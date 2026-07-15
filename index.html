@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IMX Vocabulary Notebook</title>
+    <meta
+      name="description"
+      content="A clean personal vocabulary notebook for tracking English words"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div class="hero__content">
+          <p class="eyebrow">Personal English Learning</p>
+          <h1>IMX Vocabulary Notebook</h1>
+          <p class="subtitle">
+            Build your vocabulary. Strengthen your English. One word at a time.
+          </p>
+          <p class="hero-note">
+            Great speakers aren't born—they're built through consistent
+            learning.
+          </p>
+
+          <div class="stats">
+            <div class="stat-card">
+              <span class="stat-label">Total Words</span>
+              <strong id="totalWords">106</strong>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Favorite Words</span>
+              <strong id="favoriteCount">0</strong>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <label class="search-box" for="searchInput">
+              <span>🔎</span>
+              <input
+                id="searchInput"
+                type="text"
+                placeholder="Search by word, meaning, or category"
+              />
+            </label>
+            <button
+              id="themeToggle"
+              class="theme-toggle"
+              type="button"
+              aria-label="Toggle theme"
+            >
+              🌙
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section class="filters" aria-label="Vocabulary categories">
+          <div id="filterButtons" class="filter-buttons"></div>
+        </section>
+
+        <section class="motivation-card" aria-label="Daily motivation">
+          <div class="motivation-card__header">
+            <p class="motivation-eyebrow">💡 Daily Motivation</p>
+            <button id="newQuoteBtn" class="quote-btn" type="button">
+              🔄 New Quote
+            </button>
+          </div>
+          <p id="motivationQuote" class="motivation-quote"></p>
+        </section>
+
+        <section class="results">
+          <div class="results__meta">
+            <p id="resultsSummary">Showing vocabulary words</p>
+          </div>
+          <div id="vocabGrid" class="card-grid"></div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>📚 Keep learning. Keep growing.</p>
+        <span
+          >Success is built one word, one habit, and one day at a time.</span
+        >
+      </footer>
+    </div>
+
+    <!-- Edit modal -->
+    <div
+      id="editModal"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Edit vocabulary"
+    >
+      <div class="modal__panel">
+        <h3 id="modalTitle">Edit Word</h3>
+        <form id="editForm">
+          <input type="hidden" name="editIndex" value="" />
+          <label>Word<input name="word" required /></label>
+          <label>Meaning<textarea name="meaning" rows="2"></textarea></label>
+          <label>Synonym<input name="synonym" /></label>
+          <label>Antonym<input name="antonym" /></label>
+          <label>Word Family<input name="wordFamily" /></label>
+          <label>Sentence<textarea name="sentence" rows="2"></textarea></label>
+          <label>Category<input name="category" /></label>
+          <div class="modal-actions">
+            <button type="button" id="cancelEdit">Cancel</button>
+            <button type="submit" id="saveEdit">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <script src="app.full.js"></script>
+  </body>
+</html>
