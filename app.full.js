@@ -1,384 +1,143 @@
-const STORAGE_KEY = "imx-vocabulary-favorites";
-const STORAGE_KEY_DATA = "imx-vocabulary-data";
+const STORAGE_KEY_WORDS = "imx-hub-word-favorites";
+const STORAGE_KEY_TOPICS = "imx-hub-topic-favorites";
+
 const MOTIVATION_QUOTES = [
+  "One new word today is one more opportunity tomorrow.",
+  "Consistency beats talent.",
+  "Knowledge grows when it is shared.",
+  "Great speakers are made, not born.",
+  "The more words you know, the more clearly you can think.",
+  "The best investment is in yourself.",
   "Small improvements every day lead to remarkable results.",
   "Discipline will take you where motivation cannot.",
-  "One new word today is one more opportunity tomorrow.",
-  "Consistency beats talent when talent doesn't work.",
-  "Your future vocabulary depends on today's effort.",
-  "Knowledge compounds just like interest.",
-  "Don't study because you have to. Study because your future self will thank you.",
   "Every expert was once a beginner.",
   "Learning one word today is better than planning to learn one hundred tomorrow.",
-  "The more words you know, the more clearly you can think.",
 ];
 
-const defaultVocabulary = [
-  {
-    word: "Integrity",
-    meaning: "Doing the right thing even when nobody is watching.",
-    synonym: "Honesty",
-    antonym: "Corruption",
-    wordFamily: "Integrity, Integral",
-    sentence: "A good leader always acts with integrity.",
-    category: "Character & Values",
-  },
-  {
-    word: "Resilience",
-    meaning: "The ability to recover quickly from setbacks.",
-    synonym: "Toughness",
-    antonym: "Fragility",
-    wordFamily: "Resilient, Resilience",
-    sentence: "Her resilience helped her succeed after the failure.",
-    category: "Growth & Self-Improvement",
-  },
-  {
-    word: "Empathy",
-    meaning: "The ability to understand and share another person’s feelings.",
-    synonym: "Compassion",
-    antonym: "Indifference",
-    wordFamily: "Empathetic, Empathize",
-    sentence: "Empathy is essential for building strong relationships.",
-    category: "Mind & Psychology",
-  },
-  {
-    word: "Perspective",
-    meaning: "A particular way of viewing something.",
-    synonym: "Viewpoint",
-    antonym: "Narrow-mindedness",
-    wordFamily: "Perspective, Perspectival",
-    sentence: "A broader perspective can change your decisions.",
-    category: "Mind & Psychology",
-  },
-  {
-    word: "Ambition",
-    meaning: "A strong desire to achieve success or power.",
-    synonym: "Drive",
-    antonym: "Apathy",
-    wordFamily: "Ambitious, Ambitiously",
-    sentence: "His ambition pushed him to work harder every day.",
-    category: "Success & Wealth",
-  },
-  {
-    word: "Innovation",
-    meaning: "The introduction of new ideas or methods.",
-    synonym: "Creativity",
-    antonym: "Conservatism",
-    wordFamily: "Innovate, Innovative",
-    sentence: "Innovation is the engine of modern business.",
-    category: "Technology & Future",
-  },
-  {
-    word: "Mentorship",
-    meaning: "Guidance and support provided by a more experienced person.",
-    synonym: "Guidance",
-    antonym: "Neglect",
-    wordFamily: "Mentor, Mentorship",
-    sentence: "Mentorship can accelerate learning and confidence.",
-    category: "Leadership",
-  },
-  {
-    word: "Community",
-    meaning: "A group of people living or working together.",
-    synonym: "Society",
-    antonym: "Isolation",
-    wordFamily: "Communal, Communicate",
-    sentence: "A strong community makes life more meaningful.",
-    category: "Society & Relationships",
-  },
-  {
-    word: "Diligence",
-    meaning: "Careful and persistent effort.",
-    synonym: "Dedication",
-    antonym: "Laziness",
-    wordFamily: "Diligent, Diligently",
-    sentence: "Diligence is often more important than talent.",
-    category: "Growth & Self-Improvement",
-  },
-  {
-    word: "Reflection",
-    meaning: "Careful thought about something that happened.",
-    synonym: "Contemplation",
-    antonym: "Neglect",
-    wordFamily: "Reflect, Reflective",
-    sentence: "Reflection helps you learn from experience.",
-    category: "Mind & Psychology",
-  },
-  {
-    word: "Humility",
-    meaning: "The quality of being modest and respectful.",
-    synonym: "Modesty",
-    antonym: "Arrogance",
-    wordFamily: "Humble, Humbly",
-    sentence: "Humility makes a person easier to trust.",
-    category: "Character & Values",
-  },
-  {
-    word: "Discipline",
-    meaning: "The ability to control behavior in order to achieve goals.",
-    synonym: "Self-control",
-    antonym: "Impulsiveness",
-    wordFamily: "Disciplined, Disciplinary",
-    sentence: "Discipline turns good intentions into results.",
-    category: "Growth & Self-Improvement",
-  },
-  {
-    word: "Compassion",
-    meaning: "Sympathetic concern for the suffering of others.",
-    synonym: "Kindness",
-    antonym: "Cruelty",
-    wordFamily: "Compassionate, Compassionately",
-    sentence: "Compassion drives many acts of generosity.",
-    category: "Character & Values",
-  },
-  {
-    word: "Courage",
-    meaning: "The ability to face fear or danger.",
-    synonym: "Bravery",
-    antonym: "Cowardice",
-    wordFamily: "Courageous, Courageously",
-    sentence: "Courage is often needed before confidence appears.",
-    category: "Challenges & Difficulties",
-  },
-  {
-    word: "Adaptability",
-    meaning: "The ability to adjust to new conditions.",
-    synonym: "Flexibility",
-    antonym: "Rigidity",
-    wordFamily: "Adapt, Adaptive",
-    sentence: "Adaptability is a valuable skill in uncertain times.",
-    category: "Challenges & Difficulties",
-  },
-  {
-    word: "Vision",
-    meaning: "A clear idea of what you want to achieve.",
-    synonym: "Foreshadowing",
-    antonym: "Confusion",
-    wordFamily: "Visualize, Visionary",
-    sentence: "Great leaders often share a strong vision.",
-    category: "Leadership",
-  },
-  {
-    word: "Prosperity",
-    meaning: "A state of success and financial well-being.",
-    synonym: "Wealth",
-    antonym: "Poverty",
-    wordFamily: "Prosper, Prosperous",
-    sentence: "Prosperity comes from discipline and smart choices.",
-    category: "Success & Wealth",
-  },
-  {
-    word: "Connection",
-    meaning: "A link or relationship between people or ideas.",
-    synonym: "Bond",
-    antonym: "Separation",
-    wordFamily: "Connect, Connected",
-    sentence: "The connection between effort and result is clear.",
-    category: "Society & Relationships",
-  },
-  {
-    word: "Autonomy",
-    meaning: "The ability to act independently and make your own decisions.",
-    synonym: "Independence",
-    antonym: "Dependence",
-    wordFamily: "Autonomous, Autonomously",
-    sentence: "Autonomy encourages responsibility and confidence.",
-    category: "Growth & Self-Improvement",
-  },
-  {
-    word: "Curiosity",
-    meaning: "A strong desire to learn or know more.",
-    synonym: "Inquisitiveness",
-    antonym: "Apathy",
-    wordFamily: "Curious, Curiously",
-    sentence: "Curiosity often leads to discovery.",
-    category: "Mind & Psychology",
-  },
-  {
-    word: "Strategic",
-    meaning: "Carefully planned to achieve a long-term goal.",
-    synonym: "Calculated",
-    antonym: "Impulsive",
-    wordFamily: "Strategy, Strategize",
-    sentence: "A strategic plan can save time and resources.",
-    category: "Leadership",
-  },
-  {
-    word: "Ethics",
-    meaning: "Moral principles that guide behavior.",
-    synonym: "Morality",
-    antonym: "Immorality",
-    wordFamily: "Ethical, Ethically",
-    sentence: "Ethics matter in both business and personal life.",
-    category: "Character & Values",
-  },
-  {
-    word: "Collaboration",
-    meaning: "Working together to achieve a common goal.",
-    synonym: "Cooperation",
-    antonym: "Competition",
-    wordFamily: "Collaborate, Collaborative",
-    sentence: "Collaboration often produces better results.",
-    category: "Society & Relationships",
-  },
-  {
-    word: "Momentum",
-    meaning: "The force or progress gained by a moving object or process.",
-    synonym: "Drive",
-    antonym: "Stagnation",
-    wordFamily: "Momentous, Momentum",
-    sentence: "A small win can create momentum for the next step.",
-    category: "Growth & Self-Improvement",
-  },
-  {
-    word: "Concentration",
-    meaning: "The ability to focus fully on a single task.",
-    synonym: "Focus",
-    antonym: "Distraction",
-    wordFamily: "Concentrate, Concentrated",
-    sentence: "Concentration improves when distractions are reduced.",
-    category: "Mind & Psychology",
-  },
-  {
-    word: "Sustainability",
-    meaning: "The ability to continue over time without harming resources.",
-    synonym: "Durability",
-    antonym: "Wastefulness",
-    wordFamily: "Sustainable, Sustain",
-    sentence: "Sustainability is central to modern design.",
-    category: "Technology & Future",
-  },
-  {
-    word: "Confidence",
-    meaning: "A feeling of self-assurance and trust in your abilities.",
-    synonym: "Assurance",
-    antonym: "Doubt",
-    wordFamily: "Confident, Confidently",
-    sentence: "Confidence grows through preparation and experience.",
-    category: "Growth & Self-Improvement",
-  },
-  {
-    word: "Perseverance",
-    meaning: "Steady persistence despite difficulties.",
-    synonym: "Endurance",
-    antonym: "Quitters",
-    wordFamily: "Persevere, Persevering",
-    sentence:
-      "Perseverance often separates short-term dreams from lasting success.",
-    category: "Challenges & Difficulties",
-  },
-  {
-    word: "Stability",
-    meaning: "The condition of being steady and reliable.",
-    synonym: "Consistency",
-    antonym: "Instability",
-    wordFamily: "Stable, Stabilize",
-    sentence: "Stability creates a sense of safety and trust.",
-    category: "Society & Relationships",
-  },
-  {
-    word: "Accountability",
-    meaning: "The obligation to accept responsibility for actions.",
-    synonym: "Responsibility",
-    antonym: "Irresponsibility",
-    wordFamily: "Accountable, Accountably",
-    sentence: "Accountability strengthens trust within a team.",
-    category: "Leadership",
-  },
-  {
-    word: "Imagination",
-    meaning: "The ability to form new ideas or mental images.",
-    synonym: "Creativeness",
-    antonym: "Reality",
-    wordFamily: "Imagine, Imaginary",
-    sentence: "Imagination is the beginning of innovation.",
-    category: "Technology & Future",
-  },
-  {
-    word: "Patience",
-    meaning: "The capacity to accept delay or difficulty calmly.",
-    synonym: "Tolerance",
-    antonym: "Impatience",
-    wordFamily: "Patient, Patiently",
-    sentence: "Patience is essential when learning a new skill.",
-    category: "Challenges & Difficulties",
-  },
-];
+const state = {
+  activePage: "home",
+  searchTerm: "",
+  vocabCategory: "All",
+  vocabSort: "az",
+  vocabFavoritesOnly: false,
+  topicFavoritesOnly: false,
+};
 
-let vocabulary = [];
-
-const categoryOrder = [
-  "All",
-  "Growth & Self-Improvement",
-  "Mind & Psychology",
-  "Character & Values",
-  "Society & Relationships",
-  "Success & Wealth",
-  "Technology & Future",
-  "Leadership",
-  "Challenges & Difficulties",
-];
-
-const state = { activeCategory: "All", searchTerm: "" };
-
-const searchInput = document.getElementById("searchInput");
-const filterButtons = document.getElementById("filterButtons");
-const vocabGrid = document.getElementById("vocabGrid");
-const resultsSummary = document.getElementById("resultsSummary");
-const totalWords = document.getElementById("totalWords");
-const favoriteCount = document.getElementById("favoriteCount");
+const globalSearchInput = document.getElementById("globalSearchInput");
+const navLinks = document.querySelectorAll(".nav-link");
+const pages = document.querySelectorAll(".page");
 const themeToggle = document.getElementById("themeToggle");
-const motivationQuote = document.getElementById("motivationQuote");
 const newQuoteBtn = document.getElementById("newQuoteBtn");
-const editModal = document.getElementById("editModal");
-const editForm = document.getElementById("editForm");
+const motivationQuote = document.getElementById("motivationQuote");
+const homeTotalWords = document.getElementById("homeTotalWords");
+const homeTotalTopics = document.getElementById("homeTotalTopics");
+const homeFavoriteWords = document.getElementById("homeFavoriteWords");
+const homeCompletedTopics = document.getElementById("homeCompletedTopics");
+const vocabCategoryButtons = document.getElementById("vocabCategoryButtons");
+const vocabGrid = document.getElementById("vocabGrid");
+const vocabResultsText = document.getElementById("vocabResultsText");
+const vocabFavoriteToggle = document.getElementById("vocabFavoriteToggle");
+const vocabSortSelect = document.getElementById("vocabSortSelect");
+const topicGrid = document.getElementById("topicGrid");
+const topicResultsText = document.getElementById("topicResultsText");
+const topicFavoriteToggle = document.getElementById("topicFavoriteToggle");
+const favoriteVocabGrid = document.getElementById("favoriteVocabGrid");
+const favoriteTopicGrid = document.getElementById("favoriteTopicGrid");
 
-const favorites = new Set(
-  JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"),
+const favoriteWords = new Set(
+  JSON.parse(localStorage.getItem(STORAGE_KEY_WORDS) || "[]"),
+);
+const favoriteTopics = new Set(
+  JSON.parse(localStorage.getItem(STORAGE_KEY_TOPICS) || "[]"),
 );
 
-function loadVocabulary() {
+let vocabularyData = [];
+let topicData = [];
+
+const formatDate = (isoString) => {
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) {
+    return isoString;
+  }
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+const loadData = async () => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_DATA);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {}
-  return defaultVocabulary.slice();
-}
+    const [vocabModule, topicsModule] = await Promise.all([
+      import("./data/vocabulary.js"),
+      import("./data/topics.js"),
+    ]);
 
-function saveVocabulary() {
-  try {
-    localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(vocabulary));
-  } catch (e) {}
-}
+    vocabularyData = vocabModule.vocabularyData || [];
+    topicData = topicsModule.topicData || [];
+  } catch (error) {
+    console.error("Failed to load data modules", error);
+  }
+};
 
-function saveFavorites() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...favorites]));
-}
+const saveFavorites = () => {
+  localStorage.setItem(STORAGE_KEY_WORDS, JSON.stringify([...favoriteWords]));
+  localStorage.setItem(STORAGE_KEY_TOPICS, JSON.stringify([...favoriteTopics]));
+};
 
-function renderFilters() {
-  filterButtons.innerHTML = "";
-  categoryOrder.forEach((category) => {
+const updateUrlState = (page) => {
+  const url = new URL(window.location.href);
+  url.searchParams.set("page", page);
+  window.history.replaceState({}, "", url);
+};
+
+const switchPage = (page) => {
+  state.activePage = page;
+  pages.forEach((section) =>
+    section.classList.toggle("page--active", section.id === page),
+  );
+  navLinks.forEach((button) =>
+    button.classList.toggle("active", button.dataset.page === page),
+  );
+  updateUrlState(page);
+};
+
+const getUniqueCategories = () => {
+  const categories = new Set(vocabularyData.map((item) => item.category));
+  return ["All", ...[...categories].sort((a, b) => a.localeCompare(b))];
+};
+
+const renderCategoryButtons = () => {
+  const categories = getUniqueCategories();
+  vocabCategoryButtons.innerHTML = "";
+
+  categories.forEach((category) => {
     const button = document.createElement("button");
-    button.className = "filter-btn";
-    if (state.activeCategory === category) button.classList.add("is-active");
-    button.textContent = category === "All" ? "All" : category;
+    button.type = "button";
+    button.className = `filter-btn ${state.vocabCategory === category ? "is-active" : ""}`;
+    button.textContent = category;
     button.addEventListener("click", () => {
-      state.activeCategory = category;
-      renderFilters();
+      state.vocabCategory = category;
+      renderCategoryButtons();
       renderVocabulary();
     });
-    filterButtons.appendChild(button);
+    vocabCategoryButtons.appendChild(button);
   });
-}
+};
 
-function getFilteredVocabulary() {
+const filterVocabulary = () => {
   const term = state.searchTerm.trim().toLowerCase();
-  return vocabulary
-    .map((w, i) => ({ item: w, index: i }))
-    .filter(({ item }) => {
+
+  return vocabularyData
+    .filter((item) => {
       const matchesCategory =
-        state.activeCategory === "All" ||
-        item.category === state.activeCategory;
+        state.vocabCategory === "All" || item.category === state.vocabCategory;
+      const matchesFavorite =
+        !state.vocabFavoritesOnly || favoriteWords.has(item.word);
+      if (!matchesCategory || !matchesFavorite) return false;
+
+      if (!term) return true;
+
       const haystack = [
         item.word,
         item.meaning,
@@ -390,36 +149,47 @@ function getFilteredVocabulary() {
       ]
         .join(" ")
         .toLowerCase();
-      const matchesSearch = !term || haystack.includes(term);
-      return matchesCategory && matchesSearch;
-    });
-}
 
-function renderVocabulary() {
-  const filtered = getFilteredVocabulary();
+      return haystack.includes(term);
+    })
+    .sort((a, b) => {
+      return state.vocabSort === "za"
+        ? b.word.localeCompare(a.word)
+        : a.word.localeCompare(b.word);
+    });
+};
+
+const renderVocabulary = () => {
+  const filtered = filterVocabulary();
   vocabGrid.innerHTML = "";
-  resultsSummary.textContent = `Showing ${filtered.length} of ${vocabulary.length} vocabulary words`;
+
+  vocabResultsText.textContent = `Showing ${filtered.length} vocabulary words`;
+
   if (!filtered.length) {
-    const empty = document.createElement("div");
-    empty.className = "empty-state";
-    empty.innerHTML =
-      "<h3>No matches yet</h3><p>Try a different keyword or category.</p>";
-    vocabGrid.appendChild(empty);
+    const fallback = document.createElement("div");
+    fallback.className = "empty-state";
+    fallback.innerHTML = `
+      <h3>No vocabulary found</h3>
+      <p>Try a different search term or category.</p>
+    `;
+    vocabGrid.appendChild(fallback);
     return;
   }
 
-  filtered.forEach(({ item, index }) => {
-    const isFavorite = favorites.has(item.word);
+  filtered.forEach((item) => {
     const card = document.createElement("article");
     card.className = "vocab-card";
+    const isFavorite = favoriteWords.has(item.word);
+
     card.innerHTML = `
       <div class="card-top">
-        <h3>${item.word}</h3>
-        <div class="card-actions">
-          <button class="favorite-btn ${isFavorite ? "is-favorite" : ""}" data-word="${item.word}" aria-label="Favorite ${item.word}">${isFavorite ? "★" : "☆"}</button>
-          <button class="edit-btn" data-index="${index}" aria-label="Edit ${item.word}">✏️</button>
-          <button class="delete-btn" data-index="${index}" aria-label="Delete ${item.word}">🗑️</button>
+        <div>
+          <h3>${item.word}</h3>
+          <div class="category-pill">${item.category}</div>
         </div>
+        <button type="button" class="favorite-btn ${isFavorite ? "is-favorite" : ""}" data-word="${item.word}" aria-label="Toggle favorite ${item.word}">
+          ${isFavorite ? "★" : "☆"}
+        </button>
       </div>
       <span class="meta-line">Meaning</span>
       <span class="meta-value">${item.meaning}</span>
@@ -431,116 +201,334 @@ function renderVocabulary() {
       <span class="meta-value">${item.wordFamily}</span>
       <span class="meta-line">Example</span>
       <span class="meta-value">“${item.sentence}”</span>
-      <span class="category-pill">${item.category}</span>
     `;
+
+    const button = card.querySelector(".favorite-btn");
+    button.addEventListener("click", () => {
+      if (favoriteWords.has(item.word)) {
+        favoriteWords.delete(item.word);
+      } else {
+        favoriteWords.add(item.word);
+      }
+      saveFavorites();
+      renderVocabulary();
+      renderFavorites();
+      renderHomeStats();
+    });
+
     vocabGrid.appendChild(card);
   });
+};
 
-  // attach handlers
-  document.querySelectorAll(".favorite-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      const word = button.getAttribute("data-word");
-      if (favorites.has(word)) favorites.delete(word);
-      else favorites.add(word);
+const filterTopics = () => {
+  const term = state.searchTerm.trim().toLowerCase();
+
+  return topicData.filter((topic) => {
+    const matchesFavorite =
+      !state.topicFavoritesOnly || favoriteTopics.has(topic.title);
+    if (!matchesFavorite) return false;
+
+    if (!term) return true;
+
+    const haystack = [
+      topic.title,
+      topic.summary,
+      topic.notes,
+      topic.date,
+      topic.vocabulary.join(" "),
+      topic.questions.join(" "),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    return haystack.includes(term);
+  });
+};
+
+const renderTopics = () => {
+  const filtered = filterTopics();
+  topicGrid.innerHTML = "";
+
+  topicResultsText.textContent = `Showing ${filtered.length} presentation topics`;
+
+  if (!filtered.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.innerHTML = `
+      <h3>No topics match your search</h3>
+      <p>Try broadening the search term or unchecking favorites.</p>
+    `;
+    topicGrid.appendChild(empty);
+    return;
+  }
+
+  filtered.forEach((topic) => {
+    const card = document.createElement("article");
+    card.className = "topic-card";
+    const isFavorite = favoriteTopics.has(topic.title);
+
+    const vocabularyCards = topic.vocabulary
+      .map((word) => {
+        const wordData = vocabularyData.find(
+          (item) => item.word.toLowerCase() === word.toLowerCase(),
+        );
+        if (!wordData) {
+          return `
+            <div class="mini-vocab-card">
+              <div class="mini-vocab-head">
+                <h5>${word}</h5>
+                <span class="mini-vocab-pron">/ˈwɜːrd/</span>
+              </div>
+              <p class="mini-vocab-meta"><strong>Meaning:</strong> Not added yet</p>
+              <p class="mini-vocab-meta"><strong>Synonym:</strong> Not added yet</p>
+              <p class="mini-vocab-meta"><strong>Antonym:</strong> Not added yet</p>
+              <p class="mini-vocab-meta"><strong>Example:</strong> Add this word to the vocabulary list for full details.</p>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="mini-vocab-card">
+            <div class="mini-vocab-head">
+              <h5>${wordData.word}</h5>
+              <span class="mini-vocab-pron">/${wordData.pronunciation || "ˈwɜːrd"}/</span>
+            </div>
+            <p class="mini-vocab-meta"><strong>Meaning:</strong> ${wordData.meaning}</p>
+            <p class="mini-vocab-meta"><strong>Synonym:</strong> ${wordData.synonym}</p>
+            <p class="mini-vocab-meta"><strong>Antonym:</strong> ${wordData.antonym}</p>
+            <p class="mini-vocab-meta"><strong>Example:</strong> ${wordData.sentence}</p>
+          </div>
+        `;
+      })
+      .join("");
+
+    card.innerHTML = `
+      <div class="topic-card__header" role="button" tabindex="0" data-topic="${topic.title}">
+        <div class="topic-headline">
+          <p class="topic-eyebrow">📅 ${formatDate(topic.date)}</p>
+          <h3>${topic.title}</h3>
+          <div class="topic-row">
+            <span class="badge ${topic.completed ? "badge-completed" : ""}">${topic.completed ? "Completed" : "In progress"}</span>
+            <span class="badge">${topic.vocabulary.length} words</span>
+          </div>
+        </div>
+        <div class="topic-card__actions">
+          <button type="button" class="topic-favorite-btn ${isFavorite ? "is-favorite" : ""}" data-topic="${topic.title}" aria-label="Toggle favorite topic ${topic.title}">
+            ${isFavorite ? "★" : "☆"}
+          </button>
+          <span class="topic-toggle-icon" aria-hidden="true">▼</span>
+        </div>
+      </div>
+      <div class="topic-details">
+        <div class="topic-detail-block">
+          <h4>📝 Summary</h4>
+          <p>${topic.summary}</p>
+        </div>
+        <div class="topic-detail-block">
+          <h4>📖 Vocabulary</h4>
+          <div class="mini-vocab-grid">
+            ${vocabularyCards}
+          </div>
+        </div>
+        ${topic.notes ? `<div class="topic-detail-block"><h4>📒 Personal Notes</h4><p>${topic.notes}</p></div>` : ""}
+        ${topic.questions.length ? `<div class="topic-detail-block"><h4>❓ Discussion Questions</h4><ul>${topic.questions.map((question) => `<li>${question}</li>`).join("")}</ul></div>` : ""}
+      </div>
+    `;
+
+    const favoriteButton = card.querySelector(".topic-favorite-btn");
+    favoriteButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (favoriteTopics.has(topic.title)) {
+        favoriteTopics.delete(topic.title);
+      } else {
+        favoriteTopics.add(topic.title);
+      }
       saveFavorites();
-      updateStats();
-      renderVocabulary();
+      renderTopics();
+      renderFavorites();
+      renderHomeStats();
     });
-  });
 
-  document.querySelectorAll(".edit-btn").forEach((btn) => {
-    btn.addEventListener("click", () =>
-      openEditModal(Number(btn.getAttribute("data-index"))),
-    );
-  });
-
-  document.querySelectorAll(".delete-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const idx = Number(btn.getAttribute("data-index"));
-      const confirmed = confirm(`Delete "${vocabulary[idx].word}"?`);
-      if (!confirmed) return;
-      vocabulary.splice(idx, 1);
-      saveVocabulary();
-      updateStats();
-      renderVocabulary();
+    const toggleButton = card.querySelector(".topic-card__header");
+    toggleButton.addEventListener("click", (event) => {
+      if (event.target.closest(".topic-favorite-btn")) return;
+      card.classList.toggle("is-open");
+      const icon = card.querySelector(".topic-toggle-icon");
+      icon.textContent = card.classList.contains("is-open") ? "▲" : "▼";
     });
+
+    toggleButton.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggleButton.click();
+      }
+    });
+
+    topicGrid.appendChild(card);
   });
-}
+};
 
-function updateStats() {
-  totalWords.textContent = vocabulary.length;
-  favoriteCount.textContent = favorites.size;
-}
+const renderFavorites = () => {
+  favoriteVocabGrid.innerHTML = "";
+  favoriteTopicGrid.innerHTML = "";
 
-function openEditModal(index) {
-  const item = vocabulary[index];
-  if (!item) return;
-  editModal.classList.remove("hidden");
-  editForm.elements["editIndex"].value = index;
-  editForm.elements["word"].value = item.word;
-  editForm.elements["meaning"].value = item.meaning;
-  editForm.elements["synonym"].value = item.synonym;
-  editForm.elements["antonym"].value = item.antonym;
-  editForm.elements["wordFamily"].value = item.wordFamily;
-  editForm.elements["sentence"].value = item.sentence;
-  editForm.elements["category"].value = item.category;
-}
+  const favoriteWordsList = vocabularyData.filter((item) =>
+    favoriteWords.has(item.word),
+  );
+  const favoriteTopicsList = topicData.filter((item) =>
+    favoriteTopics.has(item.title),
+  );
 
-function closeEditModal() {
-  editModal.classList.add("hidden");
-}
+  if (!favoriteWordsList.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.innerHTML = `
+      <h3>No favorite vocabulary yet</h3>
+      <p>Mark words as favorites to save them here.</p>
+    `;
+    favoriteVocabGrid.appendChild(empty);
+  } else {
+    favoriteWordsList.forEach((word) => {
+      const card = document.createElement("article");
+      card.className = "vocab-card";
+      card.innerHTML = `
+        <div class="card-top">
+          <div>
+            <h3>${word.word}</h3>
+            <div class="category-pill">${word.category}</div>
+          </div>
+          <button type="button" class="favorite-btn is-favorite" data-word="${word.word}" aria-label="Remove favorite ${word.word}">
+            ★
+          </button>
+        </div>
+        <span class="meta-line">Meaning</span>
+        <span class="meta-value">${word.meaning}</span>
+      `;
+      card.querySelector(".favorite-btn").addEventListener("click", () => {
+        favoriteWords.delete(word.word);
+        saveFavorites();
+        renderVocabulary();
+        renderFavorites();
+        renderHomeStats();
+      });
+      favoriteVocabGrid.appendChild(card);
+    });
+  }
 
-editForm &&
-  editForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const idx = Number(editForm.elements["editIndex"].value);
-    if (isNaN(idx)) return;
-    const updated = {
-      word: editForm.elements["word"].value.trim(),
-      meaning: editForm.elements["meaning"].value.trim(),
-      synonym: editForm.elements["synonym"].value.trim(),
-      antonym: editForm.elements["antonym"].value.trim(),
-      wordFamily: editForm.elements["wordFamily"].value.trim(),
-      sentence: editForm.elements["sentence"].value.trim(),
-      category: editForm.elements["category"].value.trim() || "Uncategorized",
-    };
-    vocabulary[idx] = updated;
-    saveVocabulary();
-    closeEditModal();
-    updateStats();
+  if (!favoriteTopicsList.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.innerHTML = `
+      <h3>No favorite topics yet</h3>
+      <p>Mark topics as favorites to save them here.</p>
+    `;
+    favoriteTopicGrid.appendChild(empty);
+  } else {
+    favoriteTopicsList.forEach((topic) => {
+      const card = document.createElement("article");
+      card.className = "topic-card";
+      card.innerHTML = `
+        <div class="topic-card__header">
+          <div class="topic-headline">
+            <p class="topic-eyebrow">${formatDate(topic.date)}</p>
+            <h3>${topic.title}</h3>
+            <div class="topic-row">
+              <span class="badge ${topic.completed ? "badge-completed" : ""}">${topic.completed ? "Completed" : "In progress"}</span>
+            </div>
+          </div>
+          <button type="button" class="topic-favorite-btn is-favorite" data-topic="${topic.title}" aria-label="Remove favorite topic ${topic.title}">
+            ★
+          </button>
+        </div>
+      `;
+      card
+        .querySelector(".topic-favorite-btn")
+        .addEventListener("click", () => {
+          favoriteTopics.delete(topic.title);
+          saveFavorites();
+          renderTopics();
+          renderFavorites();
+          renderHomeStats();
+        });
+      favoriteTopicGrid.appendChild(card);
+    });
+  }
+};
+
+const renderHomeStats = () => {
+  homeTotalWords.textContent = vocabularyData.length;
+  homeTotalTopics.textContent = topicData.length;
+  homeFavoriteWords.textContent = favoriteWords.size;
+  homeCompletedTopics.textContent = topicData.filter(
+    (topic) => topic.completed,
+  ).length;
+};
+
+const renderQuote = () => {
+  const quote =
+    MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)];
+  motivationQuote.classList.add("text-fade-out");
+  setTimeout(() => {
+    motivationQuote.textContent = quote;
+    motivationQuote.classList.remove("text-fade-out");
+  }, 180);
+};
+
+const applySearch = () => {
+  renderVocabulary();
+  renderTopics();
+};
+
+const attachListeners = () => {
+  navLinks.forEach((button) => {
+    button.addEventListener("click", () => switchPage(button.dataset.page));
+  });
+
+  globalSearchInput.addEventListener("input", (event) => {
+    state.searchTerm = event.target.value;
+    applySearch();
+  });
+
+  themeToggle.addEventListener("click", () => {
+    document.body.classList.toggle("light");
+    themeToggle.textContent = document.body.classList.contains("light")
+      ? "☀️"
+      : "🌙";
+  });
+
+  newQuoteBtn.addEventListener("click", renderQuote);
+
+  vocabFavoriteToggle.addEventListener("click", () => {
+    state.vocabFavoritesOnly = !state.vocabFavoritesOnly;
+    vocabFavoriteToggle.classList.toggle("active", state.vocabFavoritesOnly);
     renderVocabulary();
   });
 
-// cancel button
-const cancelEdit = document.getElementById("cancelEdit");
-if (cancelEdit) cancelEdit.addEventListener("click", closeEditModal);
+  topicFavoriteToggle.addEventListener("click", () => {
+    state.topicFavoritesOnly = !state.topicFavoritesOnly;
+    topicFavoriteToggle.classList.toggle("active", state.topicFavoritesOnly);
+    renderTopics();
+  });
 
-function showRandomQuote() {
-  const randomQuote =
-    MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)];
-  motivationQuote.classList.add("is-fading");
-  window.setTimeout(() => {
-    motivationQuote.textContent = randomQuote;
-    motivationQuote.classList.remove("is-fading");
-  }, 180);
-}
+  vocabSortSelect.addEventListener("change", (event) => {
+    state.vocabSort = event.target.value;
+    renderVocabulary();
+  });
+};
 
-searchInput.addEventListener("input", (event) => {
-  state.searchTerm = event.target.value;
+const init = async () => {
+  await loadData();
+
+  const page = new URL(window.location.href).searchParams.get("page");
+  switchPage(page && document.getElementById(page) ? page : "home");
+
+  renderCategoryButtons();
+  renderHomeStats();
   renderVocabulary();
-});
+  renderTopics();
+  renderFavorites();
+  renderQuote();
+  attachListeners();
+};
 
-themeToggle.addEventListener("click", () => {
-  document.body.classList.toggle("light");
-  const isLight = document.body.classList.contains("light");
-  themeToggle.textContent = isLight ? "☀️" : "🌙";
-});
-
-newQuoteBtn.addEventListener("click", showRandomQuote);
-
-// initialize
-vocabulary = loadVocabulary();
-updateStats();
-renderFilters();
-renderVocabulary();
-showRandomQuote();
+init();

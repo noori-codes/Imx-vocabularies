@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IMX Vocabulary Notebook</title>
+    <title>IMX English Hub</title>
     <meta
       name="description"
-      content="A clean personal vocabulary notebook for tracking English words"
+      content="A modern dark-themed English learning hub for vocabulary, presentation topics and progress."
     />
     <link rel="icon" type="image/png" href="IMX-logo.png" />
     <link rel="apple-touch-icon" href="IMX-logo.png" />
@@ -19,112 +19,190 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="app-shell">
-      <header class="hero">
-        <div class="hero__content">
-          <div class="hero__brand" aria-label="IMX brand mark">
-            <img src="IMX-logo.png" alt="IMX logo" />
-            <span>IMX</span>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand">
+          <img src="IMX-logo.png" alt="IMX logo" />
+          <div class="brand-copy">
+            <p class="eyebrow">IMX English Hub</p>
+            <h1>Personal English Study Journal</h1>
           </div>
-          <p class="eyebrow">Personal English Learning</p>
-          <h1>IMX Vocabulary Notebook</h1>
-          <p class="subtitle">
-            Build your vocabulary. Strengthen your English. One word at a time.
-          </p>
-          <p class="hero-note">
-            Great speakers aren't born—they're built through consistent
-            learning.
-          </p>
-
-          <div class="stats">
-            <div class="stat-card">
-              <span class="stat-label">Total Words</span>
-              <strong id="totalWords">106</strong>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Favorite Words</span>
-              <strong id="favoriteCount">0</strong>
-            </div>
-          </div>
-
-          <div class="toolbar">
-            <label class="search-box" for="searchInput">
-              <span>🔎</span>
-              <input
-                id="searchInput"
-                type="text"
-                placeholder="Search by word, meaning, or category"
-              />
-            </label>
-            <button
-              id="themeToggle"
-              class="theme-toggle"
-              type="button"
-              aria-label="Toggle theme"
-            >
-              🌙
-            </button>
-          </div>
+        </div>
+        <div class="topbar-actions">
+          <label class="search-box" for="globalSearchInput">
+            <span>🔎</span>
+            <input
+              id="globalSearchInput"
+              type="search"
+              placeholder="Search vocabulary or topics"
+              autocomplete="off"
+            />
+          </label>
+          <button
+            id="themeToggle"
+            class="theme-toggle"
+            type="button"
+            aria-label="Toggle color theme"
+          >
+            🌙
+          </button>
         </div>
       </header>
 
-      <main>
-        <section class="filters" aria-label="Vocabulary categories">
-          <div id="filterButtons" class="filter-buttons"></div>
-        </section>
+      <nav class="page-nav" aria-label="Main navigation">
+        <button class="nav-link active" data-page="home">Home</button>
+        <button class="nav-link" data-page="vocabulary">Vocabulary</button>
+        <button class="nav-link" data-page="topics">Presentation Topics</button>
+        <button class="nav-link" data-page="favorites">Favorites</button>
+        <button class="nav-link" data-page="about">About</button>
+      </nav>
 
-        <section class="motivation-card" aria-label="Daily motivation">
-          <div class="motivation-card__header">
-            <p class="motivation-eyebrow">💡 Daily Motivation</p>
-            <button id="newQuoteBtn" class="quote-btn" type="button">
-              🔄 New Quote
-            </button>
+      <main class="page-content" role="main">
+        <section id="home" class="page page--active">
+          <div class="hero-card">
+            <div class="hero-copy">
+              <p class="eyebrow">Welcome back</p>
+              <h2>IMX English Hub</h2>
+              <p class="hero-subtitle">
+                My personal journey to mastering English through vocabulary,
+                presentations, and daily practice.
+              </p>
+            </div>
+            <div class="hero-visual">
+              <div class="hero-tag">Study notebook</div>
+              <div class="hero-note">
+                Every new word and topic gets stored in one beautiful,
+                easy-to-review hub.
+              </div>
+            </div>
           </div>
-          <p id="motivationQuote" class="motivation-quote"></p>
+
+          <div class="home-grid">
+            <div class="progress-card">
+              <p class="progress-label">Total Vocabulary Words</p>
+              <strong id="homeTotalWords">0</strong>
+            </div>
+            <div class="progress-card">
+              <p class="progress-label">Total Presentation Topics</p>
+              <strong id="homeTotalTopics">0</strong>
+            </div>
+            <div class="progress-card">
+              <p class="progress-label">Favorite Words</p>
+              <strong id="homeFavoriteWords">0</strong>
+            </div>
+            <div class="progress-card">
+              <p class="progress-label">Completed Topics</p>
+              <strong id="homeCompletedTopics">0</strong>
+            </div>
+          </div>
+
+          <section class="motivation-card" aria-label="Daily motivation">
+            <div class="motivation-card__header">
+              <p class="motivation-eyebrow">💡 Daily Motivation</p>
+              <button id="newQuoteBtn" class="quote-btn" type="button">
+                🔄 New Quote
+              </button>
+            </div>
+            <p id="motivationQuote" class="motivation-quote"></p>
+          </section>
         </section>
 
-        <section class="results">
+        <section id="vocabulary" class="page">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">Vocabulary</p>
+              <h2>Word Library</h2>
+            </div>
+            <div class="page-controls">
+              <button id="vocabFavoriteToggle" class="pill-toggle">
+                Favorites only
+              </button>
+              <label class="select-wrap">
+                <span>Sort</span>
+                <select id="vocabSortSelect">
+                  <option value="az">A → Z</option>
+                  <option value="za">Z → A</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <section class="filters">
+            <div id="vocabCategoryButtons" class="filter-buttons"></div>
+          </section>
+
           <div class="results__meta">
-            <p id="resultsSummary">Showing vocabulary words</p>
+            <p id="vocabResultsText">Showing vocabulary words</p>
           </div>
           <div id="vocabGrid" class="card-grid"></div>
+        </section>
+
+        <section id="topics" class="page">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">Presentation Topics</p>
+              <h2>Expandable topic cards</h2>
+            </div>
+            <div class="page-controls">
+              <button id="topicFavoriteToggle" class="pill-toggle">
+                Favorite topics
+              </button>
+            </div>
+          </div>
+
+          <div class="results__meta">
+            <p id="topicResultsText">Showing presentation topics</p>
+          </div>
+          <div id="topicGrid" class="accordion-grid"></div>
+        </section>
+
+        <section id="favorites" class="page">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">Favorites</p>
+              <h2>Saved study highlights</h2>
+            </div>
+          </div>
+
+          <div class="favorites-section">
+            <div class="favorites-block">
+              <p class="favorites-heading">Favorite Vocabulary</p>
+              <div id="favoriteVocabGrid" class="card-grid"></div>
+            </div>
+
+            <div class="favorites-block">
+              <p class="favorites-heading">Favorite Presentation Topics</p>
+              <div id="favoriteTopicGrid" class="card-grid"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="about" class="page">
+          <div class="about-card">
+            <p class="eyebrow">About this hub</p>
+            <h2>Your personal English learning library</h2>
+            <p>
+              IMX English Hub keeps vocabulary, presentation topics, favorite
+              items, and daily motivation together in a polished dark-themed
+              interface. Add new content in the data files and review everything
+              later through a beautiful, organized, professional library.
+            </p>
+            <ul class="about-list">
+              <li>Dark mode by default with blue accent styling</li>
+              <li>Local storage favorites for vocabulary and topics</li>
+              <li>Instant filtering, search, sorting, and expandable cards</li>
+              <li>Easy-to-edit content under <code>/data</code></li>
+            </ul>
+          </div>
         </section>
       </main>
 
       <footer class="footer">
         <p>📚 Keep learning. Keep growing.</p>
-        <span
-          >Success is built one word, one habit, and one day at a time.</span
-        >
+        <span>My future is built one word at a time.</span>
       </footer>
     </div>
 
-    <!-- Edit modal -->
-    <div
-      id="editModal"
-      class="modal hidden"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Edit vocabulary"
-    >
-      <div class="modal__panel">
-        <h3 id="modalTitle">Edit Word</h3>
-        <form id="editForm">
-          <input type="hidden" name="editIndex" value="" />
-          <label>Word<input name="word" required /></label>
-          <label>Meaning<textarea name="meaning" rows="2"></textarea></label>
-          <label>Synonym<input name="synonym" /></label>
-          <label>Antonym<input name="antonym" /></label>
-          <label>Word Family<input name="wordFamily" /></label>
-          <label>Sentence<textarea name="sentence" rows="2"></textarea></label>
-          <label>Category<input name="category" /></label>
-          <div class="modal-actions">
-            <button type="button" id="cancelEdit">Cancel</button>
-            <button type="submit" id="saveEdit">Save</button>
-          </div>
-        </form>
-      </div>
-    </div>
-    <script src="app.full.js"></script>
+    <script type="module" src="app.full.js"></script>
   </body>
 </html>
