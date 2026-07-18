@@ -56,5 +56,32 @@
       "How can vocabulary change the tone of a message?",
       "What is one word you can use instead of ‘important’?"
     ]
+  },
+  {
+    "title": "Is Modern Life More Stressful Than the Past?",
+    "date": "2026-07-18",
+    "completed": false,
+    "favorite": false,
+    "vocabulary": [
+      "Stress",
+      "Burnout",
+      "Overwhelmed",
+      "Balance",
+      "Fast-paced",
+      "Deadline",
+      "Multitasking",
+      "Distraction",
+      "Resilience",
+      "Well-being"
+    ],
+    "summary": "This topic explores whether modern life is more stressful than life in the past, considering technology, work pressure, and changing social expectations.",
+    "notes": "The discussion highlights how modern life can bring more pressure through speed, constant connectivity, and higher expectations, while also offering tools to manage stress and improve well-being.",
+    "questions": [
+      "Is modern life more stressful than the past?",
+      "What factors make life feel more demanding today?",
+      "How has technology changed the way people experience stress?",
+      "Can people still live a balanced life in a fast-paced world?",
+      "What habits help people reduce stress and improve well-being?"
+    ]
   }
 ]
