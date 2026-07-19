@@ -1,9 +1,37 @@
+const normalizeList = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string" && value.trim()) return [value];
+  return [];
+};
+
+export const createTopic = ({
+  title,
+  date,
+  summary = "",
+  notes = "",
+  vocabulary = [],
+  questions = [],
+  completed = false,
+  favorite = false,
+}) => ({
+  title,
+  date,
+  completed,
+  favorite,
+  vocabulary: normalizeList(vocabulary),
+  summary,
+  notes,
+  questions: normalizeList(questions),
+});
+
+// Add a new topic by copying this pattern and changing the values:
+// createTopic({ title: "Your Topic", date: "2026-07-19", summary: "...", vocabulary: ["Word 1", "Word 2"], questions: ["Question 1"] })
+
 export const topicData = [
-  {
+  createTopic({
     title: "Is Modern Life More Stressful Than the Past?",
     date: "2026-07-18",
     completed: false,
-    favorite: false,
     vocabulary: [
       "Stress",
       "Burnout",
@@ -27,13 +55,12 @@ export const topicData = [
       "Can people still live a balanced life in a fast-paced world?",
       "What habits help people reduce stress and improve well-being?",
     ],
-  },
+  }),
 
-  {
+  createTopic({
     title: "Would You Rather Live in the Past or the Future?",
     date: "2026-07-16",
     completed: true,
-    favorite: false,
     vocabulary: [
       "Nostalgia",
       "Innovation",
@@ -58,12 +85,12 @@ export const topicData = [
       "Can we learn more from history or from imagining the future?",
       "Why is it important to live in the present even while thinking about the past and future?",
     ],
-  },
-  {
+  }),
+
+  createTopic({
     title: "Why Do We Regret the Past?",
     date: "2026-07-14",
     completed: true,
-    favorite: false,
     vocabulary: [
       "Regret",
       "Remorse",
@@ -85,8 +112,9 @@ export const topicData = [
       "What is the difference between regret and guilt?",
       "Can forgiveness change how you view the past?",
     ],
-  },
-  {
+  }),
+
+  createTopic({
     title: "How Daily Practice Builds Confidence",
     date: "2026-07-10",
     completed: true,
@@ -107,12 +135,12 @@ export const topicData = [
       "What routines help people practice consistently?",
       "Why does confidence feel different from competence?",
     ],
-  },
-  {
+  }),
+
+  createTopic({
     title: "The Power of Vocabulary in Presentation",
     date: "2026-07-05",
     completed: true,
-    favorite: false,
     vocabulary: ["Vocabulary", "Expression", "Precision", "Growth", "Impact"],
     summary:
       "Discussing how choosing the right words makes every presentation more memorable and effective.",
@@ -122,5 +150,5 @@ export const topicData = [
       "How can vocabulary change the tone of a message?",
       "What is one word you can use instead of ‘important’?",
     ],
-  },
+  }),
 ];
