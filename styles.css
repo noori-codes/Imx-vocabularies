@@ -500,8 +500,6 @@ button {
 }
 
 .category-pill,
-.badge,
-.badge-completed,
 .vocab-list li {
   display: inline-flex;
   align-items: center;
@@ -516,16 +514,6 @@ button {
 .vocab-list li {
   background: rgba(59, 130, 246, 0.16);
   color: var(--accent);
-}
-
-.badge {
-  background: rgba(59, 130, 246, 0.18);
-  color: #bfdbfe;
-}
-
-.badge-completed {
-  background: rgba(34, 197, 94, 0.18);
-  color: #86efac;
 }
 
 .topic-card {

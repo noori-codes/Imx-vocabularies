@@ -308,8 +308,6 @@ const renderTopics = () => {
           <p class="topic-eyebrow">📅 ${formatDate(topic.date)}</p>
           <h3>${topic.title}</h3>
           <div class="topic-row">
-            <span class="badge ${topic.completed ? "badge-completed" : ""}">${topic.completed ? "Completed" : "In progress"}</span>
-            <span class="badge">${topic.vocabulary.length} words</span>
           </div>
         </div>
         <div class="topic-card__actions">
@@ -433,7 +431,6 @@ const renderFavorites = () => {
             <p class="topic-eyebrow">${formatDate(topic.date)}</p>
             <h3>${topic.title}</h3>
             <div class="topic-row">
-              <span class="badge ${topic.completed ? "badge-completed" : ""}">${topic.completed ? "Completed" : "In progress"}</span>
             </div>
           </div>
           <button type="button" class="topic-favorite-btn is-favorite" data-topic="${topic.title}" aria-label="Remove favorite topic ${topic.title}">

@@ -11,12 +11,10 @@ export const createTopic = ({
   notes = "",
   vocabulary = [],
   questions = [],
-  completed = false,
   favorite = false,
 }) => ({
   title,
   date,
-  completed,
   favorite,
   vocabulary: normalizeList(vocabulary),
   summary,
@@ -31,7 +29,6 @@ export const topicData = [
   createTopic({
     title: "Is Modern Life More Stressful Than the Past?",
     date: "2026-07-18",
-    completed: false,
     vocabulary: [
       "Stress",
       "Burnout",
@@ -60,7 +57,6 @@ export const topicData = [
   createTopic({
     title: "Would You Rather Live in the Past or the Future?",
     date: "2026-07-16",
-    completed: true,
     vocabulary: [
       "Nostalgia",
       "Innovation",
@@ -90,7 +86,6 @@ export const topicData = [
   createTopic({
     title: "Why Do We Regret the Past?",
     date: "2026-07-14",
-    completed: true,
     vocabulary: [
       "Regret",
       "Remorse",
@@ -117,7 +112,6 @@ export const topicData = [
   createTopic({
     title: "How Daily Practice Builds Confidence",
     date: "2026-07-10",
-    completed: true,
     favorite: true,
     vocabulary: [
       "Confidence",
@@ -140,7 +134,6 @@ export const topicData = [
   createTopic({
     title: "The Power of Vocabulary in Presentation",
     date: "2026-07-05",
-    completed: true,
     vocabulary: ["Vocabulary", "Expression", "Precision", "Growth", "Impact"],
     summary:
       "Discussing how choosing the right words makes every presentation more memorable and effective.",
