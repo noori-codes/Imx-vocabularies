@@ -32,7 +32,6 @@ const motivationQuote = document.getElementById("motivationQuote");
 const homeTotalWords = document.getElementById("homeTotalWords");
 const homeTotalTopics = document.getElementById("homeTotalTopics");
 const homeFavoriteWords = document.getElementById("homeFavoriteWords");
-const homeCompletedTopics = document.getElementById("homeCompletedTopics");
 const vocabCategoryButtons = document.getElementById("vocabCategoryButtons");
 const vocabGrid = document.getElementById("vocabGrid");
 const vocabResultsText = document.getElementById("vocabResultsText");
@@ -456,9 +455,6 @@ const renderHomeStats = () => {
   homeTotalWords.textContent = vocabularyData.length;
   homeTotalTopics.textContent = topicData.length;
   homeFavoriteWords.textContent = favoriteWords.size;
-  homeCompletedTopics.textContent = topicData.filter(
-    (topic) => topic.completed,
-  ).length;
 };
 
 const renderQuote = () => {

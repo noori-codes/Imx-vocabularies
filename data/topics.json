@@ -2,7 +2,6 @@
   {
     "title": "Why Do We Regret the Past?",
     "date": "2026-07-14",
-    "completed": true,
     "favorite": false,
     "vocabulary": [
       "Regret",
@@ -27,7 +26,6 @@
   {
     "title": "How Daily Practice Builds Confidence",
     "date": "2026-07-10",
-    "completed": true,
     "favorite": true,
     "vocabulary": [
       "Confidence",
@@ -47,7 +45,6 @@
   {
     "title": "The Power of Vocabulary in Presentation",
     "date": "2026-07-05",
-    "completed": true,
     "favorite": false,
     "vocabulary": ["Vocabulary", "Expression", "Precision", "Growth", "Impact"],
     "summary": "Discussing how choosing the right words makes every presentation more memorable and effective.",
@@ -60,7 +57,6 @@
   {
     "title": "Is Modern Life More Stressful Than the Past?",
     "date": "2026-07-18",
-    "completed": false,
     "favorite": false,
     "vocabulary": [
       "Stress",
