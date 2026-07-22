@@ -27,6 +27,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "How Does Failure Build Character?",
+    date: "2026-07-22",
+    completed: false,
+    vocabulary: [
+      "Failure",
+      "Setback",
+      "Perseverance",
+      "Humility",
+      "Accountability",
+      "Mindset",
+      "Grit",
+      "Growth",
+      "Resilience",
+      "Redemption",
+    ],
+    summary:
+      "This topic explores how failure can become one of life's greatest teachers. Instead of viewing failure as the end of the journey, it shows how setbacks develop resilience, humility, perseverance, and a stronger mindset, ultimately shaping a person's character.",
+    notes:
+      "Failure is not the opposite of success but part of it. Every mistake provides valuable lessons, builds emotional strength, and encourages personal growth. People who embrace failure often become wiser, more resilient, and better prepared for future challenges.",
+    questions: [
+      "Can failure make a person stronger?",
+      "Why do successful people often fail many times before succeeding?",
+      "How should we respond to failure?",
+      "Can someone succeed without ever failing?",
+      "What is the biggest lesson failure can teach us?",
+    ],
+  }),
+
+  createTopic({
     title: "Is Modern Life More Stressful Than the Past?",
     date: "2026-07-18",
     vocabulary: [
