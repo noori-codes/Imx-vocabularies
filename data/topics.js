@@ -27,6 +27,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Can Money Change a Person?",
+    date: "2026-07-23",
+    completed: false,
+    vocabulary: [
+      "Greed",
+      "Corruption",
+      "Generosity",
+      "Influence",
+      "Privilege",
+      "Integrity",
+      "Compassion",
+      "Temptation",
+      "Perspective",
+      "Contentment",
+    ],
+    summary:
+      "This topic explores whether money changes a person's personality or simply reveals their true character. While wealth can provide opportunities, comfort, and influence, it can also bring greed, temptation, and corruption if a person lacks strong values.",
+    notes:
+      "Money itself is neither good nor bad—it's a tool. Some people become more generous and compassionate after becoming wealthy, while others become selfish or arrogant. Ultimately, character, integrity, and personal values determine how someone uses money.",
+    questions: [
+      "Can money really change a person's personality?",
+      "Does money reveal who people truly are?",
+      "Why do some wealthy people become generous while others become greedy?",
+      "Can someone remain humble after becoming rich?",
+      "What is more important: wealth or character?",
+    ],
+  }),
+
+  createTopic({
     title: "How Does Failure Build Character?",
     date: "2026-07-22",
     completed: false,
