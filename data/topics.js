@@ -29,6 +29,34 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Is Curiosity the Key to Intelligence?",
+    date: "2026-07-24",
+    vocabulary: [
+      "Curiosity",
+      "Inquiry",
+      "Insight",
+      "Reasoning",
+      "Analytical",
+      "Innovation",
+      "Observation",
+      "Exploration",
+      "Comprehension",
+      "Wisdom",
+    ],
+    summary:
+      "This topic examines whether curiosity is the foundation of intelligence. It discusses how asking questions, exploring new ideas, and seeking knowledge help people develop critical thinking, creativity, and lifelong learning.",
+    notes:
+      "Intelligence is not just about knowing many facts; it is also about the desire to learn. Curious people ask questions, investigate problems, and continuously expand their understanding. Curiosity drives innovation, strengthens reasoning, and often leads to wisdom.",
+    questions: [
+      "Can a curious person become more intelligent?",
+      "Why do children ask so many questions?",
+      "Is intelligence possible without curiosity?",
+      "How does curiosity lead to innovation?",
+      "Should schools encourage curiosity more than memorization?",
+    ],
+  }),
+
+  createTopic({
     title: "Can Money Change a Person?",
     date: "2026-07-23",
     vocabulary: [

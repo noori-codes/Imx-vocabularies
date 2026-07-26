@@ -40,6 +40,7 @@ const state = {
   quizIndex: 0,
   quizRevealed: false,
   quizForceAll: false,
+  quizScope: "due",
   editingWord: null,
   editingTopic: null,
 };
@@ -84,6 +85,7 @@ const els = {
   quizAgainBtn: document.getElementById("quizAgainBtn"),
   quizSpeakBtn: document.getElementById("quizSpeakBtn"),
   quizRestartBtn: document.getElementById("quizRestartBtn"),
+  quizScopeSelect: document.getElementById("quizScopeSelect"),
   exportBtn: document.getElementById("exportBtn"),
   importFileInput: document.getElementById("importFileInput"),
   importModeSelect: document.getElementById("importModeSelect"),
@@ -95,6 +97,7 @@ const els = {
 
 const favoriteWords = new Set(readStringList(STORAGE.favoritesWords));
 const favoriteTopics = new Set(readStringList(STORAGE.favoritesTopics));
+const completedTopics = new Set(readStringList(STORAGE.completedTopics));
 
 let baseVocabulary = [];
 let baseTopics = [];
@@ -331,6 +334,18 @@ const saveFavorites = () => {
   writeJson(STORAGE.favoritesTopics, [...favoriteTopics]);
 };
 
+const saveCompletedTopics = () => {
+  writeJson(STORAGE.completedTopics, [...completedTopics]);
+};
+
+const isTopicCompleted = (topic) => completedTopics.has(topic.title);
+
+const toggleTopicCompleted = (title) => {
+  if (completedTopics.has(title)) completedTopics.delete(title);
+  else completedTopics.add(title);
+  saveCompletedTopics();
+};
+
 const rebuildLibrary = () => {
   vocabularyData = mergeVocabulary(baseVocabulary);
   topicData = mergeTopics(baseTopics);
@@ -344,6 +359,7 @@ const refreshAll = () => {
   ) {
     state.vocabCategory = "All";
   }
+  populateQuizScopeSelect();
   renderCategoryButtons();
   renderHomeStats();
   renderVocabulary();
@@ -358,8 +374,9 @@ const applyTheme = (theme) => {
   const darkIcon = els.themeToggle.querySelector(".theme-icon-dark");
   const lightIcon = els.themeToggle.querySelector(".theme-icon-light");
   if (darkIcon && lightIcon) {
-    darkIcon.hidden = isLight;
-    lightIcon.hidden = !isLight;
+    // Show the opposite theme icon (moon in light mode, sun in dark mode).
+    darkIcon.hidden = !isLight;
+    lightIcon.hidden = isLight;
   }
   els.themeToggle.setAttribute(
     "aria-label",
@@ -530,14 +547,20 @@ const loadData = async () => {
     baseTopics = topicsModule.topicData || [];
     rebuildLibrary();
 
-    let seeded = false;
+    let seededFavorites = false;
+    let seededCompleted = false;
     topicData.forEach((topic) => {
       if (topic.favorite && !favoriteTopics.has(topic.title)) {
         favoriteTopics.add(topic.title);
-        seeded = true;
+        seededFavorites = true;
+      }
+      if (topic.completed && !completedTopics.has(topic.title)) {
+        completedTopics.add(topic.title);
+        seededCompleted = true;
       }
     });
-    if (seeded) saveFavorites();
+    if (seededFavorites) saveFavorites();
+    if (seededCompleted) saveCompletedTopics();
   } catch (error) {
     console.error("Failed to load data modules", error);
   }
@@ -703,7 +726,8 @@ const filterTopics = () => {
 const renderTopics = () => {
   const filtered = filterTopics();
   els.topicGrid.innerHTML = "";
-  els.topicResultsText.textContent = `Showing ${filtered.length} presentation topics`;
+  const completedCount = topicData.filter((topic) => isTopicCompleted(topic)).length;
+  els.topicResultsText.textContent = `Showing ${filtered.length} presentation topics · ${completedCount} completed`;
 
   if (!filtered.length) {
     const empty = document.createElement("div");
@@ -718,8 +742,9 @@ const renderTopics = () => {
 
   filtered.forEach((topic, index) => {
     const card = document.createElement("article");
-    card.className = "topic-card";
     const isFavorite = favoriteTopics.has(topic.title);
+    const isCompleted = isTopicCompleted(topic);
+    card.className = `topic-card${isCompleted ? " is-completed" : ""}`;
     const detailsId = `topic-details-${index}`;
     const title = escapeHtml(topic.title);
 
@@ -755,8 +780,9 @@ const renderTopics = () => {
     card.innerHTML = `
       <div class="topic-card__header" role="button" tabindex="0" aria-expanded="false" aria-controls="${detailsId}">
         <div class="topic-headline">
-          <p class="topic-eyebrow">${escapeHtml(formatDate(topic.date))}</p>
+          <p class="topic-eyebrow">${escapeHtml(formatDate(topic.date))}${isCompleted ? " · Completed" : ""}</p>
           <h3>${title}</h3>
+          ${isCompleted ? '<span class="status-pill">Completed</span>' : ""}
         </div>
         <div class="topic-card__actions">
           <button type="button" class="topic-favorite-btn ${isFavorite ? "is-favorite" : ""}" aria-label="Toggle favorite topic ${title}" aria-pressed="${isFavorite}">
@@ -783,6 +809,8 @@ const renderTopics = () => {
             : ""
         }
         <div class="card-footer-actions">
+          <button type="button" class="primary-btn practice-topic-btn">Practice words</button>
+          <button type="button" class="ghost-btn complete-topic-btn">${isCompleted ? "Mark incomplete" : "Mark completed"}</button>
           <button type="button" class="ghost-btn edit-topic-btn">Edit</button>
           <button type="button" class="danger-btn delete-topic-btn">Delete</button>
         </div>
@@ -823,12 +851,25 @@ const renderTopics = () => {
       });
     });
 
+    card.querySelector(".practice-topic-btn").addEventListener("click", () => {
+      startTopicQuiz(topic.title);
+    });
+
+    card.querySelector(".complete-topic-btn").addEventListener("click", () => {
+      toggleTopicCompleted(topic.title);
+      renderTopics();
+      populateQuizScopeSelect();
+      renderHomeStats();
+    });
+
     card.querySelector(".edit-topic-btn").addEventListener("click", () => openTopicModal(topic));
     card.querySelector(".delete-topic-btn").addEventListener("click", () => {
       if (!confirm(`Delete “${topic.title}”?`)) return;
       softDeleteTopic(topic.title);
       favoriteTopics.delete(topic.title);
+      completedTopics.delete(topic.title);
       saveFavorites();
+      saveCompletedTopics();
       refreshAll();
     });
 
@@ -896,7 +937,7 @@ const renderHomeStats = () => {
   els.homeTotalWords.textContent = vocabularyData.length;
   els.homeTotalTopics.textContent = topicData.length;
   els.homeFavoriteWords.textContent = favoriteWords.size;
-  els.homeDueWords.textContent = getDueWords(vocabularyData).length;
+  els.homeDueWords.textContent = getDueWords(getQuizWordPool()).length;
 };
 
 const renderQuote = () => {
@@ -905,7 +946,53 @@ const renderQuote = () => {
   fadeText(els.motivationQuote, quote);
 };
 
+const getQuizWordPool = () => {
+  if (!String(state.quizScope).startsWith("topic:")) {
+    return vocabularyData;
+  }
+  const topicTitle = state.quizScope.slice("topic:".length);
+  const topic = topicData.find((item) => item.title === topicTitle);
+  if (!topic) return vocabularyData;
+
+  const wanted = new Set(topic.vocabulary.map((word) => word.toLowerCase()));
+  return vocabularyData.filter((item) => wanted.has(item.word.toLowerCase()));
+};
+
+const populateQuizScopeSelect = () => {
+  if (!els.quizScopeSelect) return;
+  const previous = state.quizScope;
+  els.quizScopeSelect.innerHTML = "";
+
+  const addOption = (value, label) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    els.quizScopeSelect.appendChild(option);
+  };
+
+  addOption("due", "Due words");
+  addOption("all", "All vocabulary");
+  topicData.forEach((topic) => {
+    addOption(`topic:${topic.title}`, topic.title);
+  });
+
+  const hasPrevious = [...els.quizScopeSelect.options].some(
+    (option) => option.value === previous,
+  );
+  els.quizScopeSelect.value = hasPrevious ? previous : "due";
+  state.quizScope = els.quizScopeSelect.value;
+};
+
 const currentQuizItem = () => state.quizQueue[state.quizIndex] || null;
+
+const describeQuizScope = () => {
+  if (state.quizScope === "all") return "All vocabulary";
+  if (state.quizScope === "due") return "Due words";
+  if (String(state.quizScope).startsWith("topic:")) {
+    return `Topic: ${state.quizScope.slice("topic:".length)}`;
+  }
+  return "Quiz";
+};
 
 const renderQuizCard = () => {
   const current = currentQuizItem();
@@ -914,8 +1001,10 @@ const renderQuizCard = () => {
     els.quizEmpty.hidden = false;
     els.quizStatusText.textContent = state.quizForceAll
       ? "Session complete"
-      : "You're caught up";
-    els.quizProgressText.textContent = "";
+      : String(state.quizScope).startsWith("topic:")
+        ? "No words found for this topic"
+        : "You're caught up";
+    els.quizProgressText.textContent = describeQuizScope();
     return;
   }
 
@@ -935,29 +1024,52 @@ const renderQuizCard = () => {
   els.quizRevealBtn.hidden = state.quizRevealed;
   els.quizKnowBtn.hidden = !state.quizRevealed;
   els.quizAgainBtn.hidden = !state.quizRevealed;
-  els.quizStatusText.textContent = state.quizForceAll
-    ? "Practicing full vocabulary"
-    : "Words due for review";
+  els.quizStatusText.textContent = describeQuizScope();
   els.quizProgressText.textContent = `Card ${state.quizIndex + 1} of ${state.quizQueue.length}`;
+};
+
+const shuffle = (items) => {
+  const list = [...items];
+  for (let i = list.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  return list;
 };
 
 const prepareQuiz = ({ forceAll = false, preserveForce = false } = {}) => {
   if (!preserveForce) state.quizForceAll = forceAll;
   else if (forceAll) state.quizForceAll = true;
 
-  const due = state.quizForceAll
-    ? vocabularyData.map((item) => ({ item }))
-    : getDueWords(vocabularyData);
+  const pool = getQuizWordPool();
+  const useAllInScope =
+    state.quizForceAll ||
+    state.quizScope === "all" ||
+    String(state.quizScope).startsWith("topic:");
+
+  const due = useAllInScope
+    ? pool.map((item) => ({ item }))
+    : getDueWords(pool);
 
   const SESSION_SIZE = 15;
-  state.quizQueue = due.map(({ item }) => item);
-  if (!state.quizForceAll) {
+  state.quizQueue = shuffle(due.map(({ item }) => item));
+  if (!useAllInScope) {
     state.quizQueue = state.quizQueue.slice(0, SESSION_SIZE);
   }
   state.quizIndex = 0;
   state.quizRevealed = false;
   renderQuizCard();
   renderHomeStats();
+};
+
+const startTopicQuiz = (topicTitle) => {
+  state.quizScope = `topic:${topicTitle}`;
+  if (els.quizScopeSelect) {
+    populateQuizScopeSelect();
+    els.quizScopeSelect.value = state.quizScope;
+  }
+  switchPage("quiz", { replace: false });
+  prepareQuiz({ forceAll: true });
 };
 
 const advanceQuiz = (knewIt) => {
@@ -968,6 +1080,17 @@ const advanceQuiz = (knewIt) => {
   state.quizRevealed = false;
   renderQuizCard();
   renderHomeStats();
+};
+
+const isTypingTarget = (target) => {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return (
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    tag === "SELECT" ||
+    target.isContentEditable
+  );
 };
 
 const applySearch = () => {
@@ -986,7 +1109,11 @@ const applySearch = () => {
 };
 
 const exportBackup = () => {
-  const payload = buildExportPayload({ favoriteWords, favoriteTopics });
+  const payload = buildExportPayload({
+    favoriteWords,
+    favoriteTopics,
+    completedTopics,
+  });
   const blob = new Blob([JSON.stringify(payload, null, 2)], {
     type: "application/json",
   });
@@ -1010,6 +1137,10 @@ const importBackup = async (file) => {
     readStringList(STORAGE.favoritesWords).forEach((word) => favoriteWords.add(word));
     favoriteTopics.clear();
     readStringList(STORAGE.favoritesTopics).forEach((title) => favoriteTopics.add(title));
+    completedTopics.clear();
+    readStringList(STORAGE.completedTopics).forEach((title) =>
+      completedTopics.add(title),
+    );
 
     refreshAll();
     els.importStatus.textContent = `Import complete (${mode}).`;
@@ -1082,6 +1213,13 @@ const attachListeners = () => {
     if (current) speakWord(current.word);
   });
   els.quizRestartBtn.addEventListener("click", () => prepareQuiz({ forceAll: true }));
+  els.quizScopeSelect?.addEventListener("change", (event) => {
+    state.quizScope = event.target.value;
+    prepareQuiz({
+      forceAll:
+        state.quizScope === "all" || String(state.quizScope).startsWith("topic:"),
+    });
+  });
 
   els.exportBtn.addEventListener("click", exportBackup);
   els.importFileInput.addEventListener("change", (event) => {
@@ -1095,7 +1233,34 @@ const attachListeners = () => {
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !els.modalRoot.hidden) closeModal();
+    if (event.key === "Escape" && !els.modalRoot.hidden) {
+      closeModal();
+      return;
+    }
+
+    if (state.activePage !== "quiz" || !els.modalRoot.hidden) return;
+    if (isTypingTarget(event.target)) return;
+
+    if (event.key === " " || event.code === "Space") {
+      event.preventDefault();
+      if (!currentQuizItem()) return;
+      if (!state.quizRevealed) {
+        state.quizRevealed = true;
+        renderQuizCard();
+      }
+      return;
+    }
+
+    if (event.key === "1") {
+      event.preventDefault();
+      if (state.quizRevealed && currentQuizItem()) advanceQuiz(true);
+      return;
+    }
+
+    if (event.key === "2") {
+      event.preventDefault();
+      if (state.quizRevealed && currentQuizItem()) advanceQuiz(false);
+    }
   });
 };
 
@@ -1107,6 +1272,7 @@ const init = async () => {
   switchPage(page && document.getElementById(page) ? page : "home");
 
   renderCategoryButtons();
+  populateQuizScopeSelect();
   renderHomeStats();
   renderVocabulary();
   renderTopics();

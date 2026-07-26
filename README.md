@@ -20,7 +20,8 @@ Then visit `http://localhost:8080`.
 
 - **Vocabulary & topics** with search, filters, and favorites
 - **In-app add/edit/delete** for words and topics (saved in `localStorage`)
-- **Spaced-repetition quiz** with Know / Not yet scheduling
+- **Spaced-repetition quiz** with topic practice, keyboard shortcuts, and Know / Not yet scheduling
+- **Topic completion** tracking in the Topics page
 - **Pronunciation** via dictionary audio / browser TTS fallbacks
 - **Export / import** JSON backups on the Data page
 - **8 focused categories:** Emotions, Mindset, Character, Learning, Speaking, Lifestyle, Society, Growth

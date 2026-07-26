@@ -3,6 +3,7 @@ import { normalizeCategory, CATEGORIES } from "../data/categories.js";
 const STORAGE = {
   favoritesWords: "imx-hub-word-favorites",
   favoritesTopics: "imx-hub-topic-favorites",
+  completedTopics: "imx-hub-completed-topics",
   theme: "imx-hub-theme",
   customVocab: "imx-hub-custom-vocab",
   customTopics: "imx-hub-custom-topics",
@@ -292,13 +293,14 @@ export const gradeWord = (word, knewIt) => {
   return progress[word];
 };
 
-export const buildExportPayload = ({ favoriteWords, favoriteTopics }) => ({
+export const buildExportPayload = ({ favoriteWords, favoriteTopics, completedTopics }) => ({
   version: 1,
   exportedAt: new Date().toISOString(),
   favorites: {
     words: [...favoriteWords],
     topics: [...favoriteTopics],
   },
+  completedTopics: [...completedTopics],
   customVocabulary: readJson(STORAGE.customVocab, []),
   customTopics: readJson(STORAGE.customTopics, []),
   deletedWords: readStringList(STORAGE.deletedWords),
@@ -319,6 +321,7 @@ export const applyImportPayload = (payload, { mode = "merge" } = {}) => {
     writeJson(STORAGE.quizProgress, {});
     writeJson(STORAGE.favoritesWords, []);
     writeJson(STORAGE.favoritesTopics, []);
+    writeJson(STORAGE.completedTopics, []);
   }
 
   if (Array.isArray(payload.customVocabulary)) {
@@ -376,5 +379,13 @@ export const applyImportPayload = (payload, { mode = "merge" } = {}) => {
     const current = new Set(mode === "replace" ? [] : readStringList(STORAGE.favoritesTopics));
     favorites.topics.forEach((title) => current.add(String(title)));
     writeJson(STORAGE.favoritesTopics, [...current]);
+  }
+
+  if (Array.isArray(payload.completedTopics)) {
+    const current = new Set(
+      mode === "replace" ? [] : readStringList(STORAGE.completedTopics),
+    );
+    payload.completedTopics.forEach((title) => current.add(String(title)));
+    writeJson(STORAGE.completedTopics, [...current]);
   }
 };
