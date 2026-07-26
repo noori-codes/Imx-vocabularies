@@ -1,8 +1,20 @@
 import { formatDate, fadeText } from "./components/helpers.js";
-
-const STORAGE_KEY_WORDS = "imx-hub-word-favorites";
-const STORAGE_KEY_TOPICS = "imx-hub-topic-favorites";
-const STORAGE_KEY_THEME = "imx-hub-theme";
+import {
+  STORAGE,
+  CATEGORIES,
+  readStringList,
+  writeJson,
+  mergeVocabulary,
+  mergeTopics,
+  upsertCustomWord,
+  softDeleteWord,
+  upsertCustomTopic,
+  softDeleteTopic,
+  getDueWords,
+  gradeWord,
+  buildExportPayload,
+  applyImportPayload,
+} from "./components/storage.js";
 
 const MOTIVATION_QUOTES = [
   "One new word today is one more opportunity tomorrow.",
@@ -24,28 +36,70 @@ const state = {
   vocabSort: "az",
   vocabFavoritesOnly: false,
   topicFavoritesOnly: false,
+  quizQueue: [],
+  quizIndex: 0,
+  quizRevealed: false,
+  quizForceAll: false,
+  editingWord: null,
+  editingTopic: null,
 };
 
-const globalSearchInput = document.getElementById("globalSearchInput");
-const navLinks = document.querySelectorAll(".nav-link");
-const pages = document.querySelectorAll(".page");
-const themeToggle = document.getElementById("themeToggle");
-const newQuoteBtn = document.getElementById("newQuoteBtn");
-const motivationQuote = document.getElementById("motivationQuote");
-const homeTotalWords = document.getElementById("homeTotalWords");
-const homeTotalTopics = document.getElementById("homeTotalTopics");
-const homeFavoriteWords = document.getElementById("homeFavoriteWords");
-const homeFavoriteTopics = document.getElementById("homeFavoriteTopics");
-const vocabCategoryButtons = document.getElementById("vocabCategoryButtons");
-const vocabGrid = document.getElementById("vocabGrid");
-const vocabResultsText = document.getElementById("vocabResultsText");
-const vocabFavoriteToggle = document.getElementById("vocabFavoriteToggle");
-const vocabSortSelect = document.getElementById("vocabSortSelect");
-const topicGrid = document.getElementById("topicGrid");
-const topicResultsText = document.getElementById("topicResultsText");
-const topicFavoriteToggle = document.getElementById("topicFavoriteToggle");
-const favoriteVocabGrid = document.getElementById("favoriteVocabGrid");
-const favoriteTopicGrid = document.getElementById("favoriteTopicGrid");
+const els = {
+  globalSearchInput: document.getElementById("globalSearchInput"),
+  navLinks: document.querySelectorAll(".nav-link"),
+  pages: document.querySelectorAll(".page"),
+  themeToggle: document.getElementById("themeToggle"),
+  newQuoteBtn: document.getElementById("newQuoteBtn"),
+  motivationQuote: document.getElementById("motivationQuote"),
+  homeTotalWords: document.getElementById("homeTotalWords"),
+  homeTotalTopics: document.getElementById("homeTotalTopics"),
+  homeFavoriteWords: document.getElementById("homeFavoriteWords"),
+  homeDueWords: document.getElementById("homeDueWords"),
+  vocabCategoryButtons: document.getElementById("vocabCategoryButtons"),
+  vocabGrid: document.getElementById("vocabGrid"),
+  vocabResultsText: document.getElementById("vocabResultsText"),
+  vocabFavoriteToggle: document.getElementById("vocabFavoriteToggle"),
+  vocabSortSelect: document.getElementById("vocabSortSelect"),
+  addWordBtn: document.getElementById("addWordBtn"),
+  topicGrid: document.getElementById("topicGrid"),
+  topicResultsText: document.getElementById("topicResultsText"),
+  topicFavoriteToggle: document.getElementById("topicFavoriteToggle"),
+  addTopicBtn: document.getElementById("addTopicBtn"),
+  favoriteVocabGrid: document.getElementById("favoriteVocabGrid"),
+  favoriteTopicGrid: document.getElementById("favoriteTopicGrid"),
+  quizStatusText: document.getElementById("quizStatusText"),
+  quizProgressText: document.getElementById("quizProgressText"),
+  quizCard: document.getElementById("quizCard"),
+  quizEmpty: document.getElementById("quizEmpty"),
+  quizWord: document.getElementById("quizWord"),
+  quizPronunciation: document.getElementById("quizPronunciation"),
+  quizCategory: document.getElementById("quizCategory"),
+  quizAnswer: document.getElementById("quizAnswer"),
+  quizMeaning: document.getElementById("quizMeaning"),
+  quizSynonym: document.getElementById("quizSynonym"),
+  quizAntonym: document.getElementById("quizAntonym"),
+  quizSentence: document.getElementById("quizSentence"),
+  quizRevealBtn: document.getElementById("quizRevealBtn"),
+  quizKnowBtn: document.getElementById("quizKnowBtn"),
+  quizAgainBtn: document.getElementById("quizAgainBtn"),
+  quizSpeakBtn: document.getElementById("quizSpeakBtn"),
+  quizRestartBtn: document.getElementById("quizRestartBtn"),
+  exportBtn: document.getElementById("exportBtn"),
+  importFileInput: document.getElementById("importFileInput"),
+  importModeSelect: document.getElementById("importModeSelect"),
+  importStatus: document.getElementById("importStatus"),
+  modalRoot: document.getElementById("modalRoot"),
+  modalTitle: document.getElementById("modalTitle"),
+  modalBody: document.getElementById("modalBody"),
+};
+
+const favoriteWords = new Set(readStringList(STORAGE.favoritesWords));
+const favoriteTopics = new Set(readStringList(STORAGE.favoritesTopics));
+
+let baseVocabulary = [];
+let baseTopics = [];
+let vocabularyData = [];
+let topicData = [];
 
 const escapeHtml = (value) =>
   String(value ?? "")
@@ -55,21 +109,379 @@ const escapeHtml = (value) =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 
-const readStoredList = (key) => {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(key) || "[]");
-    return Array.isArray(parsed) ? parsed.map(String) : [];
-  } catch (error) {
-    console.warn(`Could not read localStorage key "${key}"`, error);
-    return [];
+let cachedVoices = [];
+let currentAudio = null;
+
+const loadVoices = () => {
+  if (!window.speechSynthesis) return [];
+  cachedVoices = window.speechSynthesis.getVoices();
+  return cachedVoices;
+};
+
+if (window.speechSynthesis) {
+  loadVoices();
+  window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+}
+
+const pickEnglishVoice = () => {
+  const voices = cachedVoices.length ? cachedVoices : loadVoices();
+  if (!voices.length) return null;
+  return (
+    voices.find(
+      (voice) =>
+        /en-US/i.test(voice.lang) &&
+        /google|neural|premium|natural/i.test(voice.name),
+    ) ||
+    voices.find((voice) => /en-US/i.test(voice.lang)) ||
+    voices.find((voice) => /^en(-|$)/i.test(voice.lang)) ||
+    voices[0]
+  );
+};
+
+const showSpeakFeedback = (message, isError = false) => {
+  let toast = document.getElementById("speakToast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "speakToast";
+    toast.className = "speak-toast";
+    toast.setAttribute("role", "status");
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.toggle("is-error", isError);
+  toast.classList.add("is-visible");
+  window.clearTimeout(showSpeakFeedback._timer);
+  showSpeakFeedback._timer = window.setTimeout(() => {
+    toast.classList.remove("is-visible");
+  }, 3500);
+};
+
+const stopSpeaking = () => {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+  }
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
   }
 };
 
-const favoriteWords = new Set(readStoredList(STORAGE_KEY_WORDS));
-const favoriteTopics = new Set(readStoredList(STORAGE_KEY_TOPICS));
+const playAudioUrl = (url) =>
+  new Promise((resolve, reject) => {
+    const audio = new Audio(url);
+    currentAudio = audio;
+    audio.onended = () => {
+      currentAudio = null;
+      resolve(true);
+    };
+    audio.onerror = () => {
+      currentAudio = null;
+      reject(new Error("audio failed"));
+    };
+    audio.play().then(() => {}).catch(reject);
+  });
 
-let vocabularyData = [];
-let topicData = [];
+const speakWithDictionaryAudio = async (phrase) => {
+  const cleaned = phrase.toLowerCase().trim();
+  const candidates = [
+    cleaned,
+    cleaned.split(/\s+/)[0],
+    cleaned.replace(/-/g, ""),
+    cleaned.replace(/[^a-z'-]/gi, ""),
+  ].filter((item, index, arr) => item && arr.indexOf(item) === index);
+
+  for (const query of candidates) {
+    const response = await fetch(
+      `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(query)}`,
+    );
+    if (!response.ok) continue;
+
+    const data = await response.json();
+    const audioUrl = (data || [])
+      .flatMap((entry) => entry.phonetics || [])
+      .map((item) => item.audio)
+      .find((src) => typeof src === "string" && src.trim());
+
+    if (!audioUrl) continue;
+    await playAudioUrl(audioUrl);
+    return true;
+  }
+
+  return false;
+};
+
+const speakWithSpeechSynthesis = (phrase) =>
+  new Promise((resolve, reject) => {
+    if (!window.speechSynthesis || typeof window.SpeechSynthesisUtterance !== "function") {
+      reject(new Error("unsupported"));
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(phrase);
+    utterance.lang = "en-US";
+    utterance.rate = 0.92;
+    utterance.pitch = 1;
+
+    const voice = pickEnglishVoice();
+    if (voice) {
+      utterance.voice = voice;
+      utterance.lang = voice.lang || "en-US";
+    } else if (!loadVoices().length) {
+      reject(new Error("no-voices"));
+      return;
+    }
+
+    utterance.onend = () => resolve(true);
+    utterance.onerror = (event) => {
+      if (event.error === "canceled" || event.error === "interrupted") {
+        resolve(false);
+        return;
+      }
+      reject(new Error(event.error || "synthesis-error"));
+    };
+
+    const start = () => {
+      window.speechSynthesis.resume();
+      window.speechSynthesis.speak(utterance);
+    };
+
+    // Chrome bug: cancel() immediately before speak() can silently fail.
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+      window.speechSynthesis.cancel();
+      window.setTimeout(start, 60);
+    } else {
+      start();
+    }
+  });
+
+const speakWithOnlineTts = async (phrase) => {
+  // Media-element fallback when local speech voices are missing (common on Linux).
+  const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(
+    phrase.slice(0, 100),
+  )}`;
+  await playAudioUrl(url);
+  return true;
+};
+
+const speakWord = async (text) => {
+  const phrase = String(text || "").trim();
+  if (!phrase) return;
+
+  stopSpeaking();
+
+  try {
+    if (await speakWithDictionaryAudio(phrase)) return;
+  } catch (error) {
+    console.warn("Dictionary audio unavailable", error);
+  }
+
+  try {
+    await speakWithSpeechSynthesis(phrase);
+    return;
+  } catch (error) {
+    console.warn("Speech synthesis unavailable", error);
+  }
+
+  try {
+    if (await speakWithOnlineTts(phrase)) return;
+  } catch (error) {
+    console.warn("Online TTS unavailable", error);
+  }
+
+  showSpeakFeedback(
+    "Pronunciation unavailable. Allow network audio, or fix Linux speech-dispatcher.",
+    true,
+  );
+};
+
+const saveFavorites = () => {
+  writeJson(STORAGE.favoritesWords, [...favoriteWords]);
+  writeJson(STORAGE.favoritesTopics, [...favoriteTopics]);
+};
+
+const rebuildLibrary = () => {
+  vocabularyData = mergeVocabulary(baseVocabulary);
+  topicData = mergeTopics(baseTopics);
+};
+
+const refreshAll = () => {
+  rebuildLibrary();
+  if (
+    state.vocabCategory !== "All" &&
+    !CATEGORIES.includes(state.vocabCategory)
+  ) {
+    state.vocabCategory = "All";
+  }
+  renderCategoryButtons();
+  renderHomeStats();
+  renderVocabulary();
+  renderTopics();
+  renderFavorites();
+  prepareQuiz({ preserveForce: true });
+};
+
+const applyTheme = (theme) => {
+  const isLight = theme === "light";
+  document.body.classList.toggle("light", isLight);
+  els.themeToggle.textContent = isLight ? "☀️" : "🌙";
+  els.themeToggle.setAttribute(
+    "aria-label",
+    isLight ? "Switch to dark theme" : "Switch to light theme",
+  );
+};
+
+const loadTheme = () => {
+  const saved = localStorage.getItem(STORAGE.theme);
+  applyTheme(saved === "light" ? "light" : "dark");
+};
+
+const saveTheme = () => {
+  const theme = document.body.classList.contains("light") ? "light" : "dark";
+  localStorage.setItem(STORAGE.theme, theme);
+};
+
+const updateUrlState = (page, { replace = true } = {}) => {
+  const url = new URL(window.location.href);
+  url.searchParams.set("page", page);
+  if (replace) window.history.replaceState({ page }, "", url);
+  else window.history.pushState({ page }, "", url);
+};
+
+const switchPage = (page, { updateHistory = true, replace = true } = {}) => {
+  if (!document.getElementById(page)) page = "home";
+  state.activePage = page;
+  els.pages.forEach((section) =>
+    section.classList.toggle("page--active", section.id === page),
+  );
+  els.navLinks.forEach((button) =>
+    button.classList.toggle("active", button.dataset.page === page),
+  );
+  if (updateHistory) updateUrlState(page, { replace });
+  if (page === "quiz") prepareQuiz({ preserveForce: true });
+};
+
+const closeModal = () => {
+  els.modalRoot.hidden = true;
+  els.modalBody.innerHTML = "";
+  state.editingWord = null;
+  state.editingTopic = null;
+};
+
+const openModal = (title, bodyHtml) => {
+  els.modalTitle.textContent = title;
+  els.modalBody.innerHTML = bodyHtml;
+  els.modalRoot.hidden = false;
+  const firstField = els.modalBody.querySelector("input, textarea, select");
+  firstField?.focus();
+};
+
+const categoryOptions = (selected = "Learning") =>
+  CATEGORIES.map(
+    (category) =>
+      `<option value="${escapeHtml(category)}" ${
+        category === selected ? "selected" : ""
+      }>${escapeHtml(category)}</option>`,
+  ).join("");
+
+const openWordModal = (item = null) => {
+  state.editingWord = item?.word || null;
+  const values = item || {
+    word: "",
+    pronunciation: "",
+    meaning: "",
+    synonym: "",
+    antonym: "",
+    wordFamily: "",
+    sentence: "",
+    category: "Learning",
+  };
+
+  openModal(item ? "Edit word" : "Add word", `
+    <form id="wordForm" class="form-grid">
+      <label>Word<input name="word" required value="${escapeHtml(values.word)}" /></label>
+      <label>Pronunciation<input name="pronunciation" value="${escapeHtml(values.pronunciation)}" placeholder="rɪˈɡrɛt" /></label>
+      <label>Category<select name="category">${categoryOptions(values.category)}</select></label>
+      <label class="full">Meaning<textarea name="meaning" required rows="2">${escapeHtml(values.meaning)}</textarea></label>
+      <label>Synonym<input name="synonym" value="${escapeHtml(values.synonym)}" /></label>
+      <label>Antonym<input name="antonym" value="${escapeHtml(values.antonym)}" /></label>
+      <label class="full">Word family<input name="wordFamily" value="${escapeHtml(values.wordFamily)}" /></label>
+      <label class="full">Example sentence<textarea name="sentence" rows="2">${escapeHtml(values.sentence)}</textarea></label>
+      <div class="form-actions full">
+        <button type="button" class="ghost-btn" data-close-modal>Cancel</button>
+        <button type="submit" class="primary-btn">Save word</button>
+      </div>
+    </form>
+  `);
+
+  els.modalBody.querySelector("#wordForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const payload = Object.fromEntries(form.entries());
+    try {
+      const previousWord = state.editingWord;
+      const saved = upsertCustomWord(payload, { previousWord });
+      if (previousWord && previousWord !== saved.word && favoriteWords.has(previousWord)) {
+        favoriteWords.delete(previousWord);
+        favoriteWords.add(saved.word);
+        saveFavorites();
+      }
+      closeModal();
+      refreshAll();
+    } catch (error) {
+      alert(error.message || "Could not save word");
+    }
+  });
+};
+
+const openTopicModal = (item = null) => {
+  state.editingTopic = item?.title || null;
+  const values = item || {
+    title: "",
+    date: new Date().toISOString().slice(0, 10),
+    summary: "",
+    notes: "",
+    vocabulary: [],
+    questions: [],
+  };
+
+  openModal(item ? "Edit topic" : "Add topic", `
+    <form id="topicForm" class="form-grid">
+      <label class="full">Title<input name="title" required value="${escapeHtml(values.title)}" /></label>
+      <label>Date<input name="date" type="date" required value="${escapeHtml(values.date)}" /></label>
+      <label class="full">Summary<textarea name="summary" rows="3" required>${escapeHtml(values.summary)}</textarea></label>
+      <label class="full">Notes<textarea name="notes" rows="2">${escapeHtml(values.notes)}</textarea></label>
+      <label class="full">Vocabulary words (comma-separated)<textarea name="vocabulary" rows="2">${escapeHtml(
+        (values.vocabulary || []).join(", "),
+      )}</textarea></label>
+      <label class="full">Discussion questions (one per line)<textarea name="questions" rows="3">${escapeHtml(
+        (values.questions || []).join("\n"),
+      )}</textarea></label>
+      <div class="form-actions full">
+        <button type="button" class="ghost-btn" data-close-modal>Cancel</button>
+        <button type="submit" class="primary-btn">Save topic</button>
+      </div>
+    </form>
+  `);
+
+  els.modalBody.querySelector("#topicForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const payload = Object.fromEntries(form.entries());
+    try {
+      const previousTitle = state.editingTopic;
+      const saved = upsertCustomTopic(payload, { previousTitle });
+      if (previousTitle && previousTitle !== saved.title && favoriteTopics.has(previousTitle)) {
+        favoriteTopics.delete(previousTitle);
+        favoriteTopics.add(saved.title);
+        saveFavorites();
+      }
+      closeModal();
+      refreshAll();
+    } catch (error) {
+      alert(error.message || "Could not save topic");
+    }
+  });
+};
 
 const loadData = async () => {
   try {
@@ -77,9 +489,9 @@ const loadData = async () => {
       import("./data/vocabulary.js"),
       import("./data/topics.js"),
     ]);
-
-    vocabularyData = vocabModule.vocabularyData || [];
-    topicData = topicsModule.topicData || [];
+    baseVocabulary = vocabModule.vocabularyData || [];
+    baseTopics = topicsModule.topicData || [];
+    rebuildLibrary();
 
     let seeded = false;
     topicData.forEach((topic) => {
@@ -94,72 +506,9 @@ const loadData = async () => {
   }
 };
 
-const saveFavorites = () => {
-  try {
-    localStorage.setItem(STORAGE_KEY_WORDS, JSON.stringify([...favoriteWords]));
-    localStorage.setItem(
-      STORAGE_KEY_TOPICS,
-      JSON.stringify([...favoriteTopics]),
-    );
-  } catch (error) {
-    console.warn("Could not save favorites", error);
-  }
-};
-
-const applyTheme = (theme) => {
-  const isLight = theme === "light";
-  document.body.classList.toggle("light", isLight);
-  themeToggle.textContent = isLight ? "☀️" : "🌙";
-  themeToggle.setAttribute(
-    "aria-label",
-    isLight ? "Switch to dark theme" : "Switch to light theme",
-  );
-};
-
-const loadTheme = () => {
-  const saved = localStorage.getItem(STORAGE_KEY_THEME);
-  applyTheme(saved === "light" ? "light" : "dark");
-};
-
-const saveTheme = () => {
-  const theme = document.body.classList.contains("light") ? "light" : "dark";
-  try {
-    localStorage.setItem(STORAGE_KEY_THEME, theme);
-  } catch (error) {
-    console.warn("Could not save theme", error);
-  }
-};
-
-const updateUrlState = (page, { replace = true } = {}) => {
-  const url = new URL(window.location.href);
-  url.searchParams.set("page", page);
-  if (replace) {
-    window.history.replaceState({ page }, "", url);
-  } else {
-    window.history.pushState({ page }, "", url);
-  }
-};
-
-const switchPage = (page, { updateHistory = true, replace = true } = {}) => {
-  if (!document.getElementById(page)) page = "home";
-  state.activePage = page;
-  pages.forEach((section) =>
-    section.classList.toggle("page--active", section.id === page),
-  );
-  navLinks.forEach((button) =>
-    button.classList.toggle("active", button.dataset.page === page),
-  );
-  if (updateHistory) updateUrlState(page, { replace });
-};
-
-const getUniqueCategories = () => {
-  const categories = new Set(vocabularyData.map((item) => item.category));
-  return ["All", ...[...categories].sort((a, b) => a.localeCompare(b))];
-};
-
 const renderCategoryButtons = () => {
-  const categories = getUniqueCategories();
-  vocabCategoryButtons.innerHTML = "";
+  const categories = ["All", ...CATEGORIES];
+  els.vocabCategoryButtons.innerHTML = "";
 
   categories.forEach((category) => {
     const button = document.createElement("button");
@@ -171,7 +520,7 @@ const renderCategoryButtons = () => {
       renderCategoryButtons();
       renderVocabulary();
     });
-    vocabCategoryButtons.appendChild(button);
+    els.vocabCategoryButtons.appendChild(button);
   });
 };
 
@@ -185,7 +534,6 @@ const filterVocabulary = () => {
       const matchesFavorite =
         !state.vocabFavoritesOnly || favoriteWords.has(item.word);
       if (!matchesCategory || !matchesFavorite) return false;
-
       if (!term) return true;
 
       const haystack = [
@@ -199,51 +547,41 @@ const filterVocabulary = () => {
       ]
         .join(" ")
         .toLowerCase();
-
       return haystack.includes(term);
     })
-    .sort((a, b) => {
-      return state.vocabSort === "za"
+    .sort((a, b) =>
+      state.vocabSort === "za"
         ? b.word.localeCompare(a.word)
-        : a.word.localeCompare(b.word);
-    });
+        : a.word.localeCompare(b.word),
+    );
 };
 
-const renderVocabulary = () => {
-  const filtered = filterVocabulary();
-  vocabGrid.innerHTML = "";
+const createVocabCard = (item, { compact = false } = {}) => {
+  const card = document.createElement("article");
+  card.className = "vocab-card";
+  const isFavorite = favoriteWords.has(item.word);
+  const word = escapeHtml(item.word);
 
-  vocabResultsText.textContent = `Showing ${filtered.length} vocabulary words`;
-
-  if (!filtered.length) {
-    const fallback = document.createElement("div");
-    fallback.className = "empty-state";
-    fallback.innerHTML = `
-      <h3>No vocabulary found</h3>
-      <p>Try a different search term or category.</p>
-    `;
-    vocabGrid.appendChild(fallback);
-    return;
-  }
-
-  filtered.forEach((item) => {
-    const card = document.createElement("article");
-    card.className = "vocab-card";
-    const isFavorite = favoriteWords.has(item.word);
-    const word = escapeHtml(item.word);
-
-    card.innerHTML = `
-      <div class="card-top">
-        <div>
-          <h3>${word}</h3>
-          <div class="category-pill">${escapeHtml(item.category)}</div>
-        </div>
-        <button type="button" class="favorite-btn ${isFavorite ? "is-favorite" : ""}" data-word="${word}" aria-label="Toggle favorite ${word}" aria-pressed="${isFavorite}">
+  card.innerHTML = `
+    <div class="card-top">
+      <div>
+        <h3>${word}</h3>
+        <div class="category-pill">${escapeHtml(item.category)}</div>
+      </div>
+      <div class="card-actions">
+        <button type="button" class="icon-btn speak-btn" aria-label="Pronounce ${word}">🔊</button>
+        <button type="button" class="favorite-btn ${isFavorite ? "is-favorite" : ""}" aria-label="Toggle favorite ${word}" aria-pressed="${isFavorite}">
           ${isFavorite ? "★" : "☆"}
         </button>
       </div>
-      <span class="meta-line">Meaning</span>
-      <span class="meta-value">${escapeHtml(item.meaning)}</span>
+    </div>
+    ${item.pronunciation ? `<p class="pronunciation">/${escapeHtml(item.pronunciation)}/</p>` : ""}
+    <span class="meta-line">Meaning</span>
+    <span class="meta-value">${escapeHtml(item.meaning)}</span>
+    ${
+      compact
+        ? ""
+        : `
       <span class="meta-line">Synonym</span>
       <span class="meta-value">${escapeHtml(item.synonym)}</span>
       <span class="meta-line">Antonym</span>
@@ -252,35 +590,61 @@ const renderVocabulary = () => {
       <span class="meta-value">${escapeHtml(item.wordFamily)}</span>
       <span class="meta-line">Example</span>
       <span class="meta-value">“${escapeHtml(item.sentence)}”</span>
-    `;
+    `
+    }
+    <div class="card-footer-actions">
+      <button type="button" class="ghost-btn edit-btn">Edit</button>
+      <button type="button" class="danger-btn delete-btn">Delete</button>
+    </div>
+  `;
 
-    const button = card.querySelector(".favorite-btn");
-    button.addEventListener("click", () => {
-      if (favoriteWords.has(item.word)) {
-        favoriteWords.delete(item.word);
-      } else {
-        favoriteWords.add(item.word);
-      }
-      saveFavorites();
-      renderVocabulary();
-      renderFavorites();
-      renderHomeStats();
-    });
-
-    vocabGrid.appendChild(card);
+  card.querySelector(".speak-btn").addEventListener("click", () => speakWord(item.word));
+  card.querySelector(".favorite-btn").addEventListener("click", () => {
+    if (favoriteWords.has(item.word)) favoriteWords.delete(item.word);
+    else favoriteWords.add(item.word);
+    saveFavorites();
+    renderVocabulary();
+    renderFavorites();
+    renderHomeStats();
   });
+  card.querySelector(".edit-btn").addEventListener("click", () => openWordModal(item));
+  card.querySelector(".delete-btn").addEventListener("click", () => {
+    if (!confirm(`Delete “${item.word}”?`)) return;
+    softDeleteWord(item.word);
+    favoriteWords.delete(item.word);
+    saveFavorites();
+    refreshAll();
+  });
+
+  return card;
+};
+
+const renderVocabulary = () => {
+  const filtered = filterVocabulary();
+  els.vocabGrid.innerHTML = "";
+  els.vocabResultsText.textContent = `Showing ${filtered.length} vocabulary words`;
+
+  if (!filtered.length) {
+    const fallback = document.createElement("div");
+    fallback.className = "empty-state";
+    fallback.innerHTML = `
+      <h3>No vocabulary found</h3>
+      <p>Try a different search term or category, or add a new word.</p>
+    `;
+    els.vocabGrid.appendChild(fallback);
+    return;
+  }
+
+  filtered.forEach((item) => els.vocabGrid.appendChild(createVocabCard(item)));
 };
 
 const filterTopics = () => {
   const term = state.searchTerm.trim().toLowerCase();
-
   return topicData.filter((topic) => {
     const matchesFavorite =
       !state.topicFavoritesOnly || favoriteTopics.has(topic.title);
     if (!matchesFavorite) return false;
-
     if (!term) return true;
-
     const haystack = [
       topic.title,
       topic.summary,
@@ -291,25 +655,23 @@ const filterTopics = () => {
     ]
       .join(" ")
       .toLowerCase();
-
     return haystack.includes(term);
   });
 };
 
 const renderTopics = () => {
   const filtered = filterTopics();
-  topicGrid.innerHTML = "";
-
-  topicResultsText.textContent = `Showing ${filtered.length} presentation topics`;
+  els.topicGrid.innerHTML = "";
+  els.topicResultsText.textContent = `Showing ${filtered.length} presentation topics`;
 
   if (!filtered.length) {
     const empty = document.createElement("div");
     empty.className = "empty-state";
     empty.innerHTML = `
       <h3>No topics match your search</h3>
-      <p>Try broadening the search term or unchecking favorites.</p>
+      <p>Try broadening the search term or add a new topic.</p>
     `;
-    topicGrid.appendChild(empty);
+    els.topicGrid.appendChild(empty);
     return;
   }
 
@@ -330,25 +692,19 @@ const renderTopics = () => {
             <div class="mini-vocab-card">
               <div class="mini-vocab-head">
                 <h5>${escapeHtml(word)}</h5>
-                <span class="mini-vocab-pron">/ˈwɜːrd/</span>
               </div>
               <p class="mini-vocab-meta"><strong>Meaning:</strong> Not added yet</p>
-              <p class="mini-vocab-meta"><strong>Synonym:</strong> Not added yet</p>
-              <p class="mini-vocab-meta"><strong>Antonym:</strong> Not added yet</p>
-              <p class="mini-vocab-meta"><strong>Example:</strong> Add this word to the vocabulary list for full details.</p>
             </div>
           `;
         }
-
         return `
           <div class="mini-vocab-card">
             <div class="mini-vocab-head">
               <h5>${escapeHtml(wordData.word)}</h5>
-              <span class="mini-vocab-pron">/${escapeHtml(wordData.pronunciation || "ˈwɜːrd")}/</span>
+              <button type="button" class="icon-btn mini-speak" data-speak="${escapeHtml(wordData.word)}" aria-label="Pronounce ${escapeHtml(wordData.word)}">🔊</button>
             </div>
+            <p class="mini-vocab-pron">/${escapeHtml(wordData.pronunciation || "ˈwɜːrd")}/</p>
             <p class="mini-vocab-meta"><strong>Meaning:</strong> ${escapeHtml(wordData.meaning)}</p>
-            <p class="mini-vocab-meta"><strong>Synonym:</strong> ${escapeHtml(wordData.synonym)}</p>
-            <p class="mini-vocab-meta"><strong>Antonym:</strong> ${escapeHtml(wordData.antonym)}</p>
             <p class="mini-vocab-meta"><strong>Example:</strong> ${escapeHtml(wordData.sentence)}</p>
           </div>
         `;
@@ -356,15 +712,13 @@ const renderTopics = () => {
       .join("");
 
     card.innerHTML = `
-      <div class="topic-card__header" role="button" tabindex="0" data-topic="${title}" aria-expanded="false" aria-controls="${detailsId}">
+      <div class="topic-card__header" role="button" tabindex="0" aria-expanded="false" aria-controls="${detailsId}">
         <div class="topic-headline">
-          <p class="topic-eyebrow">📅 ${escapeHtml(formatDate(topic.date))}</p>
+          <p class="topic-eyebrow">${escapeHtml(formatDate(topic.date))}</p>
           <h3>${title}</h3>
-          <div class="topic-row">
-          </div>
         </div>
         <div class="topic-card__actions">
-          <button type="button" class="topic-favorite-btn ${isFavorite ? "is-favorite" : ""}" data-topic="${title}" aria-label="Toggle favorite topic ${title}" aria-pressed="${isFavorite}">
+          <button type="button" class="topic-favorite-btn ${isFavorite ? "is-favorite" : ""}" aria-label="Toggle favorite topic ${title}" aria-pressed="${isFavorite}">
             ${isFavorite ? "★" : "☆"}
           </button>
           <span class="topic-toggle-icon" aria-hidden="true">▼</span>
@@ -372,28 +726,32 @@ const renderTopics = () => {
       </div>
       <div class="topic-details" id="${detailsId}">
         <div class="topic-detail-block">
-          <h4>📝 Summary</h4>
+          <h4>Summary</h4>
           <p>${escapeHtml(topic.summary)}</p>
         </div>
         <div class="topic-detail-block">
-          <h4>📖 Vocabulary</h4>
-          <div class="mini-vocab-grid">
-            ${vocabularyCards}
-          </div>
+          <h4>Vocabulary</h4>
+          <div class="mini-vocab-grid">${vocabularyCards}</div>
         </div>
-        ${topic.notes ? `<div class="topic-detail-block"><h4>📒 Personal Notes</h4><p>${escapeHtml(topic.notes)}</p></div>` : ""}
-        ${topic.questions.length ? `<div class="topic-detail-block"><h4>❓ Discussion Questions</h4><ul>${topic.questions.map((question) => `<li>${escapeHtml(question)}</li>`).join("")}</ul></div>` : ""}
+        ${topic.notes ? `<div class="topic-detail-block"><h4>Personal Notes</h4><p>${escapeHtml(topic.notes)}</p></div>` : ""}
+        ${
+          topic.questions.length
+            ? `<div class="topic-detail-block"><h4>Discussion Questions</h4><ul>${topic.questions
+                .map((question) => `<li>${escapeHtml(question)}</li>`)
+                .join("")}</ul></div>`
+            : ""
+        }
+        <div class="card-footer-actions">
+          <button type="button" class="ghost-btn edit-topic-btn">Edit</button>
+          <button type="button" class="danger-btn delete-topic-btn">Delete</button>
+        </div>
       </div>
     `;
 
-    const favoriteButton = card.querySelector(".topic-favorite-btn");
-    favoriteButton.addEventListener("click", (event) => {
+    card.querySelector(".topic-favorite-btn").addEventListener("click", (event) => {
       event.stopPropagation();
-      if (favoriteTopics.has(topic.title)) {
-        favoriteTopics.delete(topic.title);
-      } else {
-        favoriteTopics.add(topic.title);
-      }
+      if (favoriteTopics.has(topic.title)) favoriteTopics.delete(topic.title);
+      else favoriteTopics.add(topic.title);
       saveFavorites();
       renderTopics();
       renderFavorites();
@@ -404,15 +762,13 @@ const renderTopics = () => {
     const setExpanded = (open) => {
       card.classList.toggle("is-open", open);
       toggleButton.setAttribute("aria-expanded", String(open));
-      const icon = card.querySelector(".topic-toggle-icon");
-      icon.textContent = open ? "▲" : "▼";
+      card.querySelector(".topic-toggle-icon").textContent = open ? "▲" : "▼";
     };
 
     toggleButton.addEventListener("click", (event) => {
       if (event.target.closest(".topic-favorite-btn")) return;
       setExpanded(!card.classList.contains("is-open"));
     });
-
     toggleButton.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
@@ -420,13 +776,29 @@ const renderTopics = () => {
       }
     });
 
-    topicGrid.appendChild(card);
+    card.querySelectorAll(".mini-speak").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        speakWord(button.dataset.speak);
+      });
+    });
+
+    card.querySelector(".edit-topic-btn").addEventListener("click", () => openTopicModal(topic));
+    card.querySelector(".delete-topic-btn").addEventListener("click", () => {
+      if (!confirm(`Delete “${topic.title}”?`)) return;
+      softDeleteTopic(topic.title);
+      favoriteTopics.delete(topic.title);
+      saveFavorites();
+      refreshAll();
+    });
+
+    els.topicGrid.appendChild(card);
   });
 };
 
 const renderFavorites = () => {
-  favoriteVocabGrid.innerHTML = "";
-  favoriteTopicGrid.innerHTML = "";
+  els.favoriteVocabGrid.innerHTML = "";
+  els.favoriteTopicGrid.innerHTML = "";
 
   const favoriteWordsList = vocabularyData.filter((item) =>
     favoriteWords.has(item.word),
@@ -436,106 +808,132 @@ const renderFavorites = () => {
   );
 
   if (!favoriteWordsList.length) {
-    const empty = document.createElement("div");
-    empty.className = "empty-state";
-    empty.innerHTML = `
-      <h3>No favorite vocabulary yet</h3>
-      <p>Mark words as favorites to save them here.</p>
+    els.favoriteVocabGrid.innerHTML = `
+      <div class="empty-state">
+        <h3>No favorite vocabulary yet</h3>
+        <p>Mark words as favorites to save them here.</p>
+      </div>
     `;
-    favoriteVocabGrid.appendChild(empty);
   } else {
-    favoriteWordsList.forEach((word) => {
-      const card = document.createElement("article");
-      card.className = "vocab-card";
-      const safeWord = escapeHtml(word.word);
-      card.innerHTML = `
-        <div class="card-top">
-          <div>
-            <h3>${safeWord}</h3>
-            <div class="category-pill">${escapeHtml(word.category)}</div>
-          </div>
-          <button type="button" class="favorite-btn is-favorite" data-word="${safeWord}" aria-label="Remove favorite ${safeWord}" aria-pressed="true">
-            ★
-          </button>
-        </div>
-        <span class="meta-line">Meaning</span>
-        <span class="meta-value">${escapeHtml(word.meaning)}</span>
-      `;
-      card.querySelector(".favorite-btn").addEventListener("click", () => {
-        favoriteWords.delete(word.word);
-        saveFavorites();
-        renderVocabulary();
-        renderFavorites();
-        renderHomeStats();
-      });
-      favoriteVocabGrid.appendChild(card);
+    favoriteWordsList.forEach((item) => {
+      els.favoriteVocabGrid.appendChild(createVocabCard(item, { compact: true }));
     });
   }
 
   if (!favoriteTopicsList.length) {
-    const empty = document.createElement("div");
-    empty.className = "empty-state";
-    empty.innerHTML = `
-      <h3>No favorite topics yet</h3>
-      <p>Mark topics as favorites to save them here.</p>
+    els.favoriteTopicGrid.innerHTML = `
+      <div class="empty-state">
+        <h3>No favorite topics yet</h3>
+        <p>Mark topics as favorites to save them here.</p>
+      </div>
     `;
-    favoriteTopicGrid.appendChild(empty);
   } else {
     favoriteTopicsList.forEach((topic) => {
       const card = document.createElement("article");
       card.className = "topic-card";
-      const safeTitle = escapeHtml(topic.title);
       card.innerHTML = `
         <div class="topic-card__header">
           <div class="topic-headline">
             <p class="topic-eyebrow">${escapeHtml(formatDate(topic.date))}</p>
-            <h3>${safeTitle}</h3>
-            <div class="topic-row">
-            </div>
+            <h3>${escapeHtml(topic.title)}</h3>
           </div>
-          <button type="button" class="topic-favorite-btn is-favorite" data-topic="${safeTitle}" aria-label="Remove favorite topic ${safeTitle}" aria-pressed="true">
-            ★
-          </button>
+          <button type="button" class="topic-favorite-btn is-favorite" aria-pressed="true">★</button>
         </div>
       `;
-      card
-        .querySelector(".topic-favorite-btn")
-        .addEventListener("click", () => {
-          favoriteTopics.delete(topic.title);
-          saveFavorites();
-          renderTopics();
-          renderFavorites();
-          renderHomeStats();
-        });
-      favoriteTopicGrid.appendChild(card);
+      card.querySelector(".topic-favorite-btn").addEventListener("click", () => {
+        favoriteTopics.delete(topic.title);
+        saveFavorites();
+        renderTopics();
+        renderFavorites();
+        renderHomeStats();
+      });
+      els.favoriteTopicGrid.appendChild(card);
     });
   }
 };
 
 const renderHomeStats = () => {
-  homeTotalWords.textContent = vocabularyData.length;
-  homeTotalTopics.textContent = topicData.length;
-  homeFavoriteWords.textContent = favoriteWords.size;
-  if (homeFavoriteTopics) {
-    homeFavoriteTopics.textContent = favoriteTopics.size;
-  }
+  els.homeTotalWords.textContent = vocabularyData.length;
+  els.homeTotalTopics.textContent = topicData.length;
+  els.homeFavoriteWords.textContent = favoriteWords.size;
+  els.homeDueWords.textContent = getDueWords(vocabularyData).length;
 };
 
 const renderQuote = () => {
   const quote =
     MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)];
-  fadeText(motivationQuote, quote);
+  fadeText(els.motivationQuote, quote);
+};
+
+const currentQuizItem = () => state.quizQueue[state.quizIndex] || null;
+
+const renderQuizCard = () => {
+  const current = currentQuizItem();
+  if (!current) {
+    els.quizCard.hidden = true;
+    els.quizEmpty.hidden = false;
+    els.quizStatusText.textContent = state.quizForceAll
+      ? "Session complete"
+      : "You're caught up";
+    els.quizProgressText.textContent = "";
+    return;
+  }
+
+  els.quizEmpty.hidden = true;
+  els.quizCard.hidden = false;
+  els.quizWord.textContent = current.word;
+  els.quizPronunciation.textContent = current.pronunciation
+    ? `/${current.pronunciation}/`
+    : "";
+  els.quizCategory.textContent = current.category;
+  els.quizMeaning.textContent = current.meaning;
+  els.quizSynonym.textContent = current.synonym || "—";
+  els.quizAntonym.textContent = current.antonym || "—";
+  els.quizSentence.textContent = current.sentence || "—";
+  els.quizAnswer.hidden = !state.quizRevealed;
+  els.quizRevealBtn.hidden = state.quizRevealed;
+  els.quizKnowBtn.hidden = !state.quizRevealed;
+  els.quizAgainBtn.hidden = !state.quizRevealed;
+  els.quizStatusText.textContent = state.quizForceAll
+    ? "Practicing full vocabulary"
+    : "Words due for review";
+  els.quizProgressText.textContent = `Card ${state.quizIndex + 1} of ${state.quizQueue.length}`;
+};
+
+const prepareQuiz = ({ forceAll = false, preserveForce = false } = {}) => {
+  if (!preserveForce) state.quizForceAll = forceAll;
+  else if (forceAll) state.quizForceAll = true;
+
+  const due = state.quizForceAll
+    ? vocabularyData.map((item) => ({ item }))
+    : getDueWords(vocabularyData);
+
+  const SESSION_SIZE = 15;
+  state.quizQueue = due.map(({ item }) => item);
+  if (!state.quizForceAll) {
+    state.quizQueue = state.quizQueue.slice(0, SESSION_SIZE);
+  }
+  state.quizIndex = 0;
+  state.quizRevealed = false;
+  renderQuizCard();
+  renderHomeStats();
+};
+
+const advanceQuiz = (knewIt) => {
+  const current = currentQuizItem();
+  if (!current) return;
+  gradeWord(current.word, knewIt);
+  state.quizIndex += 1;
+  state.quizRevealed = false;
+  renderQuizCard();
+  renderHomeStats();
 };
 
 const applySearch = () => {
   renderVocabulary();
   renderTopics();
-
   const term = state.searchTerm.trim();
-  if (
-    term &&
-    (state.activePage === "home" || state.activePage === "about")
-  ) {
+  if (term && (state.activePage === "home" || state.activePage === "about" || state.activePage === "data")) {
     const vocabMatches = filterVocabulary().length;
     const topicMatches = filterTopics().length;
     if (vocabMatches || topicMatches) {
@@ -546,10 +944,50 @@ const applySearch = () => {
   }
 };
 
+const exportBackup = () => {
+  const payload = buildExportPayload({ favoriteWords, favoriteTopics });
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `imx-english-hub-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+const importBackup = async (file) => {
+  els.importStatus.textContent = "Importing…";
+  try {
+    const text = await file.text();
+    const payload = JSON.parse(text);
+    const mode = els.importModeSelect.value === "replace" ? "replace" : "merge";
+    applyImportPayload(payload, { mode });
+
+    favoriteWords.clear();
+    readStringList(STORAGE.favoritesWords).forEach((word) => favoriteWords.add(word));
+    favoriteTopics.clear();
+    readStringList(STORAGE.favoritesTopics).forEach((title) => favoriteTopics.add(title));
+
+    refreshAll();
+    els.importStatus.textContent = `Import complete (${mode}).`;
+  } catch (error) {
+    console.error(error);
+    els.importStatus.textContent = error.message || "Import failed.";
+  }
+};
+
 const attachListeners = () => {
-  navLinks.forEach((button) => {
+  els.navLinks.forEach((button) => {
     button.addEventListener("click", () =>
       switchPage(button.dataset.page, { replace: false }),
+    );
+  });
+
+  document.querySelectorAll("[data-jump]").forEach((button) => {
+    button.addEventListener("click", () =>
+      switchPage(button.dataset.jump, { replace: false }),
     );
   });
 
@@ -560,34 +998,63 @@ const attachListeners = () => {
     });
   });
 
-  globalSearchInput.addEventListener("input", (event) => {
+  els.globalSearchInput.addEventListener("input", (event) => {
     state.searchTerm = event.target.value;
     applySearch();
   });
 
-  themeToggle.addEventListener("click", () => {
+  els.themeToggle.addEventListener("click", () => {
     const next = document.body.classList.contains("light") ? "dark" : "light";
     applyTheme(next);
     saveTheme();
   });
 
-  newQuoteBtn.addEventListener("click", renderQuote);
+  els.newQuoteBtn.addEventListener("click", renderQuote);
+  els.addWordBtn.addEventListener("click", () => openWordModal());
+  els.addTopicBtn.addEventListener("click", () => openTopicModal());
 
-  vocabFavoriteToggle.addEventListener("click", () => {
+  els.vocabFavoriteToggle.addEventListener("click", () => {
     state.vocabFavoritesOnly = !state.vocabFavoritesOnly;
-    vocabFavoriteToggle.classList.toggle("active", state.vocabFavoritesOnly);
+    els.vocabFavoriteToggle.classList.toggle("active", state.vocabFavoritesOnly);
     renderVocabulary();
   });
 
-  topicFavoriteToggle.addEventListener("click", () => {
+  els.topicFavoriteToggle.addEventListener("click", () => {
     state.topicFavoritesOnly = !state.topicFavoritesOnly;
-    topicFavoriteToggle.classList.toggle("active", state.topicFavoritesOnly);
+    els.topicFavoriteToggle.classList.toggle("active", state.topicFavoritesOnly);
     renderTopics();
   });
 
-  vocabSortSelect.addEventListener("change", (event) => {
+  els.vocabSortSelect.addEventListener("change", (event) => {
     state.vocabSort = event.target.value;
     renderVocabulary();
+  });
+
+  els.quizRevealBtn.addEventListener("click", () => {
+    state.quizRevealed = true;
+    renderQuizCard();
+  });
+  els.quizKnowBtn.addEventListener("click", () => advanceQuiz(true));
+  els.quizAgainBtn.addEventListener("click", () => advanceQuiz(false));
+  els.quizSpeakBtn.addEventListener("click", () => {
+    const current = currentQuizItem();
+    if (current) speakWord(current.word);
+  });
+  els.quizRestartBtn.addEventListener("click", () => prepareQuiz({ forceAll: true }));
+
+  els.exportBtn.addEventListener("click", exportBackup);
+  els.importFileInput.addEventListener("change", (event) => {
+    const file = event.target.files?.[0];
+    if (file) importBackup(file);
+    event.target.value = "";
+  });
+
+  els.modalRoot.addEventListener("click", (event) => {
+    if (event.target.matches("[data-close-modal]")) closeModal();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !els.modalRoot.hidden) closeModal();
   });
 };
 
@@ -603,6 +1070,7 @@ const init = async () => {
   renderVocabulary();
   renderTopics();
   renderFavorites();
+  prepareQuiz();
   renderQuote();
   attachListeners();
 };

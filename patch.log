@@ -1,4 +1,0 @@
-Patch log for inline edit/delete feature
-- Added modal markup in index.html
-- Updated styles.css for modal and edit/delete buttons
-- Updated app.js: load/save vocabulary to localStorage, render edit/delete buttons, modal handlers

@@ -177,7 +177,7 @@ export const vocabularyData = [
     antonym: "Stagnation",
     wordFamily: "Innovate, Innovative",
     sentence: "Innovation has transformed modern communication.",
-    category: "Technology",
+    category: "Society",
   },
   {
     word: "Tradition",
@@ -187,7 +187,7 @@ export const vocabularyData = [
     antonym: "Change",
     wordFamily: "Traditional",
     sentence: "Every culture has traditions that shape its identity.",
-    category: "Culture",
+    category: "Society",
   },
   {
     word: "Progress",
@@ -197,7 +197,7 @@ export const vocabularyData = [
     antonym: "Decline",
     wordFamily: "Progressive",
     sentence: "Scientific progress has improved human life.",
-    category: "Development",
+    category: "Growth",
   },
   {
     word: "Uncertainty",
@@ -217,7 +217,7 @@ export const vocabularyData = [
     antonym: "Narrow-mindedness",
     wordFamily: "Perspectival",
     sentence: "Traveling changes your perspective on life.",
-    category: "Thinking",
+    category: "Mindset",
   },
   {
     word: "Legacy",
@@ -227,7 +227,7 @@ export const vocabularyData = [
     antonym: "Oblivion",
     wordFamily: "Legacy",
     sentence: "Great leaders leave a lasting legacy.",
-    category: "Values",
+    category: "Character",
   },
   {
     word: "Adaptability",
@@ -237,7 +237,7 @@ export const vocabularyData = [
     antonym: "Rigidity",
     wordFamily: "Adaptable",
     sentence: "Adaptability is an essential skill in today's world.",
-    category: "Skill",
+    category: "Learning",
   },
   {
     word: "Civilization",
@@ -257,7 +257,7 @@ export const vocabularyData = [
     antonym: "Hindsight",
     wordFamily: "Foresee",
     sentence: "Good leaders use foresight when making important decisions.",
-    category: "Thinking",
+    category: "Mindset",
   },
 
   {
@@ -268,7 +268,7 @@ export const vocabularyData = [
     antonym: "Relaxation",
     wordFamily: "Stressful, Stressed",
     sentence: "Many students experience stress before exams.",
-    category: "Mental Health",
+    category: "Lifestyle",
   },
   {
     word: "Burnout",
@@ -279,7 +279,7 @@ export const vocabularyData = [
     antonym: "Recovery",
     wordFamily: "Burn Out",
     sentence: "Working without rest can lead to burnout.",
-    category: "Mental Health",
+    category: "Lifestyle",
   },
   {
     word: "Overwhelmed",
@@ -321,7 +321,7 @@ export const vocabularyData = [
     antonym: "Flexibility",
     wordFamily: "Deadline",
     sentence: "Tight deadlines often increase workplace stress.",
-    category: "Work",
+    category: "Lifestyle",
   },
   {
     word: "Multitasking",
@@ -331,7 +331,7 @@ export const vocabularyData = [
     antonym: "Single-tasking",
     wordFamily: "Multitask, Multitasker",
     sentence: "Multitasking can reduce productivity if overused.",
-    category: "Productivity",
+    category: "Lifestyle",
   },
   {
     word: "Distraction",
@@ -342,7 +342,7 @@ export const vocabularyData = [
     antonym: "Focus",
     wordFamily: "Distract, Distracting",
     sentence: "Social media is a major distraction for many people.",
-    category: "Attention",
+    category: "Lifestyle",
   },
   {
     word: "Resilience",
@@ -352,7 +352,7 @@ export const vocabularyData = [
     antonym: "Fragility",
     wordFamily: "Resilient",
     sentence: "Building resilience helps people handle life's challenges.",
-    category: "Mental Strength",
+    category: "Mindset",
   },
   {
     word: "Well-being",
@@ -362,7 +362,7 @@ export const vocabularyData = [
     antonym: "Ill-being",
     wordFamily: "Well",
     sentence: "Regular exercise improves both physical and mental well-being.",
-    category: "Health",
+    category: "Lifestyle",
   },
 
   {
@@ -373,7 +373,7 @@ export const vocabularyData = [
     antonym: "Success",
     wordFamily: "Fail, Failed, Failing",
     sentence: "Failure often teaches lessons that success cannot.",
-    category: "Success",
+    category: "Growth",
   },
   {
     word: "Setback",
@@ -383,7 +383,7 @@ export const vocabularyData = [
     antonym: "Breakthrough",
     wordFamily: "Set Back",
     sentence: "Every setback is an opportunity to learn.",
-    category: "Challenges",
+    category: "Growth",
   },
   {
     word: "Perseverance",
@@ -404,7 +404,7 @@ export const vocabularyData = [
     antonym: "Pride",
     wordFamily: "Humble, Humbly",
     sentence: "Failure teaches humility and helps people appreciate success.",
-    category: "Values",
+    category: "Character",
   },
   {
     word: "Accountability",
@@ -414,7 +414,7 @@ export const vocabularyData = [
     antonym: "Irresponsibility",
     wordFamily: "Accountable",
     sentence: "Personal growth begins with accountability.",
-    category: "Responsibility",
+    category: "Character",
   },
   {
     word: "Mindset",
@@ -424,7 +424,7 @@ export const vocabularyData = [
     antonym: "Closed-mindedness",
     wordFamily: "Mind",
     sentence: "A positive mindset turns failure into motivation.",
-    category: "Psychology",
+    category: "Mindset",
   },
   {
     word: "Grit",
@@ -444,7 +444,7 @@ export const vocabularyData = [
     antonym: "Decline",
     wordFamily: "Grow, Growing",
     sentence: "Real growth often begins after failure.",
-    category: "Self-Improvement",
+    category: "Growth",
   },
   {
     word: "Redemption",
@@ -454,7 +454,7 @@ export const vocabularyData = [
     antonym: "Downfall",
     wordFamily: "Redeem, Redeemed",
     sentence: "His redemption came after years of hard work and determination.",
-    category: "Personal Growth",
+    category: "Growth",
   },
   {
     word: "Greed",
@@ -474,7 +474,7 @@ export const vocabularyData = [
     antonym: "Integrity",
     wordFamily: "Corrupt, Corruptible",
     sentence: "Power and money sometimes lead to corruption.",
-    category: "Ethics",
+    category: "Character",
   },
   {
     word: "Generosity",
@@ -484,7 +484,7 @@ export const vocabularyData = [
     antonym: "Selfishness",
     wordFamily: "Generous, Generously",
     sentence: "True generosity is measured by the willingness to help others.",
-    category: "Values",
+    category: "Character",
   },
   {
     word: "Influence",
@@ -515,7 +515,7 @@ export const vocabularyData = [
     wordFamily: "Integral",
     sentence:
       "A person's integrity should not disappear after becoming wealthy.",
-    category: "Values",
+    category: "Character",
   },
   {
     word: "Compassion",
@@ -536,7 +536,7 @@ export const vocabularyData = [
     antonym: "Self-control",
     wordFamily: "Tempt, Tempting",
     sentence: "Sudden wealth can bring unexpected temptation.",
-    category: "Psychology",
+    category: "Mindset",
   },
   {
     word: "Contentment",
@@ -566,7 +566,7 @@ export const vocabularyData = [
     antonym: "Estrangement",
     wordFamily: "Reconcile, Reconciled",
     sentence: "Honest conversation led to reconciliation between the friends.",
-    category: "Relationships",
+    category: "Society",
   },
   {
     word: "Burden",

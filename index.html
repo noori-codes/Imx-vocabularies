@@ -30,7 +30,7 @@
         </div>
         <div class="topbar-actions">
           <label class="search-box" for="globalSearchInput">
-            <span>🔎</span>
+            <span aria-hidden="true">🔎</span>
             <input
               id="globalSearchInput"
               type="search"
@@ -52,8 +52,10 @@
       <nav class="page-nav" aria-label="Main navigation">
         <button class="nav-link active" data-page="home">Home</button>
         <button class="nav-link" data-page="vocabulary">Vocabulary</button>
-        <button class="nav-link" data-page="topics">Presentation Topics</button>
+        <button class="nav-link" data-page="topics">Topics</button>
+        <button class="nav-link" data-page="quiz">Quiz</button>
         <button class="nav-link" data-page="favorites">Favorites</button>
+        <button class="nav-link" data-page="data">Data</button>
         <button class="nav-link" data-page="about">About</button>
       </nav>
 
@@ -67,12 +69,20 @@
                 My personal journey to mastering English through vocabulary,
                 presentations, and daily practice.
               </p>
+              <div class="hero-actions">
+                <button type="button" class="primary-btn" data-jump="quiz">
+                  Start quiz
+                </button>
+                <button type="button" class="ghost-btn" data-jump="vocabulary">
+                  Browse words
+                </button>
+              </div>
             </div>
             <div class="hero-visual">
               <div class="hero-tag">Study notebook</div>
               <div class="hero-note">
-                Every new word and topic gets stored in one beautiful,
-                easy-to-review hub.
+                Add words, practice with spaced repetition, and back up your
+                library — all in one hub.
               </div>
             </div>
           </div>
@@ -91,16 +101,16 @@
               <strong id="homeFavoriteWords">0</strong>
             </div>
             <div class="progress-card">
-              <p class="progress-label">Favorite Topics</p>
-              <strong id="homeFavoriteTopics">0</strong>
+              <p class="progress-label">Words due for quiz</p>
+              <strong id="homeDueWords">0</strong>
             </div>
           </div>
 
           <section class="motivation-card" aria-label="Daily motivation">
             <div class="motivation-card__header">
-              <p class="motivation-eyebrow">💡 Daily Motivation</p>
+              <p class="motivation-eyebrow">Daily Motivation</p>
               <button id="newQuoteBtn" class="quote-btn" type="button">
-                🔄 New Quote
+                New Quote
               </button>
             </div>
             <p id="motivationQuote" class="motivation-quote"></p>
@@ -114,7 +124,10 @@
               <h2>Word Library</h2>
             </div>
             <div class="page-controls">
-              <button id="vocabFavoriteToggle" class="pill-toggle">
+              <button id="addWordBtn" class="primary-btn" type="button">
+                Add word
+              </button>
+              <button id="vocabFavoriteToggle" class="pill-toggle" type="button">
                 Favorites only
               </button>
               <label class="select-wrap">
@@ -144,7 +157,10 @@
               <h2>Expandable topic cards</h2>
             </div>
             <div class="page-controls">
-              <button id="topicFavoriteToggle" class="pill-toggle">
+              <button id="addTopicBtn" class="primary-btn" type="button">
+                Add topic
+              </button>
+              <button id="topicFavoriteToggle" class="pill-toggle" type="button">
                 Favorite topics
               </button>
             </div>
@@ -154,6 +170,66 @@
             <p id="topicResultsText">Showing presentation topics</p>
           </div>
           <div id="topicGrid" class="accordion-grid"></div>
+        </section>
+
+        <section id="quiz" class="page">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">Spaced repetition</p>
+              <h2>Vocabulary Quiz</h2>
+            </div>
+            <div class="page-controls">
+              <button id="quizRestartBtn" class="ghost-btn" type="button">
+                Restart session
+              </button>
+            </div>
+          </div>
+
+          <div class="quiz-meta">
+            <p id="quizStatusText">Loading quiz…</p>
+            <p id="quizProgressText"></p>
+          </div>
+
+          <div id="quizCard" class="quiz-card" hidden>
+            <p class="quiz-label">Word</p>
+            <div class="quiz-word-row">
+              <h3 id="quizWord"></h3>
+              <button
+                id="quizSpeakBtn"
+                class="icon-btn"
+                type="button"
+                aria-label="Pronounce word"
+              >
+                🔊
+              </button>
+            </div>
+            <p id="quizPronunciation" class="quiz-pronunciation"></p>
+            <p id="quizCategory" class="category-pill"></p>
+
+            <div id="quizAnswer" class="quiz-answer" hidden>
+              <p><strong>Meaning:</strong> <span id="quizMeaning"></span></p>
+              <p><strong>Synonym:</strong> <span id="quizSynonym"></span></p>
+              <p><strong>Antonym:</strong> <span id="quizAntonym"></span></p>
+              <p><strong>Example:</strong> <span id="quizSentence"></span></p>
+            </div>
+
+            <div class="quiz-actions">
+              <button id="quizRevealBtn" class="primary-btn" type="button">
+                Show meaning
+              </button>
+              <button id="quizKnowBtn" class="success-btn" type="button" hidden>
+                I know it
+              </button>
+              <button id="quizAgainBtn" class="danger-btn" type="button" hidden>
+                Not yet
+              </button>
+            </div>
+          </div>
+
+          <div id="quizEmpty" class="empty-state">
+            <h3>You're caught up</h3>
+            <p>No words are due right now. Come back later or restart to practice everything.</p>
+          </div>
         </section>
 
         <section id="favorites" class="page">
@@ -177,30 +253,95 @@
           </div>
         </section>
 
+        <section id="data" class="page">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">Backup</p>
+              <h2>Export &amp; Import</h2>
+            </div>
+          </div>
+
+          <div class="data-grid">
+            <article class="data-card">
+              <h3>Export library</h3>
+              <p>
+                Download your custom words, topics, favorites, deletions, and
+                quiz progress as a JSON backup.
+              </p>
+              <button id="exportBtn" class="primary-btn" type="button">
+                Download backup
+              </button>
+            </article>
+
+            <article class="data-card">
+              <h3>Import backup</h3>
+              <p>
+                Restore from a previously exported JSON file. Merge keeps your
+                current data; replace overwrites local custom data.
+              </p>
+              <label class="select-wrap">
+                <span>Mode</span>
+                <select id="importModeSelect">
+                  <option value="merge">Merge</option>
+                  <option value="replace">Replace</option>
+                </select>
+              </label>
+              <label class="file-btn">
+                Choose JSON file
+                <input id="importFileInput" type="file" accept="application/json,.json" hidden />
+              </label>
+              <p id="importStatus" class="data-status" role="status"></p>
+            </article>
+          </div>
+        </section>
+
         <section id="about" class="page">
           <div class="about-card">
             <p class="eyebrow">About this hub</p>
             <h2>Your personal English learning library</h2>
             <p>
-              IMX English Hub keeps vocabulary, presentation topics, favorite
-              items, and daily motivation together in a polished dark-themed
-              interface. Add new content in the data files and review everything
-              later through a beautiful, organized, professional library.
+              IMX English Hub keeps vocabulary, presentation topics, quizzes,
+              favorites, and backups together in one place. Add or edit content
+              in the browser — everything custom is saved locally.
             </p>
             <ul class="about-list">
-              <li>Dark mode by default with blue accent styling</li>
-              <li>Local storage favorites for vocabulary and topics</li>
-              <li>Instant filtering, search, sorting, and expandable cards</li>
-              <li>Easy-to-edit content in <code>data/vocabulary.js</code> and <code>data/topics.js</code></li>
+              <li>Eight focused vocabulary categories</li>
+              <li>In-app add/edit for words and topics</li>
+              <li>Spaced-repetition quiz with pronunciation</li>
+              <li>Export/import JSON backups</li>
+              <li>Base content still lives in <code>data/*.js</code></li>
             </ul>
           </div>
         </section>
       </main>
 
       <footer class="footer">
-        <p>📚 Keep learning. Keep growing.</p>
+        <p>Keep learning. Keep growing.</p>
         <span>My future is built one word at a time.</span>
       </footer>
+    </div>
+
+    <div id="modalRoot" class="modal" hidden>
+      <div class="modal__backdrop" data-close-modal></div>
+      <div
+        class="modal__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle"
+      >
+        <div class="modal__header">
+          <h2 id="modalTitle">Edit</h2>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close-modal
+            aria-label="Close dialog"
+          >
+            ✕
+          </button>
+        </div>
+        <div id="modalBody" class="modal__body"></div>
+      </div>
     </div>
 
     <script type="module" src="app.js"></script>
