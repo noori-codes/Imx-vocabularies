@@ -109,6 +109,38 @@ const escapeHtml = (value) =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 
+const categoryClass = (category) =>
+  `cat-${String(category || "learning")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")}`;
+
+const iconSpeak = `
+  <span class="ui-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M4 10v4h3l4 3V7L7 10H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M15 9.5a3.5 3.5 0 0 1 0 5M17.5 7.5a6 6 0 0 1 0 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+  </span>
+`;
+
+const iconStar = (filled) => `
+  <span class="ui-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="${filled ? "currentColor" : "none"}">
+      <path d="m12 4.2 2.1 4.3 4.7.7-3.4 3.3.8 4.7L12 15.2 7.8 17.2l.8-4.7-3.4-3.3 4.7-.7L12 4.2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    </svg>
+  </span>
+`;
+
+const iconChevron = `
+  <span class="ui-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="m7 10 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </span>
+`;
+
+
 let cachedVoices = [];
 let currentAudio = null;
 
@@ -323,7 +355,12 @@ const refreshAll = () => {
 const applyTheme = (theme) => {
   const isLight = theme === "light";
   document.body.classList.toggle("light", isLight);
-  els.themeToggle.textContent = isLight ? "☀️" : "🌙";
+  const darkIcon = els.themeToggle.querySelector(".theme-icon-dark");
+  const lightIcon = els.themeToggle.querySelector(".theme-icon-light");
+  if (darkIcon && lightIcon) {
+    darkIcon.hidden = isLight;
+    lightIcon.hidden = !isLight;
+  }
   els.themeToggle.setAttribute(
     "aria-label",
     isLight ? "Switch to dark theme" : "Switch to light theme",
@@ -514,6 +551,7 @@ const renderCategoryButtons = () => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `filter-btn ${state.vocabCategory === category ? "is-active" : ""}`;
+    if (category !== "All") button.classList.add(categoryClass(category));
     button.textContent = category;
     button.addEventListener("click", () => {
       state.vocabCategory = category;
@@ -558,23 +596,25 @@ const filterVocabulary = () => {
 
 const createVocabCard = (item, { compact = false } = {}) => {
   const card = document.createElement("article");
-  card.className = "vocab-card";
+  const catClass = categoryClass(item.category);
+  card.className = `vocab-card ${catClass}`;
   const isFavorite = favoriteWords.has(item.word);
   const word = escapeHtml(item.word);
 
   card.innerHTML = `
     <div class="card-top">
-      <div>
+      <div class="card-title">
         <h3>${word}</h3>
-        <div class="category-pill">${escapeHtml(item.category)}</div>
+        <div class="category-pill ${catClass}">${escapeHtml(item.category)}</div>
       </div>
       <div class="card-actions">
-        <button type="button" class="icon-btn speak-btn" aria-label="Pronounce ${word}">🔊</button>
+        <button type="button" class="icon-btn speak-btn" aria-label="Pronounce ${word}">${iconSpeak}</button>
         <button type="button" class="favorite-btn ${isFavorite ? "is-favorite" : ""}" aria-label="Toggle favorite ${word}" aria-pressed="${isFavorite}">
-          ${isFavorite ? "★" : "☆"}
+          ${iconStar(isFavorite)}
         </button>
       </div>
     </div>
+    <div class="card-body">
     ${item.pronunciation ? `<p class="pronunciation">/${escapeHtml(item.pronunciation)}/</p>` : ""}
     <span class="meta-line">Meaning</span>
     <span class="meta-value">${escapeHtml(item.meaning)}</span>
@@ -592,6 +632,7 @@ const createVocabCard = (item, { compact = false } = {}) => {
       <span class="meta-value">“${escapeHtml(item.sentence)}”</span>
     `
     }
+    </div>
     <div class="card-footer-actions">
       <button type="button" class="ghost-btn edit-btn">Edit</button>
       <button type="button" class="danger-btn delete-btn">Delete</button>
@@ -701,7 +742,7 @@ const renderTopics = () => {
           <div class="mini-vocab-card">
             <div class="mini-vocab-head">
               <h5>${escapeHtml(wordData.word)}</h5>
-              <button type="button" class="icon-btn mini-speak" data-speak="${escapeHtml(wordData.word)}" aria-label="Pronounce ${escapeHtml(wordData.word)}">🔊</button>
+              <button type="button" class="icon-btn mini-speak" data-speak="${escapeHtml(wordData.word)}" aria-label="Pronounce ${escapeHtml(wordData.word)}">${iconSpeak}</button>
             </div>
             <p class="mini-vocab-pron">/${escapeHtml(wordData.pronunciation || "ˈwɜːrd")}/</p>
             <p class="mini-vocab-meta"><strong>Meaning:</strong> ${escapeHtml(wordData.meaning)}</p>
@@ -719,9 +760,9 @@ const renderTopics = () => {
         </div>
         <div class="topic-card__actions">
           <button type="button" class="topic-favorite-btn ${isFavorite ? "is-favorite" : ""}" aria-label="Toggle favorite topic ${title}" aria-pressed="${isFavorite}">
-            ${isFavorite ? "★" : "☆"}
+            ${iconStar(isFavorite)}
           </button>
-          <span class="topic-toggle-icon" aria-hidden="true">▼</span>
+          <span class="topic-toggle-icon" aria-hidden="true">${iconChevron}</span>
         </div>
       </div>
       <div class="topic-details" id="${detailsId}">
@@ -762,7 +803,6 @@ const renderTopics = () => {
     const setExpanded = (open) => {
       card.classList.toggle("is-open", open);
       toggleButton.setAttribute("aria-expanded", String(open));
-      card.querySelector(".topic-toggle-icon").textContent = open ? "▲" : "▼";
     };
 
     toggleButton.addEventListener("click", (event) => {
@@ -837,7 +877,7 @@ const renderFavorites = () => {
             <p class="topic-eyebrow">${escapeHtml(formatDate(topic.date))}</p>
             <h3>${escapeHtml(topic.title)}</h3>
           </div>
-          <button type="button" class="topic-favorite-btn is-favorite" aria-pressed="true">★</button>
+          <button type="button" class="topic-favorite-btn is-favorite" aria-pressed="true">${iconStar(true)}</button>
         </div>
       `;
       card.querySelector(".topic-favorite-btn").addEventListener("click", () => {
@@ -885,6 +925,7 @@ const renderQuizCard = () => {
   els.quizPronunciation.textContent = current.pronunciation
     ? `/${current.pronunciation}/`
     : "";
+  els.quizCategory.className = `category-pill ${categoryClass(current.category)}`;
   els.quizCategory.textContent = current.category;
   els.quizMeaning.textContent = current.meaning;
   els.quizSynonym.textContent = current.synonym || "—";

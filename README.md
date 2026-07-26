@@ -21,9 +21,10 @@ Then visit `http://localhost:8080`.
 - **Vocabulary & topics** with search, filters, and favorites
 - **In-app add/edit/delete** for words and topics (saved in `localStorage`)
 - **Spaced-repetition quiz** with Know / Not yet scheduling
-- **Pronunciation** via browser text-to-speech
+- **Pronunciation** via dictionary audio / browser TTS fallbacks
 - **Export / import** JSON backups on the Data page
 - **8 focused categories:** Emotions, Mindset, Character, Learning, Speaking, Lifestyle, Society, Growth
+- **Ink-journal visual style:** Literata + Manrope, warm charcoal/amber palette, category color accents
 
 ## Project structure
 

@@ -6,14 +6,14 @@
     <title>IMX English Hub</title>
     <meta
       name="description"
-      content="A modern dark-themed English learning hub for vocabulary, presentation topics and progress."
+      content="A personal ink-journal English hub for vocabulary, presentation topics, and daily practice."
     />
     <link rel="icon" type="image/png" href="IMX-logo.png" />
     <link rel="apple-touch-icon" href="IMX-logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,650;7..72,700&family=Manrope:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
@@ -24,17 +24,22 @@
         <div class="brand">
           <img src="IMX-logo.png" alt="IMX logo" />
           <div class="brand-copy">
-            <p class="eyebrow">IMX English Hub</p>
-            <h1>Personal English Study Journal</h1>
+            <p class="brand-mark">IMX</p>
+            <p class="brand-sub">English Study Journal</p>
           </div>
         </div>
         <div class="topbar-actions">
           <label class="search-box" for="globalSearchInput">
-            <span aria-hidden="true">🔎</span>
+            <span class="ui-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8" />
+                <path d="M16.5 16.5 20 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+            </span>
             <input
               id="globalSearchInput"
               type="search"
-              placeholder="Search vocabulary or topics"
+              placeholder="Search words or topics"
               autocomplete="off"
             />
           </label>
@@ -42,32 +47,54 @@
             id="themeToggle"
             class="theme-toggle"
             type="button"
-            aria-label="Toggle color theme"
+            aria-label="Switch to light theme"
           >
-            🌙
+            <span class="ui-icon theme-icon-dark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M19 13.5A7.5 7.5 0 1 1 10.5 5 6 6 0 0 0 19 13.5Z"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            <span class="ui-icon theme-icon-light" aria-hidden="true" hidden>
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8" />
+                <path
+                  d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </span>
           </button>
         </div>
       </header>
 
       <nav class="page-nav" aria-label="Main navigation">
-        <button class="nav-link active" data-page="home">Home</button>
-        <button class="nav-link" data-page="vocabulary">Vocabulary</button>
-        <button class="nav-link" data-page="topics">Topics</button>
-        <button class="nav-link" data-page="quiz">Quiz</button>
-        <button class="nav-link" data-page="favorites">Favorites</button>
-        <button class="nav-link" data-page="data">Data</button>
-        <button class="nav-link" data-page="about">About</button>
+        <div class="page-nav__track">
+          <button class="nav-link active" data-page="home">Home</button>
+          <button class="nav-link" data-page="vocabulary">Vocabulary</button>
+          <button class="nav-link" data-page="topics">Topics</button>
+          <button class="nav-link" data-page="quiz">Quiz</button>
+          <button class="nav-link" data-page="favorites">Favorites</button>
+          <button class="nav-link nav-link--secondary" data-page="data">Data</button>
+          <button class="nav-link nav-link--secondary" data-page="about">About</button>
+        </div>
       </nav>
 
       <main class="page-content" role="main">
         <section id="home" class="page page--active">
           <div class="hero-card">
             <div class="hero-copy">
-              <p class="eyebrow">Welcome back</p>
-              <h2>IMX English Hub</h2>
+              <p class="eyebrow">Personal study journal</p>
+              <h2 class="brand-hero">IMX</h2>
               <p class="hero-subtitle">
-                My personal journey to mastering English through vocabulary,
-                presentations, and daily practice.
+                Vocabulary, presentations, and daily practice — kept in one
+                quiet place to review and grow.
               </p>
               <div class="hero-actions">
                 <button type="button" class="primary-btn" data-jump="quiz">
@@ -78,39 +105,39 @@
                 </button>
               </div>
             </div>
-            <div class="hero-visual">
-              <div class="hero-tag">Study notebook</div>
-              <div class="hero-note">
-                Add words, practice with spaced repetition, and back up your
-                library — all in one hub.
-              </div>
-            </div>
+            <aside class="hero-aside" aria-label="Study note">
+              <p class="hero-aside__label">Today</p>
+              <p class="hero-aside__text">
+                Review a few due words, then add one new idea from your latest
+                presentation.
+              </p>
+            </aside>
           </div>
 
           <div class="home-grid">
             <div class="progress-card">
-              <p class="progress-label">Total Vocabulary Words</p>
+              <p class="progress-label">Vocabulary</p>
               <strong id="homeTotalWords">0</strong>
             </div>
             <div class="progress-card">
-              <p class="progress-label">Total Presentation Topics</p>
+              <p class="progress-label">Topics</p>
               <strong id="homeTotalTopics">0</strong>
             </div>
             <div class="progress-card">
-              <p class="progress-label">Favorite Words</p>
+              <p class="progress-label">Favorites</p>
               <strong id="homeFavoriteWords">0</strong>
             </div>
             <div class="progress-card">
-              <p class="progress-label">Words due for quiz</p>
+              <p class="progress-label">Due for quiz</p>
               <strong id="homeDueWords">0</strong>
             </div>
           </div>
 
           <section class="motivation-card" aria-label="Daily motivation">
             <div class="motivation-card__header">
-              <p class="motivation-eyebrow">Daily Motivation</p>
+              <p class="motivation-eyebrow">Daily line</p>
               <button id="newQuoteBtn" class="quote-btn" type="button">
-                New Quote
+                New line
               </button>
             </div>
             <p id="motivationQuote" class="motivation-quote"></p>
@@ -121,7 +148,7 @@
           <div class="page-header">
             <div>
               <p class="eyebrow">Vocabulary</p>
-              <h2>Word Library</h2>
+              <h2>Word library</h2>
             </div>
             <div class="page-controls">
               <button id="addWordBtn" class="primary-btn" type="button">
@@ -153,8 +180,8 @@
         <section id="topics" class="page">
           <div class="page-header">
             <div>
-              <p class="eyebrow">Presentation Topics</p>
-              <h2>Expandable topic cards</h2>
+              <p class="eyebrow">Presentations</p>
+              <h2>Topic notes</h2>
             </div>
             <div class="page-controls">
               <button id="addTopicBtn" class="primary-btn" type="button">
@@ -175,8 +202,8 @@
         <section id="quiz" class="page">
           <div class="page-header">
             <div>
-              <p class="eyebrow">Spaced repetition</p>
-              <h2>Vocabulary Quiz</h2>
+              <p class="eyebrow">Practice</p>
+              <h2>Vocabulary quiz</h2>
             </div>
             <div class="page-controls">
               <button id="quizRestartBtn" class="ghost-btn" type="button">
@@ -200,7 +227,22 @@
                 type="button"
                 aria-label="Pronounce word"
               >
-                🔊
+                <span class="ui-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M4 10v4h3l4 3V7L7 10H4Z"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M15 9.5a3.5 3.5 0 0 1 0 5M17.5 7.5a6 6 0 0 1 0 9"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </span>
               </button>
             </div>
             <p id="quizPronunciation" class="quiz-pronunciation"></p>
@@ -228,26 +270,29 @@
 
           <div id="quizEmpty" class="empty-state">
             <h3>You're caught up</h3>
-            <p>No words are due right now. Come back later or restart to practice everything.</p>
+            <p>
+              No words are due right now. Come back later or restart to practice
+              everything.
+            </p>
           </div>
         </section>
 
         <section id="favorites" class="page">
           <div class="page-header">
             <div>
-              <p class="eyebrow">Favorites</p>
-              <h2>Saved study highlights</h2>
+              <p class="eyebrow">Saved</p>
+              <h2>Study highlights</h2>
             </div>
           </div>
 
           <div class="favorites-section">
             <div class="favorites-block">
-              <p class="favorites-heading">Favorite Vocabulary</p>
+              <p class="favorites-heading">Favorite vocabulary</p>
               <div id="favoriteVocabGrid" class="card-grid"></div>
             </div>
 
             <div class="favorites-block">
-              <p class="favorites-heading">Favorite Presentation Topics</p>
+              <p class="favorites-heading">Favorite topics</p>
               <div id="favoriteTopicGrid" class="card-grid"></div>
             </div>
           </div>
@@ -257,7 +302,7 @@
           <div class="page-header">
             <div>
               <p class="eyebrow">Backup</p>
-              <h2>Export &amp; Import</h2>
+              <h2>Export &amp; import</h2>
             </div>
           </div>
 
@@ -288,7 +333,12 @@
               </label>
               <label class="file-btn">
                 Choose JSON file
-                <input id="importFileInput" type="file" accept="application/json,.json" hidden />
+                <input
+                  id="importFileInput"
+                  type="file"
+                  accept="application/json,.json"
+                  hidden
+                />
               </label>
               <p id="importStatus" class="data-status" role="status"></p>
             </article>
@@ -297,12 +347,12 @@
 
         <section id="about" class="page">
           <div class="about-card">
-            <p class="eyebrow">About this hub</p>
-            <h2>Your personal English learning library</h2>
+            <p class="eyebrow">About</p>
+            <h2>A quiet place for English practice</h2>
             <p>
               IMX English Hub keeps vocabulary, presentation topics, quizzes,
-              favorites, and backups together in one place. Add or edit content
-              in the browser — everything custom is saved locally.
+              favorites, and backups together. Add or edit content in the
+              browser — custom work stays on this device until you export it.
             </p>
             <ul class="about-list">
               <li>Eight focused vocabulary categories</li>
@@ -317,7 +367,7 @@
 
       <footer class="footer">
         <p>Keep learning. Keep growing.</p>
-        <span>My future is built one word at a time.</span>
+        <span>One word at a time.</span>
       </footer>
     </div>
 
@@ -337,7 +387,16 @@
             data-close-modal
             aria-label="Close dialog"
           >
-            ✕
+            <span class="ui-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M7 7l10 10M17 7 7 17"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </span>
           </button>
         </div>
         <div id="modalBody" class="modal__body"></div>
