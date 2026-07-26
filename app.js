@@ -537,11 +537,14 @@ const openTopicModal = (item = null) => {
   });
 };
 
+const DATA_VERSION = "2026-07-26-curiosity";
+
 const loadData = async () => {
   try {
+    // Bump DATA_VERSION when you edit data files so browsers pick up changes.
     const [vocabModule, topicsModule] = await Promise.all([
-      import("./data/vocabulary.js"),
-      import("./data/topics.js"),
+      import(`./data/vocabulary.js?v=${DATA_VERSION}`),
+      import(`./data/topics.js?v=${DATA_VERSION}`),
     ]);
     baseVocabulary = vocabModule.vocabularyData || [];
     baseTopics = topicsModule.topicData || [];
