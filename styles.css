@@ -459,8 +459,7 @@ button {
 }
 
 .favorite-btn,
-.topic-favorite-btn,
-.topic-toggle-btn {
+.topic-favorite-btn {
   border: none;
   background: rgba(255, 255, 255, 0.06);
   border-radius: 999px;
@@ -478,10 +477,7 @@ button {
 }
 
 .meta-line,
-.topic-eyebrow,
-.topic-card__summary,
-.topic-card__notes,
-.topic-card__questions {
+.topic-eyebrow {
   margin: 0;
 }
 
@@ -499,8 +495,7 @@ button {
   word-break: break-word;
 }
 
-.category-pill,
-.vocab-list li {
+.category-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -508,10 +503,6 @@ button {
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 600;
-}
-
-.category-pill,
-.vocab-list li {
   background: rgba(59, 130, 246, 0.16);
   color: var(--accent);
 }
@@ -856,7 +847,6 @@ button {
   .hero-subtitle,
   .hero-note,
   .motivation-quote,
-  .topic-card__summary,
   .results__meta {
     font-size: 0.96rem;
   }
@@ -865,8 +855,21 @@ button {
   .pill-toggle,
   .filter-btn,
   .select-wrap,
-  .topic-favorite-btn,
-  .topic-toggle-btn {
+  .topic-favorite-btn {
     width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

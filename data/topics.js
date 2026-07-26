@@ -12,10 +12,12 @@ export const createTopic = ({
   vocabulary = [],
   questions = [],
   favorite = false,
+  completed = false,
 }) => ({
   title,
   date,
   favorite,
+  completed,
   vocabulary: normalizeList(vocabulary),
   summary,
   notes,
@@ -29,7 +31,6 @@ export const topicData = [
   createTopic({
     title: "Can Money Change a Person?",
     date: "2026-07-23",
-    completed: false,
     vocabulary: [
       "Greed",
       "Corruption",
@@ -58,7 +59,6 @@ export const topicData = [
   createTopic({
     title: "How Does Failure Build Character?",
     date: "2026-07-22",
-    completed: false,
     vocabulary: [
       "Failure",
       "Setback",
