@@ -10,6 +10,8 @@ const STORAGE = {
   deletedWords: "imx-hub-deleted-words",
   deletedTopics: "imx-hub-deleted-topics",
   quizProgress: "imx-hub-quiz-progress",
+  quizSettings: "imx-hub-quiz-settings",
+  studyStreak: "imx-hub-study-streak",
 };
 
 export { STORAGE, CATEGORIES, normalizeCategory };
@@ -234,6 +236,56 @@ export const getQuizProgress = () => {
 };
 
 export const saveQuizProgress = (progress) => writeJson(STORAGE.quizProgress, progress);
+
+const defaultQuizSettings = () => ({
+  scope: "due",
+  mode: "flashcard",
+  timer: false,
+  requeue: true,
+  categoryFilter: "All",
+});
+
+export const readQuizSettings = () => {
+  const raw = readJson(STORAGE.quizSettings, null);
+  if (!raw || typeof raw !== "object") return defaultQuizSettings();
+  return { ...defaultQuizSettings(), ...raw };
+};
+
+export const saveQuizSettings = (settings) =>
+  writeJson(STORAGE.quizSettings, { ...defaultQuizSettings(), ...settings });
+
+export const getWeakWords = (vocabulary = []) => {
+  const progress = getQuizProgress();
+  return vocabulary.filter((item) => progress[item.word]?.lastResult === "again");
+};
+
+export const getStudyStreakInfo = () => {
+  const data = readJson(STORAGE.studyStreak, { lastDate: "", streak: 0 });
+  const today = new Date().toISOString().slice(0, 10);
+  const studiedToday = data.lastDate === today;
+  return {
+    streak: Number(data.streak) || 0,
+    studiedToday,
+    lastDate: String(data.lastDate || ""),
+  };
+};
+
+export const recordStudyActivity = () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const data = readJson(STORAGE.studyStreak, { lastDate: "", streak: 0 });
+  if (data.lastDate === today) return getStudyStreakInfo();
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = yesterday.toISOString().slice(0, 10);
+
+  let streak = 1;
+  if (data.lastDate === yesterdayKey) streak = (Number(data.streak) || 0) + 1;
+  else if (data.lastDate === today) streak = Number(data.streak) || 0;
+
+  writeJson(STORAGE.studyStreak, { lastDate: today, streak });
+  return getStudyStreakInfo();
+};
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

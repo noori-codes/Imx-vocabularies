@@ -14,6 +14,11 @@ import {
   gradeWord,
   buildExportPayload,
   applyImportPayload,
+  readQuizSettings,
+  saveQuizSettings,
+  getWeakWords,
+  getStudyStreakInfo,
+  recordStudyActivity,
 } from "./components/storage.js";
 
 const MOTIVATION_QUOTES = [
@@ -41,6 +46,16 @@ const state = {
   quizRevealed: false,
   quizForceAll: false,
   quizScope: "due",
+  quizMode: "flashcard",
+  quizCategoryFilter: "All",
+  quizTimerEnabled: false,
+  quizRequeueMissed: true,
+  quizSessionLimit: null,
+  quizMcqChoices: [],
+  quizTypeChecked: false,
+  quizCardTimerId: null,
+  quizCardTimerRemaining: 0,
+  quizSessionStats: { known: 0, again: 0, missed: [], total: 0 },
   editingWord: null,
   editingTopic: null,
 };
@@ -86,6 +101,32 @@ const els = {
   quizSpeakBtn: document.getElementById("quizSpeakBtn"),
   quizRestartBtn: document.getElementById("quizRestartBtn"),
   quizScopeSelect: document.getElementById("quizScopeSelect"),
+  quizModeSelect: document.getElementById("quizModeSelect"),
+  quizCategorySelect: document.getElementById("quizCategorySelect"),
+  quizTimerToggle: document.getElementById("quizTimerToggle"),
+  quizRequeueToggle: document.getElementById("quizRequeueToggle"),
+  quizPrintBtn: document.getElementById("quizPrintBtn"),
+  quizProgressBar: document.getElementById("quizProgressBar"),
+  quizProgressFill: document.getElementById("quizProgressFill"),
+  quizTimerText: document.getElementById("quizTimerText"),
+  quizPromptLabel: document.getElementById("quizPromptLabel"),
+  quizWordRow: document.getElementById("quizWordRow"),
+  quizPromptText: document.getElementById("quizPromptText"),
+  quizTypeArea: document.getElementById("quizTypeArea"),
+  quizTypeInput: document.getElementById("quizTypeInput"),
+  quizCheckTypeBtn: document.getElementById("quizCheckTypeBtn"),
+  quizTypeFeedback: document.getElementById("quizTypeFeedback"),
+  quizMcqArea: document.getElementById("quizMcqArea"),
+  quizAnswerWordRow: document.getElementById("quizAnswerWordRow"),
+  quizAnswerWord: document.getElementById("quizAnswerWord"),
+  quizSummary: document.getElementById("quizSummary"),
+  quizSummaryStats: document.getElementById("quizSummaryStats"),
+  quizSummaryMissedWrap: document.getElementById("quizSummaryMissedWrap"),
+  quizSummaryMissed: document.getElementById("quizSummaryMissed"),
+  quizReviewMissedBtn: document.getElementById("quizReviewMissedBtn"),
+  quizNewSessionBtn: document.getElementById("quizNewSessionBtn"),
+  quizPrintSheet: document.getElementById("quizPrintSheet"),
+  homeStudyStreak: document.getElementById("homeStudyStreak"),
   exportBtn: document.getElementById("exportBtn"),
   importFileInput: document.getElementById("importFileInput"),
   importModeSelect: document.getElementById("importModeSelect"),
@@ -411,7 +452,13 @@ const switchPage = (page, { updateHistory = true, replace = true } = {}) => {
     button.classList.toggle("active", button.dataset.page === page),
   );
   if (updateHistory) updateUrlState(page, { replace });
-  if (page === "quiz") prepareQuiz({ preserveForce: true });
+  if (page === "quiz") {
+    try {
+      prepareQuiz({ preserveForce: true });
+    } catch (error) {
+      console.error("Quiz setup failed", error);
+    }
+  }
 };
 
 const closeModal = () => {
@@ -537,7 +584,7 @@ const openTopicModal = (item = null) => {
   });
 };
 
-const DATA_VERSION = "2026-07-26-curiosity";
+const DATA_VERSION = "2026-07-27-exam";
 
 const loadData = async () => {
   try {
@@ -813,6 +860,7 @@ const renderTopics = () => {
         }
         <div class="card-footer-actions">
           <button type="button" class="primary-btn practice-topic-btn">Practice words</button>
+          <button type="button" class="ghost-btn exam-topic-btn">Exam session (10)</button>
           <button type="button" class="ghost-btn complete-topic-btn">${isCompleted ? "Mark incomplete" : "Mark completed"}</button>
           <button type="button" class="ghost-btn edit-topic-btn">Edit</button>
           <button type="button" class="danger-btn delete-topic-btn">Delete</button>
@@ -856,6 +904,9 @@ const renderTopics = () => {
 
     card.querySelector(".practice-topic-btn").addEventListener("click", () => {
       startTopicQuiz(topic.title);
+    });
+    card.querySelector(".exam-topic-btn")?.addEventListener("click", () => {
+      startTopicExam(topic.title);
     });
 
     card.querySelector(".complete-topic-btn").addEventListener("click", () => {
@@ -940,25 +991,93 @@ const renderHomeStats = () => {
   els.homeTotalWords.textContent = vocabularyData.length;
   els.homeTotalTopics.textContent = topicData.length;
   els.homeFavoriteWords.textContent = favoriteWords.size;
-  els.homeDueWords.textContent = getDueWords(getQuizWordPool()).length;
+  els.homeDueWords.textContent = getDueWords(vocabularyData).length;
+
+  if (els.homeStudyStreak) {
+    const { streak, studiedToday } = getStudyStreakInfo();
+    if (studiedToday) {
+      els.homeStudyStreak.textContent =
+        streak > 1
+          ? `You studied today — ${streak}-day streak. Keep it going.`
+          : "You studied today. Nice work — come back tomorrow for a streak.";
+    } else {
+      els.homeStudyStreak.textContent =
+        streak > 0
+          ? `${streak}-day streak waiting — review a few due words today.`
+          : "Review a few due words, then add one new idea from your latest presentation.";
+    }
+  }
 };
 
-const renderQuote = () => {
-  const quote =
-    MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)];
-  fadeText(els.motivationQuote, quote);
+const QUIZ_SESSION_SIZE = 15;
+const QUIZ_CARD_TIMER_SEC = 20;
+
+const applyQuizSettingsToState = () => {
+  const saved = readQuizSettings();
+  state.quizScope = saved.scope || "due";
+  state.quizMode = saved.mode || "flashcard";
+  state.quizCategoryFilter = saved.categoryFilter || "All";
+  state.quizTimerEnabled = Boolean(saved.timer);
+  state.quizRequeueMissed = saved.requeue !== false;
+};
+
+const persistQuizSettings = () => {
+  saveQuizSettings({
+    scope: state.quizScope,
+    mode: state.quizMode,
+    categoryFilter: state.quizCategoryFilter,
+    timer: state.quizTimerEnabled,
+    requeue: state.quizRequeueMissed,
+  });
+};
+
+const syncQuizControlsFromState = () => {
+  if (els.quizModeSelect) els.quizModeSelect.value = state.quizMode;
+  if (els.quizCategorySelect) els.quizCategorySelect.value = state.quizCategoryFilter;
+  if (els.quizTimerToggle) els.quizTimerToggle.checked = state.quizTimerEnabled;
+  if (els.quizRequeueToggle) els.quizRequeueToggle.checked = state.quizRequeueMissed;
+};
+
+const populateQuizCategorySelect = () => {
+  if (!els.quizCategorySelect) return;
+  const previous = state.quizCategoryFilter;
+  els.quizCategorySelect.innerHTML = "";
+  const addOption = (value, label) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    els.quizCategorySelect.appendChild(option);
+  };
+  addOption("All", "All categories");
+  CATEGORIES.forEach((category) => addOption(category, category));
+  const hasPrevious = [...els.quizCategorySelect.options].some(
+    (option) => option.value === previous,
+  );
+  els.quizCategorySelect.value = hasPrevious ? previous : "All";
+  state.quizCategoryFilter = els.quizCategorySelect.value;
 };
 
 const getQuizWordPool = () => {
-  if (!String(state.quizScope).startsWith("topic:")) {
-    return vocabularyData;
-  }
-  const topicTitle = state.quizScope.slice("topic:".length);
-  const topic = topicData.find((item) => item.title === topicTitle);
-  if (!topic) return vocabularyData;
+  let pool = vocabularyData;
 
-  const wanted = new Set(topic.vocabulary.map((word) => word.toLowerCase()));
-  return vocabularyData.filter((item) => wanted.has(item.word.toLowerCase()));
+  if (state.quizScope === "favorites") {
+    pool = pool.filter((item) => favoriteWords.has(item.word));
+  } else if (state.quizScope === "weak") {
+    pool = getWeakWords(pool);
+  } else if (String(state.quizScope).startsWith("topic:")) {
+    const topicTitle = state.quizScope.slice("topic:".length);
+    const topic = topicData.find((item) => item.title === topicTitle);
+    if (topic) {
+      const wanted = new Set(topic.vocabulary.map((word) => word.toLowerCase()));
+      pool = pool.filter((item) => wanted.has(item.word.toLowerCase()));
+    }
+  }
+
+  if (state.quizCategoryFilter && state.quizCategoryFilter !== "All") {
+    pool = pool.filter((item) => item.category === state.quizCategoryFilter);
+  }
+
+  return pool;
 };
 
 const populateQuizScopeSelect = () => {
@@ -975,6 +1094,8 @@ const populateQuizScopeSelect = () => {
 
   addOption("due", "Due words");
   addOption("all", "All vocabulary");
+  addOption("favorites", "Favorites only");
+  addOption("weak", "Weak words (recent again)");
   topicData.forEach((topic) => {
     addOption(`topic:${topic.title}`, topic.title);
   });
@@ -991,44 +1112,61 @@ const currentQuizItem = () => state.quizQueue[state.quizIndex] || null;
 const describeQuizScope = () => {
   if (state.quizScope === "all") return "All vocabulary";
   if (state.quizScope === "due") return "Due words";
+  if (state.quizScope === "favorites") return "Favorite words";
+  if (state.quizScope === "weak") return "Weak words";
   if (String(state.quizScope).startsWith("topic:")) {
-    return `Topic: ${state.quizScope.slice("topic:".length)}`;
+    const title = state.quizScope.slice("topic:".length);
+    return state.quizSessionLimit === 10 ? `Topic exam: ${title}` : `Topic: ${title}`;
   }
-  return "Quiz";
+  return "Exam practice";
 };
 
-const renderQuizCard = () => {
-  const current = currentQuizItem();
-  if (!current) {
-    els.quizCard.hidden = true;
-    els.quizEmpty.hidden = false;
-    els.quizStatusText.textContent = state.quizForceAll
-      ? "Session complete"
-      : String(state.quizScope).startsWith("topic:")
-        ? "No words found for this topic"
-        : "You're caught up";
-    els.quizProgressText.textContent = describeQuizScope();
-    return;
+const describeQuizMode = () => {
+  const modes = {
+    flashcard: "Word → meaning",
+    reverse: "Meaning → word",
+    type: "Type the word",
+    mcq: "Pick the word",
+  };
+  return modes[state.quizMode] || modes.flashcard;
+};
+
+const clearQuizCardTimer = () => {
+  if (state.quizCardTimerId) {
+    clearInterval(state.quizCardTimerId);
+    state.quizCardTimerId = null;
+  }
+  if (els.quizTimerText) els.quizTimerText.hidden = true;
+};
+
+const startQuizCardTimer = () => {
+  clearQuizCardTimer();
+  if (!state.quizTimerEnabled || !currentQuizItem()) return;
+
+  state.quizCardTimerRemaining = QUIZ_CARD_TIMER_SEC;
+  if (els.quizTimerText) {
+    els.quizTimerText.hidden = false;
+    els.quizTimerText.textContent = `${state.quizCardTimerRemaining}s`;
   }
 
-  els.quizEmpty.hidden = true;
-  els.quizCard.hidden = false;
-  els.quizWord.textContent = current.word;
-  els.quizPronunciation.textContent = current.pronunciation
-    ? `/${current.pronunciation}/`
-    : "";
-  els.quizCategory.className = `category-pill ${categoryClass(current.category)}`;
-  els.quizCategory.textContent = current.category;
-  els.quizMeaning.textContent = current.meaning;
-  els.quizSynonym.textContent = current.synonym || "—";
-  els.quizAntonym.textContent = current.antonym || "—";
-  els.quizSentence.textContent = current.sentence || "—";
-  els.quizAnswer.hidden = !state.quizRevealed;
-  els.quizRevealBtn.hidden = state.quizRevealed;
-  els.quizKnowBtn.hidden = !state.quizRevealed;
-  els.quizAgainBtn.hidden = !state.quizRevealed;
-  els.quizStatusText.textContent = describeQuizScope();
-  els.quizProgressText.textContent = `Card ${state.quizIndex + 1} of ${state.quizQueue.length}`;
+  state.quizCardTimerId = setInterval(() => {
+    state.quizCardTimerRemaining -= 1;
+    if (els.quizTimerText) {
+      els.quizTimerText.textContent = `${Math.max(0, state.quizCardTimerRemaining)}s`;
+      els.quizTimerText.classList.toggle(
+        "is-urgent",
+        state.quizCardTimerRemaining <= 5,
+      );
+    }
+    if (state.quizCardTimerRemaining <= 0) {
+      clearQuizCardTimer();
+      if (state.quizMode === "mcq" || state.quizTypeChecked) return;
+      if (!state.quizRevealed) {
+        state.quizRevealed = true;
+        renderQuizCard();
+      }
+    }
+  }, 1000);
 };
 
 const shuffle = (items) => {
@@ -1040,49 +1178,405 @@ const shuffle = (items) => {
   return list;
 };
 
-const prepareQuiz = ({ forceAll = false, preserveForce = false } = {}) => {
+const pickMcqChoices = (correct, pool) => {
+  const sameCategory = pool.filter(
+    (item) =>
+      item.word.toLowerCase() !== correct.word.toLowerCase() &&
+      item.category === correct.category,
+  );
+  const fallback = pool.filter(
+    (item) => item.word.toLowerCase() !== correct.word.toLowerCase(),
+  );
+  const distractorPool = sameCategory.length >= 3 ? sameCategory : fallback;
+  const distractors = shuffle(distractorPool).slice(0, 3);
+  while (distractors.length < 3 && fallback.length) {
+    const next = fallback.find(
+      (item) =>
+        !distractors.some((d) => d.word === item.word) &&
+        item.word !== correct.word,
+    );
+    if (!next) break;
+    distractors.push(next);
+  }
+  return shuffle([correct, ...distractors.slice(0, 3)]);
+};
+
+const normalizeTypedWord = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\u00C0-\u024F\s'-]/gi, "");
+
+const wordsMatchTyped = (typed, word) =>
+  normalizeTypedWord(typed) === normalizeTypedWord(word);
+
+const updateQuizProgressBar = () => {
+  if (!els.quizProgressBar || !els.quizProgressFill) return;
+  const total = state.quizSessionStats.total || state.quizQueue.length;
+  if (!total || !currentQuizItem()) {
+    els.quizProgressBar.hidden = true;
+    return;
+  }
+  const done = state.quizSessionStats.known + state.quizSessionStats.again;
+  const current = Math.min(done + 1, total);
+  const pct = Math.round((current / total) * 100);
+  els.quizProgressBar.hidden = false;
+  els.quizProgressBar.setAttribute("aria-valuenow", String(pct));
+  els.quizProgressFill.style.width = `${pct}%`;
+};
+
+const hideQuizSummary = () => {
+  if (els.quizSummary) els.quizSummary.hidden = true;
+};
+
+const showQuizSummary = () => {
+  clearQuizCardTimer();
+  if (els.quizCard) els.quizCard.hidden = true;
+  if (els.quizEmpty) els.quizEmpty.hidden = true;
+  if (!els.quizSummary) return;
+
+  const { known, again, missed, total } = state.quizSessionStats;
+  els.quizSummary.hidden = false;
+  els.quizSummaryStats.textContent = `${known} known · ${again} again · ${total} cards · ${describeQuizMode()}`;
+
+  if (missed.length && els.quizSummaryMissed && els.quizSummaryMissedWrap) {
+    els.quizSummaryMissed.innerHTML = missed
+      .map((word) => `<li>${escapeHtml(word)}</li>`)
+      .join("");
+    els.quizSummaryMissedWrap.hidden = false;
+    if (els.quizReviewMissedBtn) els.quizReviewMissedBtn.hidden = false;
+  } else {
+    if (els.quizSummaryMissedWrap) els.quizSummaryMissedWrap.hidden = true;
+    if (els.quizReviewMissedBtn) els.quizReviewMissedBtn.hidden = true;
+  }
+
+  if (els.quizStatusText) els.quizStatusText.textContent = "Session complete";
+  if (els.quizProgressText) els.quizProgressText.textContent = describeQuizScope();
+  if (els.quizProgressBar) els.quizProgressBar.hidden = true;
+};
+
+const resetQuizSessionStats = (total) => {
+  state.quizSessionStats = { known: 0, again: 0, missed: [], total };
+};
+
+const renderQuizMcq = (current, pool) => {
+  if (!els.quizMcqArea) return;
+  state.quizMcqChoices = pickMcqChoices(current, pool);
+  els.quizMcqArea.innerHTML = state.quizMcqChoices
+    .map(
+      (item) =>
+        `<button type="button" class="ghost-btn quiz-mcq-btn" data-word="${escapeHtml(item.word)}">${escapeHtml(item.word)}</button>`,
+    )
+    .join("");
+  els.quizMcqArea.querySelectorAll(".quiz-mcq-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const picked = button.dataset.word;
+      const correct = picked.toLowerCase() === current.word.toLowerCase();
+      button.classList.add(correct ? "is-correct" : "is-wrong");
+      els.quizMcqArea.querySelectorAll(".quiz-mcq-btn").forEach((btn) => {
+        btn.disabled = true;
+        if (btn.dataset.word.toLowerCase() === current.word.toLowerCase()) {
+          btn.classList.add("is-correct");
+        }
+      });
+      setTimeout(() => advanceQuiz(correct), correct ? 420 : 900);
+    });
+  });
+};
+
+const renderQuizCard = () => {
+  hideQuizSummary();
+  const current = currentQuizItem();
+  const pool = getQuizWordPool();
+  const mode = state.quizMode;
+
+  if (!els.quizCard || !els.quizEmpty) return;
+
+  if (!current) {
+    clearQuizCardTimer();
+    els.quizCard.hidden = true;
+    if (state.quizSessionStats.known + state.quizSessionStats.again > 0) {
+      showQuizSummary();
+      return;
+    }
+    els.quizEmpty.hidden = false;
+    if (els.quizStatusText) {
+      els.quizStatusText.textContent = state.quizForceAll
+        ? "Session complete"
+        : String(state.quizScope).startsWith("topic:")
+          ? "No words found for this topic"
+          : state.quizScope === "favorites"
+            ? "No favorite words in this filter"
+            : state.quizScope === "weak"
+              ? "No weak words right now — great job"
+              : "You're caught up";
+    }
+    if (els.quizProgressText) els.quizProgressText.textContent = describeQuizScope();
+    if (els.quizProgressBar) els.quizProgressBar.hidden = true;
+    return;
+  }
+
+  state.quizTypeChecked = false;
+  els.quizEmpty.hidden = true;
+  els.quizCard.hidden = false;
+
+  const isReverse = mode === "reverse";
+  const isType = mode === "type";
+  const isMcq = mode === "mcq";
+  const isFlashcard = mode === "flashcard";
+
+  if (els.quizPromptLabel) {
+    els.quizPromptLabel.textContent = isReverse || isType || isMcq ? "Prompt" : "Word";
+  }
+  if (els.quizWordRow) {
+    els.quizWordRow.hidden =
+      isMcq || ((isReverse || isType) && !state.quizRevealed && !state.quizTypeChecked);
+  }
+  if (els.quizPromptText) {
+    els.quizPromptText.hidden = !(isReverse || isType || isMcq);
+    els.quizPromptText.textContent = current.meaning;
+  }
+  if (els.quizWord) els.quizWord.textContent = current.word;
+  if (els.quizPronunciation) {
+    els.quizPronunciation.textContent =
+    isFlashcard || state.quizRevealed
+      ? current.pronunciation
+        ? `/${current.pronunciation}/`
+        : ""
+      : "";
+  }
+  if (els.quizCategory) {
+    els.quizCategory.className = `category-pill ${categoryClass(current.category)}`;
+    els.quizCategory.textContent = current.category;
+  }
+  if (els.quizMeaning) els.quizMeaning.textContent = current.meaning;
+  if (els.quizSynonym) els.quizSynonym.textContent = current.synonym || "—";
+  if (els.quizAntonym) els.quizAntonym.textContent = current.antonym || "—";
+  if (els.quizSentence) els.quizSentence.textContent = current.sentence || "—";
+  if (els.quizAnswerWord) els.quizAnswerWord.textContent = current.word;
+
+  if (els.quizTypeArea) els.quizTypeArea.hidden = !isType;
+  if (els.quizMcqArea) els.quizMcqArea.hidden = !isMcq;
+  if (isType && els.quizTypeInput) {
+    els.quizTypeInput.value = "";
+    els.quizTypeInput.disabled = false;
+    if (els.quizTypeFeedback) els.quizTypeFeedback.hidden = true;
+  }
+  if (isMcq) renderQuizMcq(current, pool);
+
+  const showFullAnswer = state.quizRevealed && !isMcq;
+  if (els.quizAnswer) els.quizAnswer.hidden = !showFullAnswer;
+  if (els.quizAnswerWordRow) {
+    els.quizAnswerWordRow.hidden = isFlashcard;
+  }
+
+  if (els.quizRevealBtn) {
+    els.quizRevealBtn.hidden = isMcq || isType || state.quizRevealed;
+    els.quizRevealBtn.textContent =
+      isReverse || isType ? "Show word" : "Show answer";
+  }
+  if (els.quizKnowBtn) els.quizKnowBtn.hidden = isMcq || isType || !state.quizRevealed;
+  if (els.quizAgainBtn) els.quizAgainBtn.hidden = isMcq || isType || !state.quizRevealed;
+  if (els.quizSpeakBtn) els.quizSpeakBtn.hidden = isReverse || isType || isMcq;
+
+  if (els.quizShortcutsHint) {
+    els.quizShortcutsHint.hidden = isMcq;
+  }
+
+  if (els.quizStatusText) {
+    els.quizStatusText.textContent = `${describeQuizScope()} · ${describeQuizMode()}`;
+  }
+  if (els.quizProgressText) {
+    els.quizProgressText.textContent = `Card ${Math.min(
+      state.quizSessionStats.known + state.quizSessionStats.again + 1,
+      state.quizSessionStats.total || state.quizQueue.length,
+    )} of ${state.quizSessionStats.total || state.quizQueue.length}`;
+  }
+  updateQuizProgressBar();
+  startQuizCardTimer();
+};
+
+const prepareQuiz = ({ forceAll = false, preserveForce = false, limit = null } = {}) => {
   if (!preserveForce) state.quizForceAll = forceAll;
   else if (forceAll) state.quizForceAll = true;
+
+  if (limit != null) state.quizSessionLimit = limit;
+  else if (!preserveForce) state.quizSessionLimit = null;
+
+  hideQuizSummary();
+  clearQuizCardTimer();
 
   const pool = getQuizWordPool();
   const useAllInScope =
     state.quizForceAll ||
     state.quizScope === "all" ||
+    state.quizScope === "favorites" ||
+    state.quizScope === "weak" ||
     String(state.quizScope).startsWith("topic:");
 
   const due = useAllInScope
     ? pool.map((item) => ({ item }))
     : getDueWords(pool);
 
-  const SESSION_SIZE = 15;
   state.quizQueue = shuffle(due.map(({ item }) => item));
-  if (!useAllInScope) {
-    state.quizQueue = state.quizQueue.slice(0, SESSION_SIZE);
+  const sessionCap = state.quizSessionLimit || QUIZ_SESSION_SIZE;
+  if (!useAllInScope || state.quizSessionLimit) {
+    state.quizQueue = state.quizQueue.slice(0, sessionCap);
+  } else if (useAllInScope && !String(state.quizScope).startsWith("topic:")) {
+    state.quizQueue = state.quizQueue.slice(0, sessionCap);
   }
+
+  resetQuizSessionStats(state.quizQueue.length);
   state.quizIndex = 0;
   state.quizRevealed = false;
-  renderQuizCard();
+  try {
+    renderQuizCard();
+  } catch (error) {
+    console.error("Quiz render failed", error);
+  }
   renderHomeStats();
 };
 
 const startTopicQuiz = (topicTitle) => {
   state.quizScope = `topic:${topicTitle}`;
+  state.quizSessionLimit = null;
   if (els.quizScopeSelect) {
     populateQuizScopeSelect();
     els.quizScopeSelect.value = state.quizScope;
   }
+  persistQuizSettings();
   switchPage("quiz", { replace: false });
   prepareQuiz({ forceAll: true });
+};
+
+const startTopicExam = (topicTitle) => {
+  state.quizScope = `topic:${topicTitle}`;
+  state.quizMode = "flashcard";
+  syncQuizControlsFromState();
+  if (els.quizScopeSelect) {
+    populateQuizScopeSelect();
+    els.quizScopeSelect.value = state.quizScope;
+  }
+  persistQuizSettings();
+  switchPage("quiz", { replace: false });
+  prepareQuiz({ forceAll: true, limit: 10 });
+};
+
+const reviewMissedQuiz = () => {
+  const missedWords = state.quizSessionStats.missed;
+  if (!missedWords.length) return;
+  const lookup = new Map(
+    vocabularyData.map((item) => [item.word.toLowerCase(), item]),
+  );
+  state.quizQueue = missedWords
+    .map((word) => lookup.get(word.toLowerCase()))
+    .filter(Boolean);
+  resetQuizSessionStats(state.quizQueue.length);
+  state.quizIndex = 0;
+  state.quizRevealed = false;
+  state.quizForceAll = true;
+  hideQuizSummary();
+  renderQuizCard();
 };
 
 const advanceQuiz = (knewIt) => {
   const current = currentQuizItem();
   if (!current) return;
+
+  clearQuizCardTimer();
+  recordStudyActivity();
+
+  if (knewIt) state.quizSessionStats.known += 1;
+  else {
+    state.quizSessionStats.again += 1;
+    if (!state.quizSessionStats.missed.includes(current.word)) {
+      state.quizSessionStats.missed.push(current.word);
+    }
+  }
+
   gradeWord(current.word, knewIt);
+
+  if (!knewIt && state.quizRequeueMissed) {
+    state.quizQueue.push(current);
+  }
+
   state.quizIndex += 1;
   state.quizRevealed = false;
   renderQuizCard();
   renderHomeStats();
+};
+
+const checkTypedQuizAnswer = () => {
+  const current = currentQuizItem();
+  if (!current || state.quizMode !== "type" || state.quizTypeChecked) return;
+
+  const typed = els.quizTypeInput?.value || "";
+  const correct = wordsMatchTyped(typed, current.word);
+  state.quizTypeChecked = true;
+  if (els.quizTypeInput) els.quizTypeInput.disabled = true;
+
+  if (els.quizTypeFeedback) {
+    els.quizTypeFeedback.hidden = false;
+    els.quizTypeFeedback.textContent = correct
+      ? "Correct!"
+      : `Not quite — the word was “${current.word}”.`;
+    els.quizTypeFeedback.classList.toggle("is-success", correct);
+    els.quizTypeFeedback.classList.toggle("is-error", !correct);
+  }
+
+  state.quizRevealed = true;
+  els.quizAnswer.hidden = false;
+  if (els.quizAnswerWordRow) els.quizAnswerWordRow.hidden = false;
+  els.quizWordRow.hidden = false;
+  els.quizWord.textContent = current.word;
+  els.quizPronunciation.textContent = current.pronunciation
+    ? `/${current.pronunciation}/`
+    : "";
+  els.quizRevealBtn.hidden = true;
+  els.quizKnowBtn.hidden = false;
+  els.quizAgainBtn.hidden = false;
+
+  if (correct) {
+    setTimeout(() => advanceQuiz(true), 650);
+  }
+};
+
+const buildPrintExamSheet = () => {
+  if (!els.quizPrintSheet) return;
+  const pool = shuffle(getQuizWordPool()).slice(0, 30);
+  const wordsHtml = pool
+    .map(
+      (item, index) =>
+        `<tr><td>${index + 1}.</td><td class="print-blank"></td><td>${escapeHtml(item.category)}</td></tr>`,
+    )
+    .join("");
+  const answersHtml = pool
+    .map(
+      (item, index) =>
+        `<tr><td>${index + 1}.</td><td><strong>${escapeHtml(item.word)}</strong></td><td>${escapeHtml(item.meaning)}</td></tr>`,
+    )
+    .join("");
+
+  els.quizPrintSheet.innerHTML = `
+    <div class="quiz-print-page">
+      <h1>IMX Exam Sheet — Words</h1>
+      <p>${escapeHtml(describeQuizScope())} · ${new Date().toLocaleDateString()}</p>
+      <table><thead><tr><th>#</th><th>Your word</th><th>Category</th></tr></thead><tbody>${wordsHtml}</tbody></table>
+    </div>
+    <div class="quiz-print-page quiz-print-page--answers">
+      <h1>Answer key</h1>
+      <table><thead><tr><th>#</th><th>Word</th><th>Meaning</th></tr></thead><tbody>${answersHtml}</tbody></table>
+    </div>
+  `;
+  els.quizPrintSheet.hidden = false;
+  window.print();
+  els.quizPrintSheet.hidden = true;
+};
+
+const renderQuote = () => {
+  const quote =
+    MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)];
+  fadeText(els.motivationQuote, quote);
 };
 
 const isTypingTarget = (target) => {
@@ -1153,7 +1647,11 @@ const importBackup = async (file) => {
   }
 };
 
+let listenersReady = false;
+
 const attachListeners = () => {
+  if (listenersReady) return;
+  listenersReady = true;
   els.navLinks.forEach((button) => {
     button.addEventListener("click", () =>
       switchPage(button.dataset.page, { replace: false }),
@@ -1173,80 +1671,124 @@ const attachListeners = () => {
     });
   });
 
-  els.globalSearchInput.addEventListener("input", (event) => {
+  els.globalSearchInput?.addEventListener("input", (event) => {
     state.searchTerm = event.target.value;
     applySearch();
   });
 
-  els.themeToggle.addEventListener("click", () => {
+  els.themeToggle?.addEventListener("click", () => {
     const next = document.body.classList.contains("light") ? "dark" : "light";
     applyTheme(next);
     saveTheme();
   });
 
-  els.newQuoteBtn.addEventListener("click", renderQuote);
-  els.addWordBtn.addEventListener("click", () => openWordModal());
-  els.addTopicBtn.addEventListener("click", () => openTopicModal());
+  els.newQuoteBtn?.addEventListener("click", renderQuote);
+  els.addWordBtn?.addEventListener("click", () => openWordModal());
+  els.addTopicBtn?.addEventListener("click", () => openTopicModal());
 
-  els.vocabFavoriteToggle.addEventListener("click", () => {
+  els.vocabFavoriteToggle?.addEventListener("click", () => {
     state.vocabFavoritesOnly = !state.vocabFavoritesOnly;
     els.vocabFavoriteToggle.classList.toggle("active", state.vocabFavoritesOnly);
     renderVocabulary();
   });
 
-  els.topicFavoriteToggle.addEventListener("click", () => {
+  els.topicFavoriteToggle?.addEventListener("click", () => {
     state.topicFavoritesOnly = !state.topicFavoritesOnly;
     els.topicFavoriteToggle.classList.toggle("active", state.topicFavoritesOnly);
     renderTopics();
   });
 
-  els.vocabSortSelect.addEventListener("change", (event) => {
+  els.vocabSortSelect?.addEventListener("change", (event) => {
     state.vocabSort = event.target.value;
     renderVocabulary();
   });
 
-  els.quizRevealBtn.addEventListener("click", () => {
+  els.quizRevealBtn?.addEventListener("click", () => {
     state.quizRevealed = true;
     renderQuizCard();
   });
-  els.quizKnowBtn.addEventListener("click", () => advanceQuiz(true));
-  els.quizAgainBtn.addEventListener("click", () => advanceQuiz(false));
-  els.quizSpeakBtn.addEventListener("click", () => {
+  els.quizKnowBtn?.addEventListener("click", () => advanceQuiz(true));
+  els.quizAgainBtn?.addEventListener("click", () => advanceQuiz(false));
+  els.quizSpeakBtn?.addEventListener("click", () => {
     const current = currentQuizItem();
     if (current) speakWord(current.word);
   });
-  els.quizRestartBtn.addEventListener("click", () => prepareQuiz({ forceAll: true }));
+  els.quizRestartBtn?.addEventListener("click", () => prepareQuiz({ forceAll: true }));
   els.quizScopeSelect?.addEventListener("change", (event) => {
     state.quizScope = event.target.value;
+    persistQuizSettings();
     prepareQuiz({
       forceAll:
-        state.quizScope === "all" || String(state.quizScope).startsWith("topic:"),
+        state.quizScope === "all" ||
+        state.quizScope === "favorites" ||
+        state.quizScope === "weak" ||
+        String(state.quizScope).startsWith("topic:"),
     });
   });
 
-  els.exportBtn.addEventListener("click", exportBackup);
-  els.importFileInput.addEventListener("change", (event) => {
+  els.quizModeSelect?.addEventListener("change", (event) => {
+    state.quizMode = event.target.value;
+    persistQuizSettings();
+    state.quizRevealed = false;
+    renderQuizCard();
+  });
+
+  els.quizCategorySelect?.addEventListener("change", (event) => {
+    state.quizCategoryFilter = event.target.value;
+    persistQuizSettings();
+    prepareQuiz({ preserveForce: true, forceAll: state.quizForceAll });
+  });
+
+  els.quizTimerToggle?.addEventListener("change", (event) => {
+    state.quizTimerEnabled = event.target.checked;
+    persistQuizSettings();
+    startQuizCardTimer();
+  });
+
+  els.quizRequeueToggle?.addEventListener("change", (event) => {
+    state.quizRequeueMissed = event.target.checked;
+    persistQuizSettings();
+  });
+
+  els.quizCheckTypeBtn?.addEventListener("click", checkTypedQuizAnswer);
+  els.quizTypeInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      checkTypedQuizAnswer();
+    }
+  });
+
+  els.quizReviewMissedBtn?.addEventListener("click", reviewMissedQuiz);
+  els.quizNewSessionBtn?.addEventListener("click", () =>
+    prepareQuiz({ forceAll: state.quizForceAll }),
+  );
+  els.quizPrintBtn?.addEventListener("click", buildPrintExamSheet);
+
+  els.exportBtn?.addEventListener("click", exportBackup);
+  els.importFileInput?.addEventListener("change", (event) => {
     const file = event.target.files?.[0];
     if (file) importBackup(file);
     event.target.value = "";
   });
 
-  els.modalRoot.addEventListener("click", (event) => {
+  els.modalRoot?.addEventListener("click", (event) => {
     if (event.target.matches("[data-close-modal]")) closeModal();
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !els.modalRoot.hidden) {
+    if (event.key === "Escape" && els.modalRoot && !els.modalRoot.hidden) {
       closeModal();
       return;
     }
 
-    if (state.activePage !== "quiz" || !els.modalRoot.hidden) return;
-    if (isTypingTarget(event.target)) return;
+    if (state.activePage !== "quiz" || (els.modalRoot && !els.modalRoot.hidden)) return;
+    if (isTypingTarget(event.target) && state.quizMode !== "type") return;
 
     if (event.key === " " || event.code === "Space") {
       event.preventDefault();
       if (!currentQuizItem()) return;
+      if (state.quizMode === "mcq") return;
+      if (state.quizMode === "type" && !state.quizTypeChecked) return;
       if (!state.quizRevealed) {
         state.quizRevealed = true;
         renderQuizCard();
@@ -1270,19 +1812,33 @@ const attachListeners = () => {
 const init = async () => {
   loadTheme();
   await loadData();
+  attachListeners();
 
-  const page = new URL(window.location.href).searchParams.get("page");
-  switchPage(page && document.getElementById(page) ? page : "home");
-
+  applyQuizSettingsFromState();
   renderCategoryButtons();
   populateQuizScopeSelect();
+  populateQuizCategorySelect();
+  syncQuizControlsFromState();
+  if (els.quizScopeSelect) els.quizScopeSelect.value = state.quizScope;
+
+  const page = new URL(window.location.href).searchParams.get("page");
+  switchPage(page && document.getElementById(page) ? page : "home", {
+    updateHistory: false,
+  });
+
   renderHomeStats();
   renderVocabulary();
   renderTopics();
   renderFavorites();
-  prepareQuiz();
+  try {
+    prepareQuiz({ preserveForce: true });
+  } catch (error) {
+    console.error("Quiz setup failed", error);
+  }
   renderQuote();
-  attachListeners();
 };
 
-init();
+init().catch((error) => {
+  console.error("App failed to start", error);
+  attachListeners();
+});

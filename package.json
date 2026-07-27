@@ -1,0 +1,20 @@
+{
+  "name": "website-for-lessons",
+  "version": "1.0.0",
+  "description": "Personal English study journal for vocabulary, presentation topics, quizzes, favorites, and daily motivation quotes.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Noori-codes/Imx-vocabularies.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Noori-codes/Imx-vocabularies/issues"
+  },
+  "homepage": "https://github.com/Noori-codes/Imx-vocabularies#readme"
+}

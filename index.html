@@ -79,7 +79,7 @@
           <button class="nav-link active" data-page="home">Home</button>
           <button class="nav-link" data-page="vocabulary">Vocabulary</button>
           <button class="nav-link" data-page="topics">Topics</button>
-          <button class="nav-link" data-page="quiz">Quiz</button>
+          <button class="nav-link" data-page="quiz">Exam practice</button>
           <button class="nav-link" data-page="favorites">Favorites</button>
           <button class="nav-link nav-link--secondary" data-page="data">Data</button>
           <button class="nav-link nav-link--secondary" data-page="about">About</button>
@@ -98,7 +98,7 @@
               </p>
               <div class="hero-actions">
                 <button type="button" class="primary-btn" data-jump="quiz">
-                  Start quiz
+                  Start exam
                 </button>
                 <button type="button" class="ghost-btn" data-jump="vocabulary">
                   Browse words
@@ -107,9 +107,8 @@
             </div>
             <aside class="hero-aside" aria-label="Study note">
               <p class="hero-aside__label">Today</p>
-              <p class="hero-aside__text">
-                Review a few due words, then add one new idea from your latest
-                presentation.
+              <p class="hero-aside__text" id="homeStudyStreak">
+                Open exam practice when you are ready.
               </p>
             </aside>
           </div>
@@ -203,33 +202,83 @@
           <div class="page-header">
             <div>
               <p class="eyebrow">Practice</p>
-              <h2>Vocabulary quiz</h2>
+              <h2>Exam practice</h2>
             </div>
-            <div class="page-controls">
-              <label class="select-wrap">
-                <span>Scope</span>
-                <select id="quizScopeSelect">
-                  <option value="due">Due words</option>
-                  <option value="all">All vocabulary</option>
-                </select>
-              </label>
-              <button id="quizRestartBtn" class="ghost-btn" type="button">
-                Restart session
-              </button>
+            <div class="page-controls quiz-page-controls">
+              <div class="quiz-toolbar">
+                <label class="select-wrap">
+                  <span>Mode</span>
+                  <select id="quizModeSelect">
+                    <option value="flashcard">Word → meaning</option>
+                    <option value="reverse">Meaning → word</option>
+                    <option value="type">Type the word</option>
+                    <option value="mcq">Pick the word</option>
+                  </select>
+                </label>
+                <label class="select-wrap">
+                  <span>Scope</span>
+                  <select id="quizScopeSelect">
+                    <option value="due">Due words</option>
+                    <option value="all">All vocabulary</option>
+                  </select>
+                </label>
+                <label class="select-wrap">
+                  <span>Category</span>
+                  <select id="quizCategorySelect">
+                    <option value="All">All categories</option>
+                  </select>
+                </label>
+                <div class="quiz-toolbar__extras">
+                  <label class="checkbox-wrap">
+                    <input id="quizTimerToggle" type="checkbox" />
+                    <span>20s timer</span>
+                  </label>
+                  <label class="checkbox-wrap">
+                    <input id="quizRequeueToggle" type="checkbox" checked />
+                    <span>Re-queue missed</span>
+                  </label>
+                  <button id="quizPrintBtn" class="ghost-btn" type="button">
+                    Print sheet
+                  </button>
+                  <button id="quizRestartBtn" class="ghost-btn" type="button">
+                    Restart session
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
+          <div class="quiz-body">
+          <div class="quiz-status-block">
           <div class="quiz-meta">
-            <p id="quizStatusText">Loading quiz…</p>
+            <p id="quizStatusText">Loading exam…</p>
             <p id="quizProgressText"></p>
           </div>
+          <div
+            id="quizProgressBar"
+            class="quiz-progress-bar"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+            hidden
+          >
+            <div id="quizProgressFill" class="quiz-progress-bar__fill"></div>
+          </div>
+          <p id="quizTimerText" class="quiz-timer" hidden></p>
           <p class="quiz-shortcuts" id="quizShortcutsHint">
             Shortcuts: <kbd>Space</kbd> reveal · <kbd>1</kbd> know · <kbd>2</kbd> again
           </p>
+          </div>
 
           <div id="quizCard" class="quiz-card" hidden>
-            <p class="quiz-label">Word</p>
-            <div class="quiz-word-row">
+            <div class="quiz-card__head">
+              <p class="quiz-label" id="quizPromptLabel">Word</p>
+              <p id="quizCategory" class="category-pill quiz-card__pill"></p>
+            </div>
+
+            <div class="quiz-card__main">
+            <div class="quiz-word-row" id="quizWordRow">
               <h3 id="quizWord"></h3>
               <button
                 id="quizSpeakBtn"
@@ -255,10 +304,34 @@
                 </span>
               </button>
             </div>
+            <p id="quizPromptText" class="quiz-prompt-text" hidden></p>
             <p id="quizPronunciation" class="quiz-pronunciation"></p>
-            <p id="quizCategory" class="category-pill"></p>
+            </div>
+
+            <div id="quizTypeArea" class="quiz-type-area" hidden>
+              <label class="quiz-type-label" for="quizTypeInput">Your answer</label>
+              <div class="quiz-type-row">
+                <input
+                  id="quizTypeInput"
+                  class="quiz-type-input"
+                  type="text"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Type the word…"
+                />
+                <button id="quizCheckTypeBtn" class="primary-btn" type="button">
+                  Check
+                </button>
+              </div>
+              <p id="quizTypeFeedback" class="quiz-type-feedback" hidden></p>
+            </div>
+
+            <div id="quizMcqArea" class="quiz-mcq-grid" hidden></div>
 
             <div id="quizAnswer" class="quiz-answer" hidden>
+              <p id="quizAnswerWordRow" hidden>
+                <strong>Word:</strong> <span id="quizAnswerWord"></span>
+              </p>
               <p><strong>Meaning:</strong> <span id="quizMeaning"></span></p>
               <p><strong>Synonym:</strong> <span id="quizSynonym"></span></p>
               <p><strong>Antonym:</strong> <span id="quizAntonym"></span></p>
@@ -267,7 +340,7 @@
 
             <div class="quiz-actions">
               <button id="quizRevealBtn" class="primary-btn" type="button">
-                Show meaning
+                Show answer
               </button>
               <button id="quizKnowBtn" class="success-btn" type="button" hidden>
                 I know it
@@ -278,12 +351,32 @@
             </div>
           </div>
 
-          <div id="quizEmpty" class="empty-state">
+          <div id="quizSummary" class="quiz-summary" hidden>
+            <h3>Session complete</h3>
+            <p id="quizSummaryStats" class="quiz-summary__stats"></p>
+            <div id="quizSummaryMissedWrap" class="quiz-summary__missed" hidden>
+              <p class="quiz-summary__label">Review these words:</p>
+              <ul id="quizSummaryMissed"></ul>
+            </div>
+            <div class="quiz-summary__actions">
+              <button id="quizReviewMissedBtn" class="primary-btn" type="button" hidden>
+                Review missed
+              </button>
+              <button id="quizNewSessionBtn" class="ghost-btn" type="button">
+                New session
+              </button>
+            </div>
+          </div>
+
+          <div id="quizEmpty" class="empty-state quiz-empty">
             <h3>You're caught up</h3>
             <p>
               No words are due right now. Come back later or restart to practice
               everything.
             </p>
+          </div>
+
+          <div id="quizPrintSheet" class="quiz-print-sheet" hidden aria-hidden="true"></div>
           </div>
         </section>
 
