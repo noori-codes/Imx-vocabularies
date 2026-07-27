@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div id="appBanner" class="app-banner" hidden role="status"></div>
     <div class="page-shell">
       <header class="topbar">
         <div class="brand">
@@ -443,6 +444,9 @@
                   hidden
                 />
               </label>
+              <button id="restoreBuiltInBtn" class="ghost-btn" type="button">
+                Restore built-in library
+              </button>
               <p id="importStatus" class="data-status" role="status"></p>
             </article>
           </div>

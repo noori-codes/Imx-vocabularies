@@ -134,6 +134,8 @@ const els = {
   modalRoot: document.getElementById("modalRoot"),
   modalTitle: document.getElementById("modalTitle"),
   modalBody: document.getElementById("modalBody"),
+  appBanner: document.getElementById("appBanner"),
+  restoreBuiltInBtn: document.getElementById("restoreBuiltInBtn"),
 };
 
 const favoriteWords = new Set(readStringList(STORAGE.favoritesWords));
@@ -584,18 +586,83 @@ const openTopicModal = (item = null) => {
   });
 };
 
-const DATA_VERSION = "2026-07-27-exam";
+const DATA_VERSION = "2026-07-27-tech-topic-v2";
+
+const importDataModule = async (path) => {
+  try {
+    return await import(`${path}?v=${DATA_VERSION}`);
+  } catch (firstError) {
+    console.warn(`Import failed for ${path} (versioned), retrying…`, firstError);
+    return import(path);
+  }
+};
+
+const showAppBanner = (message, { variant = "info" } = {}) => {
+  if (!els.appBanner) return;
+  els.appBanner.textContent = message;
+  els.appBanner.hidden = false;
+  els.appBanner.dataset.variant = variant;
+};
+
+const hideAppBanner = () => {
+  if (!els.appBanner) return;
+  els.appBanner.hidden = true;
+  els.appBanner.textContent = "";
+};
+
+const clearViewFilters = () => {
+  state.searchTerm = "";
+  state.vocabFavoritesOnly = false;
+  state.topicFavoritesOnly = false;
+  state.vocabCategory = "All";
+  if (els.globalSearchInput) els.globalSearchInput.value = "";
+  els.vocabFavoriteToggle?.classList.remove("active");
+  els.topicFavoriteToggle?.classList.remove("active");
+  renderCategoryButtons();
+  renderVocabulary();
+  renderTopics();
+  renderFavorites();
+};
+
+const restoreBuiltInLibrary = () => {
+  writeJson(STORAGE.deletedWords, []);
+  writeJson(STORAGE.deletedTopics, []);
+  refreshAll();
+  hideAppBanner();
+  if (els.importStatus) {
+    els.importStatus.textContent = "Built-in words and topics restored.";
+  }
+};
 
 const loadData = async () => {
+  if (window.location.protocol === "file:") {
+    showAppBanner(
+      "Data cannot load from a file on disk. Run python3 -m http.server in the project folder, then open http://localhost:8000",
+      { variant: "error" },
+    );
+    return false;
+  }
+
   try {
-    // Bump DATA_VERSION when you edit data files so browsers pick up changes.
     const [vocabModule, topicsModule] = await Promise.all([
-      import(`./data/vocabulary.js?v=${DATA_VERSION}`),
-      import(`./data/topics.js?v=${DATA_VERSION}`),
+      importDataModule("./data/vocabulary.js"),
+      importDataModule("./data/topics.js"),
     ]);
     baseVocabulary = vocabModule.vocabularyData || [];
     baseTopics = topicsModule.topicData || [];
+    if (!baseVocabulary.length || !baseTopics.length) {
+      throw new Error("Built-in library files loaded empty");
+    }
     rebuildLibrary();
+
+    if (vocabularyData.length === 0 && baseVocabulary.length > 0) {
+      showAppBanner(
+        "Your library looks empty because many words may be marked deleted. Go to Data → Restore built-in library, or clear search and turn off Favorites only.",
+        { variant: "warn" },
+      );
+    } else {
+      hideAppBanner();
+    }
 
     let seededFavorites = false;
     let seededCompleted = false;
@@ -611,12 +678,19 @@ const loadData = async () => {
     });
     if (seededFavorites) saveFavorites();
     if (seededCompleted) saveCompletedTopics();
+    return true;
   } catch (error) {
     console.error("Failed to load data modules", error);
+    showAppBanner(
+      `Could not load vocabulary or topics (${error.message || "unknown error"}). Hard-refresh the page (Ctrl+Shift+R).`,
+      { variant: "error" },
+    );
+    return false;
   }
 };
 
 const renderCategoryButtons = () => {
+  if (!els.vocabCategoryButtons) return;
   const categories = ["All", ...CATEGORIES];
   els.vocabCategoryButtons.innerHTML = "";
 
@@ -734,6 +808,7 @@ const createVocabCard = (item, { compact = false } = {}) => {
 };
 
 const renderVocabulary = () => {
+  if (!els.vocabGrid || !els.vocabResultsText) return;
   const filtered = filterVocabulary();
   els.vocabGrid.innerHTML = "";
   els.vocabResultsText.textContent = `Showing ${filtered.length} vocabulary words`;
@@ -741,10 +816,13 @@ const renderVocabulary = () => {
   if (!filtered.length) {
     const fallback = document.createElement("div");
     fallback.className = "empty-state";
-    fallback.innerHTML = `
-      <h3>No vocabulary found</h3>
-      <p>Try a different search term or category, or add a new word.</p>
-    `;
+    fallback.innerHTML = emptyStateWithFiltersHint(
+      vocabularyData.length ? "No vocabulary found" : "Vocabulary not loaded",
+      vocabularyData.length
+        ? "Try a different search term or category, or add a new word."
+        : "Use a local server (python3 -m http.server) and hard-refresh the page.",
+    );
+    fallback.querySelector("[data-clear-filters]")?.addEventListener("click", clearViewFilters);
     els.vocabGrid.appendChild(fallback);
     return;
   }
@@ -764,8 +842,8 @@ const filterTopics = () => {
       topic.summary,
       topic.notes,
       topic.date,
-      topic.vocabulary.join(" "),
-      topic.questions.join(" "),
+      (topic.vocabulary || []).join(" "),
+      (topic.questions || []).join(" "),
     ]
       .join(" ")
       .toLowerCase();
@@ -773,7 +851,22 @@ const filterTopics = () => {
   });
 };
 
+const emptyStateWithFiltersHint = (title, detail) => {
+  const hasLibrary = vocabularyData.length > 0 || topicData.length > 0;
+  const filteredBySearch =
+    state.searchTerm.trim() ||
+    state.vocabFavoritesOnly ||
+    state.topicFavoritesOnly ||
+    state.vocabCategory !== "All";
+  const extra =
+    hasLibrary && filteredBySearch
+      ? `<p><button type="button" class="ghost-btn" data-clear-filters>Clear search &amp; filters</button></p>`
+      : "";
+  return `<h3>${title}</h3><p>${detail}</p>${extra}`;
+};
+
 const renderTopics = () => {
+  if (!els.topicGrid || !els.topicResultsText) return;
   const filtered = filterTopics();
   els.topicGrid.innerHTML = "";
   const completedCount = topicData.filter((topic) => isTopicCompleted(topic)).length;
@@ -782,10 +875,13 @@ const renderTopics = () => {
   if (!filtered.length) {
     const empty = document.createElement("div");
     empty.className = "empty-state";
-    empty.innerHTML = `
-      <h3>No topics match your search</h3>
-      <p>Try broadening the search term or add a new topic.</p>
-    `;
+    empty.innerHTML = emptyStateWithFiltersHint(
+      topicData.length ? "No topics match your filters" : "Topics not loaded",
+      topicData.length
+        ? "Try broadening the search term or add a new topic."
+        : "Use a local server (python3 -m http.server) and hard-refresh the page.",
+    );
+    empty.querySelector("[data-clear-filters]")?.addEventListener("click", clearViewFilters);
     els.topicGrid.appendChild(empty);
     return;
   }
@@ -1764,6 +1860,17 @@ const attachListeners = () => {
   );
   els.quizPrintBtn?.addEventListener("click", buildPrintExamSheet);
 
+  els.restoreBuiltInBtn?.addEventListener("click", () => {
+    if (
+      !confirm(
+        "Restore all built-in words and topics? This clears your deletion list (custom words are kept).",
+      )
+    ) {
+      return;
+    }
+    restoreBuiltInLibrary();
+  });
+
   els.exportBtn?.addEventListener("click", exportBackup);
   els.importFileInput?.addEventListener("change", (event) => {
     const file = event.target.files?.[0];
@@ -1811,10 +1918,10 @@ const attachListeners = () => {
 
 const init = async () => {
   loadTheme();
-  await loadData();
+  const dataOk = await loadData();
   attachListeners();
 
-  applyQuizSettingsFromState();
+  applyQuizSettingsToState();
   renderCategoryButtons();
   populateQuizScopeSelect();
   populateQuizCategorySelect();
@@ -1826,16 +1933,20 @@ const init = async () => {
     updateHistory: false,
   });
 
-  renderHomeStats();
-  renderVocabulary();
-  renderTopics();
-  renderFavorites();
-  try {
-    prepareQuiz({ preserveForce: true });
-  } catch (error) {
-    console.error("Quiz setup failed", error);
+  if (dataOk) {
+    renderHomeStats();
+    renderVocabulary();
+    renderTopics();
+    renderFavorites();
+    try {
+      prepareQuiz({ preserveForce: true });
+    } catch (error) {
+      console.error("Quiz setup failed", error);
+    }
+    renderQuote();
+  } else {
+    renderHomeStats();
   }
-  renderQuote();
 };
 
 init().catch((error) => {

@@ -119,6 +119,32 @@ h4,
   padding: var(--space-3) var(--space-3) var(--space-4);
 }
 
+.app-banner {
+  max-width: 1120px;
+  margin: var(--space-2) auto 0;
+  padding: 0 var(--space-3);
+}
+
+.app-banner:not([hidden]) {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface));
+  color: var(--text);
+  line-height: 1.55;
+  font-size: 0.92rem;
+}
+
+.app-banner[data-variant="error"] {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+}
+
+.app-banner[data-variant="warn"] {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
 .page-content,
 .page--active,
 .favorites-section,

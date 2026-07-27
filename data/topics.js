@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Is Technology Solving Problems or Creating New Ones?",
+    date: "2026-07-25",
+    completed: false,
+    vocabulary: [
+      "Automation",
+      "Dependency",
+      "Cybersecurity",
+      "Innovation",
+      "Efficiency",
+      "Surveillance",
+      "Misinformation",
+      "Ethics",
+      "Connectivity",
+      "Sustainability",
+    ],
+    summary:
+      "This topic examines the double-edged nature of technology. While technological advancements improve healthcare, education, communication, and productivity, they also introduce challenges such as cybersecurity threats, misinformation, privacy concerns, and increasing dependence on digital devices.",
+    notes:
+      "Technology is a powerful tool, but its impact depends on how people use it. It can solve complex global problems and improve quality of life, yet it also creates ethical, social, and environmental challenges. The goal should not be to reject technology but to use it responsibly.",
+    questions: [
+      "Has technology improved our quality of life?",
+      "What new problems has technology created?",
+      "Can society become too dependent on technology?",
+      "Should governments regulate new technologies more strictly?",
+      "How can we ensure technology benefits future generations?",
+    ],
+  }),
+
+  createTopic({
     title: "Is Curiosity the Key to Intelligence?",
     date: "2026-07-24",
     vocabulary: [

@@ -11,6 +11,7 @@ export const formatDate = (isoString) => {
 };
 
 export const fadeText = (element, nextText) => {
+  if (!element) return;
   element.classList.add("text-fade-out");
   window.setTimeout(() => {
     element.textContent = nextText;
