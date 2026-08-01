@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Can a Person Change Their Destiny?",
+    date: "2026-08-02",
+    completed: false,
+    vocabulary: [
+      "Destiny",
+      "Fate",
+      "Free Will",
+      "Determination",
+      "Perseverance",
+      "Opportunity",
+      "Potential",
+      "Transformation",
+      "Conviction",
+      "Resilience",
+    ],
+    summary:
+      "This topic explores whether people's lives are determined by fate or shaped by their own choices. It examines the roles of free will, determination, opportunity, and resilience in achieving personal goals and overcoming obstacles.",
+    notes:
+      "Some believe destiny is fixed, while others believe every decision influences the future. Hard work, perseverance, and a willingness to change can transform a person's life, even when circumstances seem impossible. Although we cannot control everything that happens to us, we can control how we respond.",
+    questions: [
+      "Can people truly change their destiny?",
+      "Is success determined by fate or by personal effort?",
+      "How do our daily choices shape our future?",
+      "Can one decision completely change a person's life?",
+      "What role does resilience play in changing someone's destiny?",
+    ],
+  }),
+
+  createTopic({
     title: "Is Technology Solving Problems or Creating New Ones?",
     date: "2026-07-25",
     completed: false,
