@@ -18,14 +18,20 @@ Then visit `http://localhost:8080`.
 
 ## Features
 
-- **Vocabulary & topics** with search, filters, and favorites
+- **Vocabulary & topics** with search, filters, favorites, and share/copy
+- **Word ↔ topic linking** — open a word from a topic, see “Appears in” on vocab cards
 - **In-app add/edit/delete** for words and topics (saved in `localStorage`)
-- **Spaced-repetition quiz** with topic practice, keyboard shortcuts, and Know / Not yet scheduling
-- **Topic completion** tracking in the Topics page
+- **Lesson template** — start a new topic with vocab + question placeholders
+- **Missing vocab warnings** when a topic lists words not in the library
+- **Spaced-repetition quiz** with flashcard, reverse, type, MCQ, and cloze modes
+- **Topic practice** — practice words or a 10-card exam from any topic
+- **Speaking practice** — timed discussion-question drills per topic
+- **Weak words** on Home plus a one-tap review session
+- **Session summary** with missed-word review
 - **Pronunciation** via dictionary audio / browser TTS fallbacks
-- **Export / import** JSON backups on the Data page
+- **Export / import** JSON backups with a weekly reminder
+- **Installable PWA** for offline use
 - **8 focused categories:** Emotions, Mindset, Character, Learning, Speaking, Lifestyle, Society, Growth
-- **Ink-journal visual style:** Literata + Manrope, warm charcoal/amber palette, category color accents
 
 ## Project structure
 
@@ -33,9 +39,15 @@ Then visit `http://localhost:8080`.
 index.html
 app.js
 styles.css
+manifest.webmanifest
+sw.js
 components/
   helpers.js
-  storage.js          # localStorage merge, quiz, import/export
+  storage.js          # localStorage merge, quiz, import/export, streaks
+  dom.js              # HTML helpers + icons
+  speech.js           # pronunciation
+  share.js            # share / clipboard
+  cloze.js            # fill-in-the-blank prompts
 data/
   vocabulary.js       # base vocabulary
   topics.js           # base topics
@@ -45,6 +57,6 @@ IMX-logo.png
 
 ## Add content
 
-- Prefer the **Add word** / **Add topic** buttons in the UI
+- Prefer the **Add word** / **Add topic** / **From template** buttons in the UI
 - Or edit `data/vocabulary.js` and `data/topics.js` for permanent base content
 - Custom edits, favorites, quiz progress, and deletions stay in the browser until you export a backup

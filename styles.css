@@ -1600,6 +1600,7 @@ body.light .form-grid select option {
   font-size: clamp(1.25rem, 3vw, 1.45rem);
   line-height: 1.45;
   color: var(--text);
+  white-space: pre-wrap;
 }
 
 .quiz-type-area {
@@ -1770,3 +1771,197 @@ body.light .form-grid select option {
     min-height: 28px;
   }
 }
+
+/* --- Hub improvements --- */
+
+.home-panel {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 92%, var(--accent-soft));
+}
+
+.home-panel__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.home-panel__header h3 {
+  margin: 0.15rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+}
+
+.home-weak-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.home-weak-list li {
+  display: grid;
+  grid-template-columns: minmax(7rem, auto) 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.home-weak-list li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.word-title-btn,
+.link-btn {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  margin: 0;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.word-title-btn {
+  color: inherit;
+  text-decoration: none;
+}
+
+.word-title-btn:hover,
+.link-btn:hover {
+  color: var(--accent);
+}
+
+.appears-in {
+  margin-top: var(--space-2);
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.appears-in .meta-line {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.topic-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
+.status-pill--warn {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.mini-vocab-card.is-missing {
+  border-style: dashed;
+  opacity: 0.95;
+}
+
+.form-hint {
+  margin: -0.35rem 0 0;
+  font-size: 0.86rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.speaking-practice {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.speaking-topic {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+}
+
+.speaking-meta,
+.speaking-progress {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.speaking-prompt {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent-soft) 40%, var(--surface));
+  border: 1px solid var(--border);
+  font-size: 1.15rem;
+  line-height: 1.55;
+}
+
+.speaking-timer {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: 0.04em;
+}
+
+.speaking-timer.is-urgent {
+  color: var(--danger);
+}
+
+.speaking-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.word-detail {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.word-detail p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.app-banner:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+}
+
+.app-banner__action {
+  flex: 0 0 auto;
+}
+
+.app-banner__dismiss {
+  margin-left: auto;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+

@@ -12,6 +12,8 @@ const STORAGE = {
   quizProgress: "imx-hub-quiz-progress",
   quizSettings: "imx-hub-quiz-settings",
   studyStreak: "imx-hub-study-streak",
+  lastBackupAt: "imx-hub-last-backup-at",
+  speakingPractice: "imx-hub-speaking-practice",
 };
 
 export { STORAGE, CATEGORIES, normalizeCategory };
@@ -254,9 +256,81 @@ export const readQuizSettings = () => {
 export const saveQuizSettings = (settings) =>
   writeJson(STORAGE.quizSettings, { ...defaultQuizSettings(), ...settings });
 
-export const getWeakWords = (vocabulary = []) => {
+export const getWeakWords = (vocabulary = [], { limit = 0 } = {}) => {
   const progress = getQuizProgress();
-  return vocabulary.filter((item) => progress[item.word]?.lastResult === "again");
+  const weak = vocabulary
+    .filter((item) => progress[item.word]?.lastResult === "again")
+    .sort(
+      (a, b) =>
+        Number(progress[b.word]?.updatedAt || 0) -
+        Number(progress[a.word]?.updatedAt || 0),
+    );
+  return limit > 0 ? weak.slice(0, limit) : weak;
+};
+
+export const getTopicsForWord = (word, topics = []) => {
+  const key = String(word || "").toLowerCase();
+  if (!key) return [];
+  return topics.filter((topic) =>
+    (topic.vocabulary || []).some((item) => String(item).toLowerCase() === key),
+  );
+};
+
+export const getMissingTopicWords = (topic, vocabulary = []) => {
+  const known = new Set(vocabulary.map((item) => item.word.toLowerCase()));
+  return (topic?.vocabulary || []).filter(
+    (word) => word && !known.has(String(word).toLowerCase()),
+  );
+};
+
+export const getLastBackupAt = () => {
+  const value = localStorage.getItem(STORAGE.lastBackupAt);
+  return value || "";
+};
+
+export const markBackupExported = () => {
+  const stamp = new Date().toISOString();
+  localStorage.setItem(STORAGE.lastBackupAt, stamp);
+  return stamp;
+};
+
+export const shouldRemindBackup = ({ days = 7 } = {}) => {
+  const customVocab = readJson(STORAGE.customVocab, []);
+  const customTopics = readJson(STORAGE.customTopics, []);
+  const hasCustom =
+    (Array.isArray(customVocab) && customVocab.length > 0) ||
+    (Array.isArray(customTopics) && customTopics.length > 0);
+  if (!hasCustom) return false;
+
+  const last = getLastBackupAt();
+  if (!last) return true;
+  const ageMs = Date.now() - new Date(last).getTime();
+  if (Number.isNaN(ageMs)) return true;
+  return ageMs >= days * 24 * 60 * 60 * 1000;
+};
+
+export const getSpeakingPractice = () => {
+  const data = readJson(STORAGE.speakingPractice, {});
+  return data && typeof data === "object" ? data : {};
+};
+
+export const recordSpeakingPractice = (topicTitle) => {
+  const title = String(topicTitle || "").trim();
+  if (!title) return null;
+  const all = getSpeakingPractice();
+  const current = all[title] || { count: 0, lastPracticed: "" };
+  const next = {
+    count: (Number(current.count) || 0) + 1,
+    lastPracticed: new Date().toISOString(),
+  };
+  all[title] = next;
+  writeJson(STORAGE.speakingPractice, all);
+  return next;
+};
+
+export const getSpeakingPracticeFor = (topicTitle) => {
+  const all = getSpeakingPractice();
+  return all[String(topicTitle || "")] || null;
 };
 
 export const getStudyStreakInfo = () => {

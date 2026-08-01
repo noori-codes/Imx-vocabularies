@@ -1,0 +1,25 @@
+{
+  "name": "IMX English Hub",
+  "short_name": "IMX Hub",
+  "description": "Personal English study journal for vocabulary, topics, and exam practice.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1a1714",
+  "theme_color": "#1a1714",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "IMX-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "IMX-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

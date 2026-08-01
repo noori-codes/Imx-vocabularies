@@ -10,6 +10,11 @@
     />
     <link rel="icon" type="image/png" href="IMX-logo.png" />
     <link rel="apple-touch-icon" href="IMX-logo.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#1a1714" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="IMX Hub" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -133,6 +138,24 @@
             </div>
           </div>
 
+          <section
+            id="homeWeakWords"
+            class="home-panel"
+            aria-label="Weak words"
+            hidden
+          >
+            <div class="home-panel__header">
+              <div>
+                <p class="eyebrow">Needs review</p>
+                <h3>Weak words</h3>
+              </div>
+              <button id="homeReviewWeakBtn" class="primary-btn" type="button">
+                Review weak words
+              </button>
+            </div>
+            <ul id="homeWeakWordsList" class="home-weak-list"></ul>
+          </section>
+
           <section class="motivation-card" aria-label="Daily motivation">
             <div class="motivation-card__header">
               <p class="motivation-eyebrow">Daily line</p>
@@ -187,6 +210,9 @@
               <button id="addTopicBtn" class="primary-btn" type="button">
                 Add topic
               </button>
+              <button id="topicTemplateBtn" class="ghost-btn" type="button">
+                From template
+              </button>
               <button id="topicFavoriteToggle" class="pill-toggle" type="button">
                 Favorite topics
               </button>
@@ -214,6 +240,7 @@
                     <option value="reverse">Meaning → word</option>
                     <option value="type">Type the word</option>
                     <option value="mcq">Pick the word</option>
+                    <option value="cloze">Fill the blank</option>
                   </select>
                 </label>
                 <label class="select-wrap">
@@ -464,8 +491,10 @@
             <ul class="about-list">
               <li>Eight focused vocabulary categories</li>
               <li>In-app add/edit for words and topics</li>
-              <li>Spaced-repetition quiz with pronunciation</li>
-              <li>Export/import JSON backups</li>
+              <li>Spaced-repetition quiz, cloze mode, and topic practice</li>
+              <li>Speaking drills for discussion questions</li>
+              <li>Export/import JSON backups (with reminders)</li>
+              <li>Installable offline app (PWA)</li>
               <li>Base content still lives in <code>data/*.js</code></li>
             </ul>
           </div>

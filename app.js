@@ -19,7 +19,24 @@ import {
   getWeakWords,
   getStudyStreakInfo,
   recordStudyActivity,
+  getTopicsForWord,
+  getMissingTopicWords,
+  shouldRemindBackup,
+  markBackupExported,
+  recordSpeakingPractice,
+  getSpeakingPracticeFor,
 } from "./components/storage.js";
+import {
+  escapeHtml,
+  categoryClass,
+  iconSpeak,
+  iconStar,
+  iconChevron,
+  iconShare,
+} from "./components/dom.js";
+import { speakWord } from "./components/speech.js";
+import { formatWordShare, formatTopicShare, shareContent } from "./components/share.js";
+import { buildClozePrompt } from "./components/cloze.js";
 
 const MOTIVATION_QUOTES = [
   "One new word today is one more opportunity tomorrow.",
@@ -127,6 +144,10 @@ const els = {
   quizNewSessionBtn: document.getElementById("quizNewSessionBtn"),
   quizPrintSheet: document.getElementById("quizPrintSheet"),
   homeStudyStreak: document.getElementById("homeStudyStreak"),
+  homeWeakWords: document.getElementById("homeWeakWords"),
+  homeWeakWordsList: document.getElementById("homeWeakWordsList"),
+  homeReviewWeakBtn: document.getElementById("homeReviewWeakBtn"),
+  topicTemplateBtn: document.getElementById("topicTemplateBtn"),
   exportBtn: document.getElementById("exportBtn"),
   importFileInput: document.getElementById("importFileInput"),
   importModeSelect: document.getElementById("importModeSelect"),
@@ -146,77 +167,16 @@ let baseVocabulary = [];
 let baseTopics = [];
 let vocabularyData = [];
 let topicData = [];
+let speakingTimerId = null;
 
-const escapeHtml = (value) =>
-  String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-
-const categoryClass = (category) =>
-  `cat-${String(category || "learning")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")}`;
-
-const iconSpeak = `
-  <span class="ui-icon" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="none">
-      <path d="M4 10v4h3l4 3V7L7 10H4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-      <path d="M15 9.5a3.5 3.5 0 0 1 0 5M17.5 7.5a6 6 0 0 1 0 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-    </svg>
-  </span>
-`;
-
-const iconStar = (filled) => `
-  <span class="ui-icon" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="${filled ? "currentColor" : "none"}">
-      <path d="m12 4.2 2.1 4.3 4.7.7-3.4 3.3.8 4.7L12 15.2 7.8 17.2l.8-4.7-3.4-3.3 4.7-.7L12 4.2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-    </svg>
-  </span>
-`;
-
-const iconChevron = `
-  <span class="ui-icon" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="none">
-      <path d="m7 10 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </span>
-`;
-
-
-let cachedVoices = [];
-let currentAudio = null;
-
-const loadVoices = () => {
-  if (!window.speechSynthesis) return [];
-  cachedVoices = window.speechSynthesis.getVoices();
-  return cachedVoices;
+const clearSpeakingTimer = () => {
+  if (speakingTimerId) {
+    clearInterval(speakingTimerId);
+    speakingTimerId = null;
+  }
 };
 
-if (window.speechSynthesis) {
-  loadVoices();
-  window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
-}
-
-const pickEnglishVoice = () => {
-  const voices = cachedVoices.length ? cachedVoices : loadVoices();
-  if (!voices.length) return null;
-  return (
-    voices.find(
-      (voice) =>
-        /en-US/i.test(voice.lang) &&
-        /google|neural|premium|natural/i.test(voice.name),
-    ) ||
-    voices.find((voice) => /en-US/i.test(voice.lang)) ||
-    voices.find((voice) => /^en(-|$)/i.test(voice.lang)) ||
-    voices[0]
-  );
-};
-
-const showSpeakFeedback = (message, isError = false) => {
+const showToast = (message, isError = false) => {
   let toast = document.getElementById("speakToast");
   if (!toast) {
     toast = document.createElement("div");
@@ -228,148 +188,98 @@ const showSpeakFeedback = (message, isError = false) => {
   toast.textContent = message;
   toast.classList.toggle("is-error", isError);
   toast.classList.add("is-visible");
-  window.clearTimeout(showSpeakFeedback._timer);
-  showSpeakFeedback._timer = window.setTimeout(() => {
+  window.clearTimeout(showToast._timer);
+  showToast._timer = window.setTimeout(() => {
     toast.classList.remove("is-visible");
-  }, 3500);
+  }, 3200);
 };
 
-const stopSpeaking = () => {
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio = null;
-  }
-  if (window.speechSynthesis) {
-    window.speechSynthesis.cancel();
-  }
+const shareItem = async (kind, payload) => {
+  const title = kind === "topic" ? payload.title : payload.word;
+  const text = kind === "topic" ? formatTopicShare(payload) : formatWordShare(payload);
+  const result = await shareContent({ title: `IMX · ${title}`, text });
+  if (result === "copied") showToast("Copied to clipboard");
+  else if (result === "failed") showToast("Could not share", true);
 };
 
-const playAudioUrl = (url) =>
-  new Promise((resolve, reject) => {
-    const audio = new Audio(url);
-    currentAudio = audio;
-    audio.onended = () => {
-      currentAudio = null;
-      resolve(true);
-    };
-    audio.onerror = () => {
-      currentAudio = null;
-      reject(new Error("audio failed"));
-    };
-    audio.play().then(() => {}).catch(reject);
-  });
-
-const speakWithDictionaryAudio = async (phrase) => {
-  const cleaned = phrase.toLowerCase().trim();
-  const candidates = [
-    cleaned,
-    cleaned.split(/\s+/)[0],
-    cleaned.replace(/-/g, ""),
-    cleaned.replace(/[^a-z'-]/gi, ""),
-  ].filter((item, index, arr) => item && arr.indexOf(item) === index);
-
-  for (const query of candidates) {
-    const response = await fetch(
-      `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(query)}`,
+const focusTopicByTitle = (title) => {
+  switchPage("topics", { replace: false });
+  state.searchTerm = "";
+  state.topicFavoritesOnly = false;
+  if (els.globalSearchInput) els.globalSearchInput.value = "";
+  if (els.topicFavoriteToggle) els.topicFavoriteToggle.classList.remove("active");
+  renderTopics();
+  requestAnimationFrame(() => {
+    const match = [...document.querySelectorAll(".topic-card")].find(
+      (card) => card.dataset.title === title,
     );
-    if (!response.ok) continue;
-
-    const data = await response.json();
-    const audioUrl = (data || [])
-      .flatMap((entry) => entry.phonetics || [])
-      .map((item) => item.audio)
-      .find((src) => typeof src === "string" && src.trim());
-
-    if (!audioUrl) continue;
-    await playAudioUrl(audioUrl);
-    return true;
-  }
-
-  return false;
-};
-
-const speakWithSpeechSynthesis = (phrase) =>
-  new Promise((resolve, reject) => {
-    if (!window.speechSynthesis || typeof window.SpeechSynthesisUtterance !== "function") {
-      reject(new Error("unsupported"));
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(phrase);
-    utterance.lang = "en-US";
-    utterance.rate = 0.92;
-    utterance.pitch = 1;
-
-    const voice = pickEnglishVoice();
-    if (voice) {
-      utterance.voice = voice;
-      utterance.lang = voice.lang || "en-US";
-    } else if (!loadVoices().length) {
-      reject(new Error("no-voices"));
-      return;
-    }
-
-    utterance.onend = () => resolve(true);
-    utterance.onerror = (event) => {
-      if (event.error === "canceled" || event.error === "interrupted") {
-        resolve(false);
-        return;
-      }
-      reject(new Error(event.error || "synthesis-error"));
-    };
-
-    const start = () => {
-      window.speechSynthesis.resume();
-      window.speechSynthesis.speak(utterance);
-    };
-
-    // Chrome bug: cancel() immediately before speak() can silently fail.
-    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-      window.speechSynthesis.cancel();
-      window.setTimeout(start, 60);
-    } else {
-      start();
-    }
+    if (!match) return;
+    match.classList.add("is-open");
+    match.querySelector(".topic-card__header")?.setAttribute("aria-expanded", "true");
+    match.scrollIntoView({ behavior: "smooth", block: "center" });
   });
-
-const speakWithOnlineTts = async (phrase) => {
-  // Media-element fallback when local speech voices are missing (common on Linux).
-  const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(
-    phrase.slice(0, 100),
-  )}`;
-  await playAudioUrl(url);
-  return true;
 };
 
-const speakWord = async (text) => {
-  const phrase = String(text || "").trim();
-  if (!phrase) return;
+const openWordDetail = (item) => {
+  if (!item) return;
+  const related = getTopicsForWord(item.word, topicData);
+  openModal(item.word, `
+    <div class="word-detail">
+      ${item.pronunciation ? `<p class="pronunciation">/${escapeHtml(item.pronunciation)}/</p>` : ""}
+      <p><strong>Meaning:</strong> ${escapeHtml(item.meaning)}</p>
+      <p><strong>Synonym:</strong> ${escapeHtml(item.synonym || "—")}</p>
+      <p><strong>Antonym:</strong> ${escapeHtml(item.antonym || "—")}</p>
+      <p><strong>Example:</strong> ${escapeHtml(item.sentence || "—")}</p>
+      ${
+        related.length
+          ? `<p class="appears-in"><strong>Appears in:</strong> ${related
+              .map(
+                (topic) =>
+                  `<button type="button" class="link-btn" data-open-topic="${escapeHtml(topic.title)}">${escapeHtml(topic.title)}</button>`,
+              )
+              .join(", ")}</p>`
+          : `<p class="appears-in muted">Not linked to a topic yet.</p>`
+      }
+      <div class="form-actions">
+        <button type="button" class="ghost-btn" data-share-word>Share</button>
+        <button type="button" class="primary-btn" data-edit-word>Edit</button>
+      </div>
+    </div>
+  `);
+  els.modalBody.querySelector("[data-share-word]")?.addEventListener("click", () => shareItem("word", item));
+  els.modalBody.querySelector("[data-edit-word]")?.addEventListener("click", () => openWordModal(item));
+  els.modalBody.querySelectorAll("[data-open-topic]").forEach((button) => {
+    button.addEventListener("click", () => {
+      closeModal();
+      focusTopicByTitle(button.dataset.openTopic);
+    });
+  });
+};
 
-  stopSpeaking();
-
-  try {
-    if (await speakWithDictionaryAudio(phrase)) return;
-  } catch (error) {
-    console.warn("Dictionary audio unavailable", error);
-  }
-
-  try {
-    await speakWithSpeechSynthesis(phrase);
-    return;
-  } catch (error) {
-    console.warn("Speech synthesis unavailable", error);
-  }
-
-  try {
-    if (await speakWithOnlineTts(phrase)) return;
-  } catch (error) {
-    console.warn("Online TTS unavailable", error);
-  }
-
-  showSpeakFeedback(
-    "Pronunciation unavailable. Allow network audio, or fix Linux speech-dispatcher.",
-    true,
-  );
+const LESSON_TEMPLATE = {
+  title: "",
+  date: new Date().toISOString().slice(0, 10),
+  summary: "Write one short paragraph about the idea you want to discuss.",
+  notes: "Add talking points or personal examples here.",
+  vocabulary: [
+    "Word 1",
+    "Word 2",
+    "Word 3",
+    "Word 4",
+    "Word 5",
+    "Word 6",
+    "Word 7",
+    "Word 8",
+    "Word 9",
+    "Word 10",
+  ],
+  questions: [
+    "What is the main idea of this topic?",
+    "How does this topic show up in daily life?",
+    "What is one argument for and one against?",
+    "Can one decision change the outcome?",
+    "What lesson would you share with someone else?",
+  ],
 };
 
 const saveFavorites = () => {
@@ -464,6 +374,7 @@ const switchPage = (page, { updateHistory = true, replace = true } = {}) => {
 };
 
 const closeModal = () => {
+  clearSpeakingTimer();
   els.modalRoot.hidden = true;
   els.modalBody.innerHTML = "";
   state.editingWord = null;
@@ -536,7 +447,7 @@ const openWordModal = (item = null) => {
   });
 };
 
-const openTopicModal = (item = null) => {
+const openTopicModal = (item = null, { fromTemplate = false } = {}) => {
   state.editingTopic = item?.title || null;
   const values = item || {
     title: "",
@@ -547,15 +458,16 @@ const openTopicModal = (item = null) => {
     questions: [],
   };
 
-  openModal(item ? "Edit topic" : "Add topic", `
+  openModal(item ? "Edit topic" : fromTemplate ? "New lesson from template" : "Add topic", `
     <form id="topicForm" class="form-grid">
-      <label class="full">Title<input name="title" required value="${escapeHtml(values.title)}" /></label>
+      <label class="full">Title<input name="title" required value="${escapeHtml(values.title)}" placeholder="Your discussion title" /></label>
       <label>Date<input name="date" type="date" required value="${escapeHtml(values.date)}" /></label>
       <label class="full">Summary<textarea name="summary" rows="3" required>${escapeHtml(values.summary)}</textarea></label>
       <label class="full">Notes<textarea name="notes" rows="2">${escapeHtml(values.notes)}</textarea></label>
       <label class="full">Vocabulary words (comma-separated)<textarea name="vocabulary" rows="2">${escapeHtml(
         (values.vocabulary || []).join(", "),
       )}</textarea></label>
+      <p id="topicVocabHint" class="form-hint full" hidden></p>
       <label class="full">Discussion questions (one per line)<textarea name="questions" rows="3">${escapeHtml(
         (values.questions || []).join("\n"),
       )}</textarea></label>
@@ -566,10 +478,45 @@ const openTopicModal = (item = null) => {
     </form>
   `);
 
-  els.modalBody.querySelector("#topicForm").addEventListener("submit", (event) => {
+  const formEl = els.modalBody.querySelector("#topicForm");
+  const vocabField = formEl.querySelector('[name="vocabulary"]');
+  const hint = formEl.querySelector("#topicVocabHint");
+
+  const updateMissingHint = () => {
+    const listed = String(vocabField.value || "")
+      .split(",")
+      .map((word) => word.trim())
+      .filter(Boolean);
+    const known = new Set(vocabularyData.map((entry) => entry.word.toLowerCase()));
+    const missing = listed.filter((word) => !known.has(word.toLowerCase()));
+    if (!missing.length) {
+      hint.hidden = true;
+      hint.textContent = "";
+      return;
+    }
+    hint.hidden = false;
+    hint.textContent = `Missing from vocabulary library: ${missing.join(", ")}. You can still save, then add them later.`;
+  };
+
+  vocabField.addEventListener("input", updateMissingHint);
+  updateMissingHint();
+
+  formEl.addEventListener("submit", (event) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const payload = Object.fromEntries(form.entries());
+    const listed = String(payload.vocabulary || "")
+      .split(",")
+      .map((word) => word.trim())
+      .filter(Boolean);
+    const known = new Set(vocabularyData.map((entry) => entry.word.toLowerCase()));
+    const missing = listed.filter((word) => !known.has(word.toLowerCase()));
+    if (missing.length) {
+      const proceed = confirm(
+        `These words are not in your vocabulary library yet:\n\n${missing.join(", ")}\n\nSave topic anyway?`,
+      );
+      if (!proceed) return;
+    }
     try {
       const previousTitle = state.editingTopic;
       const saved = upsertCustomTopic(payload, { previousTitle });
@@ -580,13 +527,26 @@ const openTopicModal = (item = null) => {
       }
       closeModal();
       refreshAll();
+      if (missing.length) {
+        showToast(`Saved. Add ${missing.length} missing word${missing.length === 1 ? "" : "s"} when ready.`);
+      }
     } catch (error) {
       alert(error.message || "Could not save topic");
     }
   });
 };
 
-const DATA_VERSION = "2026-07-27-tech-topic-v2";
+const openTopicFromTemplate = () => {
+  openTopicModal(
+    {
+      ...LESSON_TEMPLATE,
+      date: new Date().toISOString().slice(0, 10),
+    },
+    { fromTemplate: true },
+  );
+};
+
+const DATA_VERSION = "2026-08-01-hub-improvements-v1";
 
 const importDataModule = async (path) => {
   try {
@@ -747,15 +707,17 @@ const createVocabCard = (item, { compact = false } = {}) => {
   card.className = `vocab-card ${catClass}`;
   const isFavorite = favoriteWords.has(item.word);
   const word = escapeHtml(item.word);
+  const related = getTopicsForWord(item.word, topicData);
 
   card.innerHTML = `
     <div class="card-top">
       <div class="card-title">
-        <h3>${word}</h3>
+        <h3><button type="button" class="word-title-btn">${word}</button></h3>
         <div class="category-pill ${catClass}">${escapeHtml(item.category)}</div>
       </div>
       <div class="card-actions">
         <button type="button" class="icon-btn speak-btn" aria-label="Pronounce ${word}">${iconSpeak}</button>
+        <button type="button" class="icon-btn share-btn" aria-label="Share ${word}">${iconShare}</button>
         <button type="button" class="favorite-btn ${isFavorite ? "is-favorite" : ""}" aria-label="Toggle favorite ${word}" aria-pressed="${isFavorite}">
           ${iconStar(isFavorite)}
         </button>
@@ -779,6 +741,17 @@ const createVocabCard = (item, { compact = false } = {}) => {
       <span class="meta-value">“${escapeHtml(item.sentence)}”</span>
     `
     }
+    ${
+      related.length
+        ? `<p class="appears-in"><span class="meta-line">Appears in</span> ${related
+            .slice(0, 3)
+            .map(
+              (topic) =>
+                `<button type="button" class="link-btn topic-link-btn" data-topic="${escapeHtml(topic.title)}">${escapeHtml(topic.title)}</button>`,
+            )
+            .join(", ")}${related.length > 3 ? ` +${related.length - 3}` : ""}</p>`
+        : ""
+    }
     </div>
     <div class="card-footer-actions">
       <button type="button" class="ghost-btn edit-btn">Edit</button>
@@ -786,7 +759,9 @@ const createVocabCard = (item, { compact = false } = {}) => {
     </div>
   `;
 
+  card.querySelector(".word-title-btn")?.addEventListener("click", () => openWordDetail(item));
   card.querySelector(".speak-btn").addEventListener("click", () => speakWord(item.word));
+  card.querySelector(".share-btn")?.addEventListener("click", () => shareItem("word", item));
   card.querySelector(".favorite-btn").addEventListener("click", () => {
     if (favoriteWords.has(item.word)) favoriteWords.delete(item.word);
     else favoriteWords.add(item.word);
@@ -794,6 +769,9 @@ const createVocabCard = (item, { compact = false } = {}) => {
     renderVocabulary();
     renderFavorites();
     renderHomeStats();
+  });
+  card.querySelectorAll(".topic-link-btn").forEach((button) => {
+    button.addEventListener("click", () => focusTopicByTitle(button.dataset.topic));
   });
   card.querySelector(".edit-btn").addEventListener("click", () => openWordModal(item));
   card.querySelector(".delete-btn").addEventListener("click", () => {
@@ -865,6 +843,102 @@ const emptyStateWithFiltersHint = (title, detail) => {
   return `<h3>${title}</h3><p>${detail}</p>${extra}`;
 };
 
+const openSpeakingPractice = (topic) => {
+  const questions = topic.questions?.length
+    ? topic.questions
+    : ["Talk about this topic for one minute using your own words."];
+  let index = 0;
+  let remaining = 75;
+  const history = getSpeakingPracticeFor(topic.title);
+
+  openModal("Speaking practice", `
+    <div class="speaking-practice">
+      <p class="speaking-topic">${escapeHtml(topic.title)}</p>
+      <p class="speaking-meta">${
+        history?.lastPracticed
+          ? `Practiced ${history.count || 1}× · last ${escapeHtml(formatDate(history.lastPracticed.slice(0, 10)))}`
+          : "First session — speak for about a minute per question."
+      }</p>
+      <p class="speaking-progress">Question <span id="speakQIndex">1</span> of ${questions.length}</p>
+      <p id="speakPrompt" class="speaking-prompt">${escapeHtml(questions[0])}</p>
+      <p id="speakTimer" class="speaking-timer">1:15</p>
+      <div class="form-actions speaking-actions">
+        <button type="button" class="ghost-btn" id="speakPrevBtn">Previous</button>
+        <button type="button" class="ghost-btn" id="speakRestartBtn">Restart timer</button>
+        <button type="button" class="primary-btn" id="speakNextBtn">Next</button>
+      </div>
+      <button type="button" class="success-btn full-width" id="speakDoneBtn">Mark practiced</button>
+    </div>
+  `);
+
+  const promptEl = els.modalBody.querySelector("#speakPrompt");
+  const timerEl = els.modalBody.querySelector("#speakTimer");
+  const indexEl = els.modalBody.querySelector("#speakQIndex");
+  const prevBtn = els.modalBody.querySelector("#speakPrevBtn");
+  const nextBtn = els.modalBody.querySelector("#speakNextBtn");
+
+  const formatSeconds = (sec) => {
+    const m = Math.floor(sec / 60);
+    const s = String(sec % 60).padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
+  const renderPrompt = () => {
+    promptEl.textContent = questions[index];
+    indexEl.textContent = String(index + 1);
+    prevBtn.disabled = index === 0;
+    nextBtn.textContent = index >= questions.length - 1 ? "Finish" : "Next";
+  };
+
+  const startTimer = () => {
+    clearSpeakingTimer();
+    remaining = 75;
+    timerEl.textContent = formatSeconds(remaining);
+    timerEl.classList.remove("is-urgent");
+    speakingTimerId = setInterval(() => {
+      remaining -= 1;
+      timerEl.textContent = formatSeconds(Math.max(0, remaining));
+      timerEl.classList.toggle("is-urgent", remaining <= 10);
+      if (remaining <= 0) clearSpeakingTimer();
+    }, 1000);
+  };
+
+  prevBtn.addEventListener("click", () => {
+    if (index <= 0) return;
+    index -= 1;
+    renderPrompt();
+    startTimer();
+  });
+  nextBtn.addEventListener("click", () => {
+    if (index >= questions.length - 1) {
+      clearSpeakingTimer();
+      recordSpeakingPractice(topic.title);
+      recordStudyActivity();
+      closeModal();
+      showToast("Speaking practice saved");
+      renderTopics();
+      renderHomeStats();
+      return;
+    }
+    index += 1;
+    renderPrompt();
+    startTimer();
+  });
+  els.modalBody.querySelector("#speakRestartBtn").addEventListener("click", startTimer);
+  els.modalBody.querySelector("#speakDoneBtn").addEventListener("click", () => {
+    clearSpeakingTimer();
+    recordSpeakingPractice(topic.title);
+    recordStudyActivity();
+    closeModal();
+    showToast("Speaking practice saved");
+    renderTopics();
+    renderHomeStats();
+  });
+
+  renderPrompt();
+  startTimer();
+};
+
 const renderTopics = () => {
   if (!els.topicGrid || !els.topicResultsText) return;
   const filtered = filterTopics();
@@ -890,7 +964,10 @@ const renderTopics = () => {
     const card = document.createElement("article");
     const isFavorite = favoriteTopics.has(topic.title);
     const isCompleted = isTopicCompleted(topic);
+    const missing = getMissingTopicWords(topic, vocabularyData);
+    const speaking = getSpeakingPracticeFor(topic.title);
     card.className = `topic-card${isCompleted ? " is-completed" : ""}`;
+    card.dataset.title = topic.title;
     const detailsId = `topic-details-${index}`;
     const title = escapeHtml(topic.title);
 
@@ -901,18 +978,20 @@ const renderTopics = () => {
         );
         if (!wordData) {
           return `
-            <div class="mini-vocab-card">
+            <div class="mini-vocab-card is-missing">
               <div class="mini-vocab-head">
                 <h5>${escapeHtml(word)}</h5>
+                <span class="status-pill status-pill--warn">Missing</span>
               </div>
               <p class="mini-vocab-meta"><strong>Meaning:</strong> Not added yet</p>
+              <button type="button" class="ghost-btn add-missing-btn" data-missing-word="${escapeHtml(word)}">Add word</button>
             </div>
           `;
         }
         return `
-          <div class="mini-vocab-card">
+          <div class="mini-vocab-card" data-open-word="${escapeHtml(wordData.word)}">
             <div class="mini-vocab-head">
-              <h5>${escapeHtml(wordData.word)}</h5>
+              <h5><button type="button" class="word-title-btn open-word-btn">${escapeHtml(wordData.word)}</button></h5>
               <button type="button" class="icon-btn mini-speak" data-speak="${escapeHtml(wordData.word)}" aria-label="Pronounce ${escapeHtml(wordData.word)}">${iconSpeak}</button>
             </div>
             <p class="mini-vocab-pron">/${escapeHtml(wordData.pronunciation || "ˈwɜːrd")}/</p>
@@ -926,11 +1005,21 @@ const renderTopics = () => {
     card.innerHTML = `
       <div class="topic-card__header" role="button" tabindex="0" aria-expanded="false" aria-controls="${detailsId}">
         <div class="topic-headline">
-          <p class="topic-eyebrow">${escapeHtml(formatDate(topic.date))}${isCompleted ? " · Completed" : ""}</p>
+          <p class="topic-eyebrow">${escapeHtml(formatDate(topic.date))}${isCompleted ? " · Completed" : ""}${
+            speaking?.count ? ` · Spoken ${speaking.count}×` : ""
+          }</p>
           <h3>${title}</h3>
-          ${isCompleted ? '<span class="status-pill">Completed</span>' : ""}
+          <div class="topic-badges">
+            ${isCompleted ? '<span class="status-pill">Completed</span>' : ""}
+            ${
+              missing.length
+                ? `<span class="status-pill status-pill--warn">${missing.length} missing word${missing.length === 1 ? "" : "s"}</span>`
+                : ""
+            }
+          </div>
         </div>
         <div class="topic-card__actions">
+          <button type="button" class="icon-btn share-topic-btn" aria-label="Share topic ${title}">${iconShare}</button>
           <button type="button" class="topic-favorite-btn ${isFavorite ? "is-favorite" : ""}" aria-label="Toggle favorite topic ${title}" aria-pressed="${isFavorite}">
             ${iconStar(isFavorite)}
           </button>
@@ -957,6 +1046,7 @@ const renderTopics = () => {
         <div class="card-footer-actions">
           <button type="button" class="primary-btn practice-topic-btn">Practice words</button>
           <button type="button" class="ghost-btn exam-topic-btn">Exam session (10)</button>
+          <button type="button" class="ghost-btn speaking-topic-btn">Speaking practice</button>
           <button type="button" class="ghost-btn complete-topic-btn">${isCompleted ? "Mark incomplete" : "Mark completed"}</button>
           <button type="button" class="ghost-btn edit-topic-btn">Edit</button>
           <button type="button" class="danger-btn delete-topic-btn">Delete</button>
@@ -974,6 +1064,11 @@ const renderTopics = () => {
       renderHomeStats();
     });
 
+    card.querySelector(".share-topic-btn")?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      shareItem("topic", topic);
+    });
+
     const toggleButton = card.querySelector(".topic-card__header");
     const setExpanded = (open) => {
       card.classList.toggle("is-open", open);
@@ -981,7 +1076,7 @@ const renderTopics = () => {
     };
 
     toggleButton.addEventListener("click", (event) => {
-      if (event.target.closest(".topic-favorite-btn")) return;
+      if (event.target.closest(".topic-favorite-btn, .share-topic-btn")) return;
       setExpanded(!card.classList.contains("is-open"));
     });
     toggleButton.addEventListener("keydown", (event) => {
@@ -998,11 +1093,41 @@ const renderTopics = () => {
       });
     });
 
+    card.querySelectorAll(".open-word-btn").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const word = button.textContent.trim();
+        const wordData = vocabularyData.find(
+          (item) => item.word.toLowerCase() === word.toLowerCase(),
+        );
+        if (wordData) openWordDetail(wordData);
+      });
+    });
+
+    card.querySelectorAll(".add-missing-btn").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        openWordModal({
+          word: button.dataset.missingWord,
+          pronunciation: "",
+          meaning: "",
+          synonym: "",
+          antonym: "",
+          wordFamily: "",
+          sentence: "",
+          category: "Learning",
+        });
+      });
+    });
+
     card.querySelector(".practice-topic-btn").addEventListener("click", () => {
       startTopicQuiz(topic.title);
     });
     card.querySelector(".exam-topic-btn")?.addEventListener("click", () => {
       startTopicExam(topic.title);
+    });
+    card.querySelector(".speaking-topic-btn")?.addEventListener("click", () => {
+      openSpeakingPractice(topic);
     });
 
     card.querySelector(".complete-topic-btn").addEventListener("click", () => {
@@ -1103,6 +1228,47 @@ const renderHomeStats = () => {
           : "Review a few due words, then add one new idea from your latest presentation.";
     }
   }
+
+  renderHomeWeakWords();
+};
+
+const renderHomeWeakWords = () => {
+  if (!els.homeWeakWords || !els.homeWeakWordsList) return;
+  const weak = getWeakWords(vocabularyData, { limit: 6 });
+  if (!weak.length) {
+    els.homeWeakWords.hidden = true;
+    els.homeWeakWordsList.innerHTML = "";
+    return;
+  }
+
+  els.homeWeakWords.hidden = false;
+  els.homeWeakWordsList.innerHTML = weak
+    .map(
+      (item) =>
+        `<li><button type="button" class="link-btn" data-weak-word="${escapeHtml(item.word)}">${escapeHtml(item.word)}</button><span>${escapeHtml(item.meaning)}</span></li>`,
+    )
+    .join("");
+
+  els.homeWeakWordsList.querySelectorAll("[data-weak-word]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = vocabularyData.find(
+        (entry) => entry.word.toLowerCase() === button.dataset.weakWord.toLowerCase(),
+      );
+      if (item) openWordDetail(item);
+    });
+  });
+};
+
+const startWeakWordsQuiz = () => {
+  state.quizScope = "weak";
+  state.quizSessionLimit = null;
+  if (els.quizScopeSelect) {
+    populateQuizScopeSelect();
+    els.quizScopeSelect.value = "weak";
+  }
+  persistQuizSettings();
+  switchPage("quiz", { replace: false });
+  prepareQuiz({ forceAll: true });
 };
 
 const QUIZ_SESSION_SIZE = 15;
@@ -1223,6 +1389,7 @@ const describeQuizMode = () => {
     reverse: "Meaning → word",
     type: "Type the word",
     mcq: "Pick the word",
+    cloze: "Fill the blank",
   };
   return modes[state.quizMode] || modes.flashcard;
 };
@@ -1419,18 +1586,23 @@ const renderQuizCard = () => {
   const isReverse = mode === "reverse";
   const isType = mode === "type";
   const isMcq = mode === "mcq";
+  const isCloze = mode === "cloze";
   const isFlashcard = mode === "flashcard";
+  const cloze = isCloze ? buildClozePrompt(current) : null;
 
   if (els.quizPromptLabel) {
-    els.quizPromptLabel.textContent = isReverse || isType || isMcq ? "Prompt" : "Word";
+    els.quizPromptLabel.textContent =
+      isReverse || isType || isMcq || isCloze ? "Prompt" : "Word";
   }
   if (els.quizWordRow) {
     els.quizWordRow.hidden =
-      isMcq || ((isReverse || isType) && !state.quizRevealed && !state.quizTypeChecked);
+      isMcq ||
+      isCloze ||
+      ((isReverse || isType) && !state.quizRevealed && !state.quizTypeChecked);
   }
   if (els.quizPromptText) {
-    els.quizPromptText.hidden = !(isReverse || isType || isMcq);
-    els.quizPromptText.textContent = current.meaning;
+    els.quizPromptText.hidden = !(isReverse || isType || isMcq || isCloze);
+    els.quizPromptText.textContent = isCloze ? cloze.prompt : current.meaning;
   }
   if (els.quizWord) els.quizWord.textContent = current.word;
   if (els.quizPronunciation) {
@@ -1451,11 +1623,12 @@ const renderQuizCard = () => {
   if (els.quizSentence) els.quizSentence.textContent = current.sentence || "—";
   if (els.quizAnswerWord) els.quizAnswerWord.textContent = current.word;
 
-  if (els.quizTypeArea) els.quizTypeArea.hidden = !isType;
+  if (els.quizTypeArea) els.quizTypeArea.hidden = !(isType || isCloze);
   if (els.quizMcqArea) els.quizMcqArea.hidden = !isMcq;
-  if (isType && els.quizTypeInput) {
+  if ((isType || isCloze) && els.quizTypeInput) {
     els.quizTypeInput.value = "";
     els.quizTypeInput.disabled = false;
+    els.quizTypeInput.placeholder = isCloze ? "Type the missing word…" : "Type the word…";
     if (els.quizTypeFeedback) els.quizTypeFeedback.hidden = true;
   }
   if (isMcq) renderQuizMcq(current, pool);
@@ -1467,13 +1640,17 @@ const renderQuizCard = () => {
   }
 
   if (els.quizRevealBtn) {
-    els.quizRevealBtn.hidden = isMcq || isType || state.quizRevealed;
+    els.quizRevealBtn.hidden = isMcq || isType || isCloze || state.quizRevealed;
     els.quizRevealBtn.textContent =
-      isReverse || isType ? "Show word" : "Show answer";
+      isReverse || isType || isCloze ? "Show word" : "Show answer";
   }
-  if (els.quizKnowBtn) els.quizKnowBtn.hidden = isMcq || isType || !state.quizRevealed;
-  if (els.quizAgainBtn) els.quizAgainBtn.hidden = isMcq || isType || !state.quizRevealed;
-  if (els.quizSpeakBtn) els.quizSpeakBtn.hidden = isReverse || isType || isMcq;
+  if (els.quizKnowBtn) {
+    els.quizKnowBtn.hidden = isMcq || isType || isCloze || !state.quizRevealed;
+  }
+  if (els.quizAgainBtn) {
+    els.quizAgainBtn.hidden = isMcq || isType || isCloze || !state.quizRevealed;
+  }
+  if (els.quizSpeakBtn) els.quizSpeakBtn.hidden = isReverse || isType || isMcq || isCloze;
 
   if (els.quizShortcutsHint) {
     els.quizShortcutsHint.hidden = isMcq;
@@ -1604,7 +1781,8 @@ const advanceQuiz = (knewIt) => {
 
 const checkTypedQuizAnswer = () => {
   const current = currentQuizItem();
-  if (!current || state.quizMode !== "type" || state.quizTypeChecked) return;
+  const typingMode = state.quizMode === "type" || state.quizMode === "cloze";
+  if (!current || !typingMode || state.quizTypeChecked) return;
 
   const typed = els.quizTypeInput?.value || "";
   const correct = wordsMatchTyped(typed, current.word);
@@ -1623,7 +1801,7 @@ const checkTypedQuizAnswer = () => {
   state.quizRevealed = true;
   els.quizAnswer.hidden = false;
   if (els.quizAnswerWordRow) els.quizAnswerWordRow.hidden = false;
-  els.quizWordRow.hidden = false;
+  if (els.quizWordRow) els.quizWordRow.hidden = false;
   els.quizWord.textContent = current.word;
   els.quizPronunciation.textContent = current.pronunciation
     ? `/${current.pronunciation}/`
@@ -1716,6 +1894,9 @@ const exportBackup = () => {
   link.download = `imx-english-hub-backup-${new Date().toISOString().slice(0, 10)}.json`;
   link.click();
   URL.revokeObjectURL(url);
+  markBackupExported();
+  hideAppBanner();
+  showToast("Backup downloaded");
 };
 
 const importBackup = async (file) => {
@@ -1781,6 +1962,8 @@ const attachListeners = () => {
   els.newQuoteBtn?.addEventListener("click", renderQuote);
   els.addWordBtn?.addEventListener("click", () => openWordModal());
   els.addTopicBtn?.addEventListener("click", () => openTopicModal());
+  els.topicTemplateBtn?.addEventListener("click", openTopicFromTemplate);
+  els.homeReviewWeakBtn?.addEventListener("click", startWeakWordsQuiz);
 
   els.vocabFavoriteToggle?.addEventListener("click", () => {
     state.vocabFavoritesOnly = !state.vocabFavoritesOnly;
@@ -1889,13 +2072,13 @@ const attachListeners = () => {
     }
 
     if (state.activePage !== "quiz" || (els.modalRoot && !els.modalRoot.hidden)) return;
-    if (isTypingTarget(event.target) && state.quizMode !== "type") return;
+    if (isTypingTarget(event.target) && state.quizMode !== "type" && state.quizMode !== "cloze") return;
 
     if (event.key === " " || event.code === "Space") {
       event.preventDefault();
       if (!currentQuizItem()) return;
       if (state.quizMode === "mcq") return;
-      if (state.quizMode === "type" && !state.quizTypeChecked) return;
+      if ((state.quizMode === "type" || state.quizMode === "cloze") && !state.quizTypeChecked) return;
       if (!state.quizRevealed) {
         state.quizRevealed = true;
         renderQuizCard();
@@ -1916,10 +2099,36 @@ const attachListeners = () => {
   });
 };
 
+const maybeRemindBackup = () => {
+  if (!shouldRemindBackup({ days: 7 }) || !els.appBanner) return;
+  els.appBanner.hidden = false;
+  els.appBanner.dataset.variant = "info";
+  els.appBanner.innerHTML = `
+    <span>Backup reminder: download a JSON export so your custom words and topics stay safe.</span>
+    <button type="button" class="ghost-btn app-banner__action" data-backup-now>Export now</button>
+    <button type="button" class="icon-btn app-banner__dismiss" data-dismiss-banner aria-label="Dismiss">×</button>
+  `;
+  els.appBanner.querySelector("[data-backup-now]")?.addEventListener("click", () => {
+    exportBackup();
+    switchPage("data", { replace: false });
+  });
+  els.appBanner.querySelector("[data-dismiss-banner]")?.addEventListener("click", hideAppBanner);
+};
+
+const registerServiceWorker = async () => {
+  if (!("serviceWorker" in navigator)) return;
+  try {
+    await navigator.serviceWorker.register("./sw.js");
+  } catch (error) {
+    console.warn("Service worker registration failed", error);
+  }
+};
+
 const init = async () => {
   loadTheme();
   const dataOk = await loadData();
   attachListeners();
+  registerServiceWorker();
 
   applyQuizSettingsToState();
   renderCategoryButtons();
@@ -1944,6 +2153,7 @@ const init = async () => {
       console.error("Quiz setup failed", error);
     }
     renderQuote();
+    maybeRemindBackup();
   } else {
     renderHomeStats();
   }
