@@ -11,21 +11,22 @@
     <link rel="icon" type="image/png" href="IMX-logo.png" />
     <link rel="apple-touch-icon" href="IMX-logo.png" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <meta name="theme-color" content="#1a1714" />
+    <meta name="theme-color" content="#0c0b0a" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="IMX Hub" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,650;7..72,700&family=Manrope:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Outfit:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=8" />
   </head>
   <body>
     <div id="appBanner" class="app-banner" hidden role="status"></div>
     <div class="page-shell">
+      <div class="site-chrome" id="siteChrome">
       <header class="topbar">
         <div class="brand">
           <img src="IMX-logo.png" alt="IMX logo" />
@@ -83,14 +84,31 @@
       <nav class="page-nav" aria-label="Main navigation">
         <div class="page-nav__track">
           <button class="nav-link active" data-page="home">Home</button>
-          <button class="nav-link" data-page="vocabulary">Vocabulary</button>
+          <button class="nav-link" data-page="vocabulary">Words</button>
           <button class="nav-link" data-page="topics">Topics</button>
-          <button class="nav-link" data-page="quiz">Exam practice</button>
-          <button class="nav-link" data-page="favorites">Favorites</button>
-          <button class="nav-link nav-link--secondary" data-page="data">Data</button>
-          <button class="nav-link nav-link--secondary" data-page="about">About</button>
+          <button class="nav-link" data-page="quiz">Exam</button>
+          <button class="nav-link nav-link--aside" data-page="favorites">Favorites</button>
+          <button class="nav-link nav-link--aside" data-page="data">Data</button>
+          <button class="nav-link nav-link--aside" data-page="about">About</button>
+          <div class="nav-more">
+            <button
+              id="navMoreBtn"
+              class="nav-link nav-more__btn"
+              type="button"
+              aria-expanded="false"
+              aria-controls="navMoreMenu"
+            >
+              More
+            </button>
+            <div id="navMoreMenu" class="nav-more__menu" hidden>
+              <button class="nav-link" data-page="favorites" type="button">Favorites</button>
+              <button class="nav-link" data-page="data" type="button">Data</button>
+              <button class="nav-link" data-page="about" type="button">About</button>
+            </div>
+          </div>
         </div>
       </nav>
+      </div>
 
       <main class="page-content" role="main">
         <section id="home" class="page page--active">
@@ -119,23 +137,33 @@
             </aside>
           </div>
 
-          <div class="home-grid">
-            <div class="progress-card">
-              <p class="progress-label">Vocabulary</p>
+          <section class="motivation-card" aria-label="Daily motivation">
+            <div class="motivation-card__header">
+              <p class="motivation-eyebrow">Daily line</p>
+              <button id="newQuoteBtn" class="quote-btn" type="button">
+                New line
+              </button>
+            </div>
+            <p id="motivationQuote" class="motivation-quote"></p>
+          </section>
+
+          <div class="home-study-strip" aria-label="Library snapshot">
+            <button type="button" class="study-stat" data-jump="vocabulary">
+              <span class="progress-label">Vocabulary</span>
               <strong id="homeTotalWords">0</strong>
-            </div>
-            <div class="progress-card">
-              <p class="progress-label">Topics</p>
+            </button>
+            <button type="button" class="study-stat" data-jump="topics">
+              <span class="progress-label">Topics</span>
               <strong id="homeTotalTopics">0</strong>
-            </div>
-            <div class="progress-card">
-              <p class="progress-label">Favorites</p>
+            </button>
+            <button type="button" class="study-stat" data-jump="favorites">
+              <span class="progress-label">Favorites</span>
               <strong id="homeFavoriteWords">0</strong>
-            </div>
-            <div class="progress-card">
-              <p class="progress-label">Due for quiz</p>
+            </button>
+            <button type="button" class="study-stat" data-jump="quiz">
+              <span class="progress-label">Due</span>
               <strong id="homeDueWords">0</strong>
-            </div>
+            </button>
           </div>
 
           <section
@@ -154,16 +182,6 @@
               </button>
             </div>
             <ul id="homeWeakWordsList" class="home-weak-list"></ul>
-          </section>
-
-          <section class="motivation-card" aria-label="Daily motivation">
-            <div class="motivation-card__header">
-              <p class="motivation-eyebrow">Daily line</p>
-              <button id="newQuoteBtn" class="quote-btn" type="button">
-                New line
-              </button>
-            </div>
-            <p id="motivationQuote" class="motivation-quote"></p>
           </section>
         </section>
 
@@ -232,45 +250,58 @@
               <h2>Exam practice</h2>
             </div>
             <div class="page-controls quiz-page-controls">
-              <div class="quiz-toolbar">
-                <label class="select-wrap">
-                  <span>Mode</span>
-                  <select id="quizModeSelect">
-                    <option value="flashcard">Word → meaning</option>
-                    <option value="reverse">Meaning → word</option>
-                    <option value="type">Type the word</option>
-                    <option value="mcq">Pick the word</option>
-                    <option value="cloze">Fill the blank</option>
-                  </select>
-                </label>
-                <label class="select-wrap">
-                  <span>Scope</span>
-                  <select id="quizScopeSelect">
-                    <option value="due">Due words</option>
-                    <option value="all">All vocabulary</option>
-                  </select>
-                </label>
-                <label class="select-wrap">
-                  <span>Category</span>
-                  <select id="quizCategorySelect">
-                    <option value="All">All categories</option>
-                  </select>
-                </label>
-                <div class="quiz-toolbar__extras">
-                  <label class="checkbox-wrap">
-                    <input id="quizTimerToggle" type="checkbox" />
-                    <span>20s timer</span>
+              <div class="quiz-focus-bar">
+                <button
+                  id="quizSettingsToggle"
+                  class="ghost-btn quiz-settings-toggle"
+                  type="button"
+                  aria-expanded="false"
+                  aria-controls="quizToolbarPanel"
+                >
+                  Settings
+                </button>
+                <button id="quizRestartBtn" class="ghost-btn" type="button">
+                  Restart
+                </button>
+              </div>
+              <div id="quizToolbarPanel" class="quiz-toolbar-panel" hidden>
+                <div class="quiz-toolbar">
+                  <label class="select-wrap">
+                    <span>Mode</span>
+                    <select id="quizModeSelect">
+                      <option value="flashcard">Word → meaning</option>
+                      <option value="reverse">Meaning → word</option>
+                      <option value="type">Type the word</option>
+                      <option value="mcq">Pick the word</option>
+                      <option value="cloze">Fill the blank</option>
+                    </select>
                   </label>
-                  <label class="checkbox-wrap">
-                    <input id="quizRequeueToggle" type="checkbox" checked />
-                    <span>Re-queue missed</span>
+                  <label class="select-wrap">
+                    <span>Scope</span>
+                    <select id="quizScopeSelect">
+                      <option value="due">Due words</option>
+                      <option value="all">All vocabulary</option>
+                    </select>
                   </label>
-                  <button id="quizPrintBtn" class="ghost-btn" type="button">
-                    Print sheet
-                  </button>
-                  <button id="quizRestartBtn" class="ghost-btn" type="button">
-                    Restart session
-                  </button>
+                  <label class="select-wrap">
+                    <span>Category</span>
+                    <select id="quizCategorySelect">
+                      <option value="All">All categories</option>
+                    </select>
+                  </label>
+                  <div class="quiz-toolbar__extras">
+                    <label class="checkbox-wrap">
+                      <input id="quizTimerToggle" type="checkbox" />
+                      <span>20s timer</span>
+                    </label>
+                    <label class="checkbox-wrap">
+                      <input id="quizRequeueToggle" type="checkbox" checked />
+                      <span>Re-queue missed</span>
+                    </label>
+                    <button id="quizPrintBtn" class="ghost-btn" type="button">
+                      Print sheet
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -1,0 +1,73 @@
+/* Premium editorial tokens — restrained champagne on deep ink */
+:root {
+  color-scheme: dark;
+  --bg: #0c0b0a;
+  --bg-glow: rgba(201, 166, 107, 0.11);
+  --bg-glow-2: rgba(120, 90, 55, 0.06);
+  --surface: #151311;
+  --surface-muted: #1b1815;
+  --surface-raised: #1a1714;
+  --surface-strong: rgba(18, 16, 14, 0.88);
+  --text: #f2eee6;
+  --muted: #9a9287;
+  --accent: #c9a66b;
+  --accent-soft: rgba(201, 166, 107, 0.12);
+  --accent-strong: #dbb97a;
+  --accent-ink: #0c0b0a;
+  --border-subtle: rgba(242, 238, 230, 0.05);
+  --border: rgba(242, 238, 230, 0.09);
+  --border-strong: rgba(242, 238, 230, 0.14);
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.28);
+  --rule: rgba(201, 166, 107, 0.45);
+  --danger: #d98b8b;
+  --success: #8fbfa3;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 28px;
+  --space-4: 40px;
+  --content-pad-x: 0;
+  --control-h: 42px;
+  --touch: 44px;
+  --action-col: 148px;
+  --font-sans: "Outfit", system-ui, sans-serif;
+  --font-serif: "Fraunces", "Literata", "Times New Roman", serif;
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px color-mix(in srgb, var(--accent) 70%, white);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --cat-emotions: #c98a98;
+  --cat-mindset: #7fa3c4;
+  --cat-character: #c4a06a;
+  --cat-learning: #6fad96;
+  --cat-speaking: #b492c4;
+  --cat-lifestyle: #c9a66b;
+  --cat-society: #8e9bb5;
+  --cat-growth: #a5b86e;
+}
+
+/* Cool stone paper — not warm cream / terracotta */
+body.light {
+  color-scheme: light;
+  --bg: #f3f2ef;
+  --bg-glow: rgba(80, 64, 40, 0.06);
+  --bg-glow-2: rgba(60, 70, 80, 0.04);
+  --surface: #faf9f6;
+  --surface-muted: #eceae4;
+  --surface-raised: #fffcf7;
+  --surface-strong: rgba(250, 249, 246, 0.92);
+  --text: #171614;
+  --muted: #6a655e;
+  --accent: #6e5630;
+  --accent-soft: rgba(110, 86, 48, 0.1);
+  --accent-strong: #543f20;
+  --accent-ink: #fffcf7;
+  --border-subtle: rgba(23, 22, 20, 0.05);
+  --border: rgba(23, 22, 20, 0.09);
+  --border-strong: rgba(23, 22, 20, 0.14);
+  --shadow: 0 20px 50px rgba(30, 26, 20, 0.08);
+  --shadow-soft: 0 8px 24px rgba(30, 26, 20, 0.05);
+  --rule: rgba(110, 86, 48, 0.4);
+  --danger: #9b3d3d;
+  --success: #2f6b4f;
+}

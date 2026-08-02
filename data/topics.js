@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "What Makes Life Truly Valuable?",
+    date: "2026-08-03",
+    completed: false,
+    vocabulary: [
+      "Significance",
+      "Altruism",
+      "Virtue",
+      "Transcendence",
+      "Fulfillment",
+      "Resonance",
+      "Stewardship",
+      "Conviction",
+      "Flourishing",
+      "Eudaimonia",
+    ],
+    summary:
+      "This topic explores the deeper sources of a meaningful life beyond wealth, fame, or pleasure. It examines philosophical and psychological ideas about virtue, selflessness, personal growth, and the lasting impact we leave on others.",
+    notes:
+      "Throughout history, philosophers such as Aristotle argued that a truly valuable life is built on virtue, wisdom, and contribution rather than material success. Modern psychology supports this idea, showing that people experience greater well-being through meaningful relationships, purposeful work, personal growth, and helping others. A valuable life is measured not by what we own, but by who we become and the positive influence we have on the world.",
+    questions: [
+      "Can a person have a valuable life without being wealthy?",
+      "What matters more: happiness or meaning?",
+      "How does helping others increase the value of our own lives?",
+      "What kind of legacy should a person try to leave behind?",
+      "How can someone live a life with greater significance?",
+    ],
+  }),
+
+  createTopic({
     title: "Can a Person Change Their Destiny?",
     date: "2026-08-02",
     completed: false,

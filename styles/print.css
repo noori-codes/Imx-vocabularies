@@ -1,0 +1,45 @@
+/* Print exam sheet */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .quiz-print-sheet,
+  .quiz-print-sheet * {
+    visibility: visible;
+  }
+
+  .quiz-print-sheet {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 24px;
+    color: #111;
+    background: #fff;
+  }
+
+  .quiz-print-page {
+    page-break-after: always;
+  }
+
+  .quiz-print-page table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+    font-size: 12px;
+  }
+
+  .quiz-print-page th,
+  .quiz-print-page td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .print-blank {
+    min-height: 28px;
+  }
+}

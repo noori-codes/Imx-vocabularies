@@ -1,8 +1,15 @@
-const CACHE_NAME = "imx-hub-v2";
+const CACHE_NAME = "imx-hub-v8";
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
+  "./styles/tokens.css",
+  "./styles/base.css",
+  "./styles/layout.css",
+  "./styles/components.css",
+  "./styles/quiz.css",
+  "./styles/responsive.css",
+  "./styles/print.css",
   "./app.js",
   "./IMX-logo.png",
   "./manifest.webmanifest",
@@ -37,6 +44,27 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  const isStyleOrScript =
+    url.pathname.endsWith(".css") ||
+    url.pathname.endsWith(".js") ||
+    url.pathname.endsWith(".webmanifest");
+
+  // Always prefer fresh CSS/JS so style edits show up without fighting the cache.
+  if (isStyleOrScript) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response && response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request)),
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(request).then((cached) => {

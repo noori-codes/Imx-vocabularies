@@ -29,6 +29,7 @@ Then visit `http://localhost:8080`.
 - **Weak words** on Home plus a one-tap review session
 - **Session summary** with missed-word review
 - **Pronunciation** via Youdao / Google TTS audio with speechSynthesis fallback
+- **Export / import** JSON backups with a weekly reminder
 - **Installable PWA** for offline use
 - **8 focused categories:** Emotions, Mindset, Character, Learning, Speaking, Lifestyle, Society, Growth
 
@@ -37,7 +38,15 @@ Then visit `http://localhost:8080`.
 ```
 index.html
 app.js
-styles.css
+styles.css                 # imports the modules below
+styles/
+  tokens.css               # colors, spacing, fonts
+  base.css                 # reset, paper texture, focus, motion
+  layout.css               # shell, nav, home, page structure
+  components.css           # cards, topics, forms, empty states
+  quiz.css                 # exam practice UI
+  responsive.css           # breakpoints
+  print.css                # printable exam sheet
 manifest.webmanifest
 sw.js
 components/

@@ -143,11 +143,16 @@ const els = {
   quizReviewMissedBtn: document.getElementById("quizReviewMissedBtn"),
   quizNewSessionBtn: document.getElementById("quizNewSessionBtn"),
   quizPrintSheet: document.getElementById("quizPrintSheet"),
+  quizSettingsToggle: document.getElementById("quizSettingsToggle"),
+  quizToolbarPanel: document.getElementById("quizToolbarPanel"),
   homeStudyStreak: document.getElementById("homeStudyStreak"),
   homeWeakWords: document.getElementById("homeWeakWords"),
   homeWeakWordsList: document.getElementById("homeWeakWordsList"),
   homeReviewWeakBtn: document.getElementById("homeReviewWeakBtn"),
   topicTemplateBtn: document.getElementById("topicTemplateBtn"),
+  navMoreBtn: document.getElementById("navMoreBtn"),
+  navMoreMenu: document.getElementById("navMoreMenu"),
+  siteChrome: document.getElementById("siteChrome"),
   exportBtn: document.getElementById("exportBtn"),
   importFileInput: document.getElementById("importFileInput"),
   importModeSelect: document.getElementById("importModeSelect"),
@@ -347,6 +352,8 @@ const applyTheme = (theme) => {
     "aria-label",
     isLight ? "Switch to dark theme" : "Switch to light theme",
   );
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) themeMeta.setAttribute("content", isLight ? "#f3f2ef" : "#0c0b0a");
 };
 
 const loadTheme = () => {
@@ -372,9 +379,11 @@ const switchPage = (page, { updateHistory = true, replace = true } = {}) => {
   els.pages.forEach((section) =>
     section.classList.toggle("page--active", section.id === page),
   );
-  els.navLinks.forEach((button) =>
-    button.classList.toggle("active", button.dataset.page === page),
-  );
+  els.navLinks.forEach((button) => {
+    if (!button.dataset.page) return;
+    button.classList.toggle("active", button.dataset.page === page);
+  });
+  closeNavMore();
   if (updateHistory) updateUrlState(page, { replace });
   if (page === "quiz") {
     try {
@@ -383,6 +392,45 @@ const switchPage = (page, { updateHistory = true, replace = true } = {}) => {
       console.error("Quiz setup failed", error);
     }
   }
+  syncQuizFocusMode();
+};
+
+const closeNavMore = () => {
+  if (!els.navMoreBtn || !els.navMoreMenu) return;
+  els.navMoreMenu.hidden = true;
+  els.navMoreBtn.setAttribute("aria-expanded", "false");
+};
+
+const toggleNavMore = () => {
+  if (!els.navMoreBtn || !els.navMoreMenu) return;
+  const open = els.navMoreMenu.hidden;
+  els.navMoreMenu.hidden = !open;
+  els.navMoreBtn.setAttribute("aria-expanded", String(open));
+};
+
+const setQuizSettingsOpen = (open) => {
+  if (!els.quizToolbarPanel || !els.quizSettingsToggle) return;
+  els.quizToolbarPanel.hidden = !open;
+  els.quizSettingsToggle.setAttribute("aria-expanded", String(open));
+};
+
+const syncQuizFocusMode = () => {
+  const quizPage = document.getElementById("quiz");
+  if (!quizPage) return;
+  const summaryVisible = Boolean(els.quizSummary && !els.quizSummary.hidden);
+  const inSession =
+    state.activePage === "quiz" && Boolean(currentQuizItem()) && !summaryVisible;
+  const wasFocus = quizPage.classList.contains("is-focus");
+  quizPage.classList.toggle("is-focus", inSession);
+  if (inSession && !wasFocus) setQuizSettingsOpen(false);
+  if (!inSession && state.activePage === "quiz" && !summaryVisible) {
+    // Idle quiz page: keep settings reachable.
+    if (els.quizToolbarPanel?.hidden && wasFocus) setQuizSettingsOpen(true);
+  }
+};
+
+const updateScrollChrome = () => {
+  document.body.classList.toggle("is-scrolled", window.scrollY > 24);
 };
 
 const closeModal = () => {
@@ -558,7 +606,7 @@ const openTopicFromTemplate = () => {
   );
 };
 
-const DATA_VERSION = "2026-08-01-hub-improvements-v1";
+const DATA_VERSION = "2026-08-03-valuable-life";
 
 const importDataModule = async (path) => {
   try {
@@ -720,6 +768,8 @@ const createVocabCard = (item, { compact = false } = {}) => {
   const isFavorite = favoriteWords.has(item.word);
   const word = escapeHtml(item.word);
   const related = getTopicsForWord(item.word, topicData);
+  const hasExtra =
+    !compact && Boolean(item.synonym || item.antonym || item.wordFamily);
 
   card.innerHTML = `
     <div class="card-top">
@@ -743,14 +793,21 @@ const createVocabCard = (item, { compact = false } = {}) => {
       compact
         ? ""
         : `
-      <span class="meta-line">Synonym</span>
-      <span class="meta-value">${escapeHtml(item.synonym)}</span>
-      <span class="meta-line">Antonym</span>
-      <span class="meta-value">${escapeHtml(item.antonym)}</span>
-      <span class="meta-line">Word Family</span>
-      <span class="meta-value">${escapeHtml(item.wordFamily)}</span>
       <span class="meta-line">Example</span>
-      <span class="meta-value">“${escapeHtml(item.sentence)}”</span>
+      <span class="meta-value">“${escapeHtml(item.sentence || "—")}”</span>
+      ${
+        hasExtra
+          ? `<div class="vocab-details" hidden>
+              <span class="meta-line">Synonym</span>
+              <span class="meta-value">${escapeHtml(item.synonym || "—")}</span>
+              <span class="meta-line">Antonym</span>
+              <span class="meta-value">${escapeHtml(item.antonym || "—")}</span>
+              <span class="meta-line">Word Family</span>
+              <span class="meta-value">${escapeHtml(item.wordFamily || "—")}</span>
+            </div>
+            <button type="button" class="ghost-btn vocab-more-btn" aria-expanded="false">More details</button>`
+          : ""
+      }
     `
     }
     ${
@@ -786,6 +843,14 @@ const createVocabCard = (item, { compact = false } = {}) => {
   });
   card.querySelectorAll(".topic-link-btn").forEach((button) => {
     button.addEventListener("click", () => focusTopicByTitle(button.dataset.topic));
+  });
+  const moreBtn = card.querySelector(".vocab-more-btn");
+  const details = card.querySelector(".vocab-details");
+  moreBtn?.addEventListener("click", () => {
+    const willOpen = details.hidden;
+    details.hidden = !willOpen;
+    moreBtn.setAttribute("aria-expanded", String(willOpen));
+    moreBtn.textContent = willOpen ? "Less details" : "More details";
   });
   card.querySelector(".edit-btn").addEventListener("click", () => openWordModal(item));
   card.querySelector(".delete-btn").addEventListener("click", () => {
@@ -843,6 +908,14 @@ const filterTopics = () => {
   });
 };
 
+const EMPTY_FLOURISH = `
+  <svg class="empty-flourish" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <path d="M8 30c6-10 12-14 16-14s10 4 16 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M16 22c3-4 6-6 8-6s5 2 8 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity="0.7"/>
+    <circle cx="24" cy="34" r="1.6" fill="currentColor"/>
+  </svg>
+`;
+
 const emptyStateWithFiltersHint = (title, detail) => {
   const hasLibrary = vocabularyData.length > 0 || topicData.length > 0;
   const filteredBySearch =
@@ -854,7 +927,7 @@ const emptyStateWithFiltersHint = (title, detail) => {
     hasLibrary && filteredBySearch
       ? `<p><button type="button" class="ghost-btn" data-clear-filters>Clear search &amp; filters</button></p>`
       : "";
-  return `<h3>${title}</h3><p>${detail}</p>${extra}`;
+  return `${EMPTY_FLOURISH}<h3>${title}</h3><p>${detail}</p>${extra}`;
 };
 
 const openSpeakingPractice = (topic) => {
@@ -1180,6 +1253,7 @@ const renderFavorites = () => {
   if (!favoriteWordsList.length) {
     els.favoriteVocabGrid.innerHTML = `
       <div class="empty-state">
+        ${EMPTY_FLOURISH}
         <h3>No favorite vocabulary yet</h3>
         <p>Mark words as favorites to save them here.</p>
       </div>
@@ -1193,6 +1267,7 @@ const renderFavorites = () => {
   if (!favoriteTopicsList.length) {
     els.favoriteTopicGrid.innerHTML = `
       <div class="empty-state">
+        ${EMPTY_FLOURISH}
         <h3>No favorite topics yet</h3>
         <p>Mark topics as favorites to save them here.</p>
       </div>
@@ -1530,6 +1605,7 @@ const showQuizSummary = () => {
   if (els.quizStatusText) els.quizStatusText.textContent = "Session complete";
   if (els.quizProgressText) els.quizProgressText.textContent = describeQuizScope();
   if (els.quizProgressBar) els.quizProgressBar.hidden = true;
+  syncQuizFocusMode();
 };
 
 const resetQuizSessionStats = (total) => {
@@ -1681,6 +1757,7 @@ const renderQuizCard = () => {
   }
   updateQuizProgressBar();
   startQuizCardTimer();
+  syncQuizFocusMode();
 };
 
 const prepareQuiz = ({ forceAll = false, preserveForce = false, limit = null } = {}) => {
@@ -1944,10 +2021,25 @@ const attachListeners = () => {
   if (listenersReady) return;
   listenersReady = true;
   els.navLinks.forEach((button) => {
-    button.addEventListener("click", () =>
-      switchPage(button.dataset.page, { replace: false }),
-    );
+    button.addEventListener("click", () => {
+      if (!button.dataset.page) return;
+      switchPage(button.dataset.page, { replace: false });
+    });
   });
+
+  els.navMoreBtn?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleNavMore();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!els.navMoreMenu || els.navMoreMenu.hidden) return;
+    if (event.target.closest(".nav-more")) return;
+    closeNavMore();
+  });
+
+  window.addEventListener("scroll", updateScrollChrome, { passive: true });
+  updateScrollChrome();
 
   // Unlock audio on first real user gesture so mobile browsers allow playback.
   const unlockOnce = () => {
@@ -2065,6 +2157,10 @@ const attachListeners = () => {
     prepareQuiz({ forceAll: state.quizForceAll }),
   );
   els.quizPrintBtn?.addEventListener("click", buildPrintExamSheet);
+  els.quizSettingsToggle?.addEventListener("click", () => {
+    const open = Boolean(els.quizToolbarPanel?.hidden);
+    setQuizSettingsOpen(open);
+  });
 
   els.restoreBuiltInBtn?.addEventListener("click", () => {
     if (
@@ -2141,7 +2237,7 @@ const maybeRemindBackup = () => {
 const registerServiceWorker = async () => {
   if (!("serviceWorker" in navigator)) return;
   try {
-    await navigator.serviceWorker.register("./sw.js");
+    await navigator.serviceWorker.register("./sw.js?v=8");
   } catch (error) {
     console.warn("Service worker registration failed", error);
   }
