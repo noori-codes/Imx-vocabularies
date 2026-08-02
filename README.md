@@ -28,8 +28,7 @@ Then visit `http://localhost:8080`.
 - **Speaking practice** — timed discussion-question drills per topic
 - **Weak words** on Home plus a one-tap review session
 - **Session summary** with missed-word review
-- **Pronunciation** via dictionary audio / browser TTS fallbacks
-- **Export / import** JSON backups with a weekly reminder
+- **Pronunciation** via Youdao / Google TTS audio with speechSynthesis fallback
 - **Installable PWA** for offline use
 - **8 focused categories:** Emotions, Mindset, Character, Learning, Speaking, Lifestyle, Society, Growth
 
@@ -45,7 +44,7 @@ components/
   helpers.js
   storage.js          # localStorage merge, quiz, import/export, streaks
   dom.js              # HTML helpers + icons
-  speech.js           # pronunciation
+  speech.js           # pronunciation (Youdao / Google TTS + native fallback)
   share.js            # share / clipboard
   cloze.js            # fill-in-the-blank prompts
 data/

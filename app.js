@@ -34,7 +34,7 @@ import {
   iconChevron,
   iconShare,
 } from "./components/dom.js";
-import { speakWord } from "./components/speech.js";
+import { speakWord, unlockAudio } from "./components/speech.js";
 import { formatWordShare, formatTopicShare, shareContent } from "./components/share.js";
 import { buildClozePrompt } from "./components/cloze.js";
 
@@ -173,6 +173,18 @@ const clearSpeakingTimer = () => {
   if (speakingTimerId) {
     clearInterval(speakingTimerId);
     speakingTimerId = null;
+  }
+};
+
+const speakWordFromUi = async (word, button) => {
+  const target = button instanceof HTMLElement ? button : null;
+  target?.classList.add("is-speaking");
+  target?.setAttribute("aria-busy", "true");
+  try {
+    await speakWord(word);
+  } finally {
+    target?.classList.remove("is-speaking");
+    target?.removeAttribute("aria-busy");
   }
 };
 
@@ -760,7 +772,9 @@ const createVocabCard = (item, { compact = false } = {}) => {
   `;
 
   card.querySelector(".word-title-btn")?.addEventListener("click", () => openWordDetail(item));
-  card.querySelector(".speak-btn").addEventListener("click", () => speakWord(item.word));
+  card.querySelector(".speak-btn").addEventListener("click", (event) => {
+    speakWordFromUi(item.word, event.currentTarget);
+  });
   card.querySelector(".share-btn")?.addEventListener("click", () => shareItem("word", item));
   card.querySelector(".favorite-btn").addEventListener("click", () => {
     if (favoriteWords.has(item.word)) favoriteWords.delete(item.word);
@@ -1089,7 +1103,7 @@ const renderTopics = () => {
     card.querySelectorAll(".mini-speak").forEach((button) => {
       button.addEventListener("click", (event) => {
         event.stopPropagation();
-        speakWord(button.dataset.speak);
+        speakWordFromUi(button.dataset.speak, button);
       });
     });
 
@@ -1935,6 +1949,15 @@ const attachListeners = () => {
     );
   });
 
+  // Unlock audio on first real user gesture so mobile browsers allow playback.
+  const unlockOnce = () => {
+    unlockAudio();
+    document.removeEventListener("pointerdown", unlockOnce);
+    document.removeEventListener("keydown", unlockOnce);
+  };
+  document.addEventListener("pointerdown", unlockOnce, { once: true });
+  document.addEventListener("keydown", unlockOnce, { once: true });
+
   document.querySelectorAll("[data-jump]").forEach((button) => {
     button.addEventListener("click", () =>
       switchPage(button.dataset.jump, { replace: false }),
@@ -1988,9 +2011,9 @@ const attachListeners = () => {
   });
   els.quizKnowBtn?.addEventListener("click", () => advanceQuiz(true));
   els.quizAgainBtn?.addEventListener("click", () => advanceQuiz(false));
-  els.quizSpeakBtn?.addEventListener("click", () => {
+  els.quizSpeakBtn?.addEventListener("click", (event) => {
     const current = currentQuizItem();
-    if (current) speakWord(current.word);
+    if (current) speakWordFromUi(current.word, event.currentTarget);
   });
   els.quizRestartBtn?.addEventListener("click", () => prepareQuiz({ forceAll: true }));
   els.quizScopeSelect?.addEventListener("change", (event) => {
