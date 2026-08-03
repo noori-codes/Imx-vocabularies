@@ -23,6 +23,8 @@ const CATEGORY_ALIASES = {
   Responsibility: "Character",
   Learning: "Learning",
   Skill: "Learning",
+  Science: "Learning",
+  Discovery: "Learning",
   Speaking: "Speaking",
   Communication: "Speaking",
   Lifestyle: "Lifestyle",
@@ -43,6 +45,8 @@ const CATEGORY_ALIASES = {
   "Personal Growth": "Growth",
   Success: "Growth",
   Challenges: "Growth",
+  Innovation: "Growth",
+  Interest: "Emotions",
 };
 
 export const normalizeCategory = (category) => {

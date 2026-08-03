@@ -606,7 +606,7 @@ const openTopicFromTemplate = () => {
   );
 };
 
-const DATA_VERSION = "2026-08-03-valuable-life";
+const DATA_VERSION = "2026-08-04-curiosity";
 
 const importDataModule = async (path) => {
   try {
@@ -2237,7 +2237,7 @@ const maybeRemindBackup = () => {
 const registerServiceWorker = async () => {
   if (!("serviceWorker" in navigator)) return;
   try {
-    await navigator.serviceWorker.register("./sw.js?v=8");
+    await navigator.serviceWorker.register("./sw.js?v=9");
   } catch (error) {
     console.warn("Service worker registration failed", error);
   }

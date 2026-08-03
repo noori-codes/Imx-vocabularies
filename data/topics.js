@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Are Humans Naturally Curious?",
+    date: "2026-08-04",
+    completed: false,
+    vocabulary: [
+      "Fascination",
+      "Intrigue",
+      "Questioning",
+      "Exploration",
+      "Reasoning",
+      "Discovery",
+      "Wonder",
+      "Observation",
+      "Inquiry",
+      "Inventiveness",
+    ],
+    summary:
+      "This topic explores whether curiosity is an inborn human trait or a skill shaped by experience. It discusses how curiosity has influenced human evolution, scientific progress, creativity, and lifelong learning, while also examining the factors that encourage or suppress our desire to explore the unknown.",
+    notes:
+      "Humans begin exploring the world from infancy by observing, experimenting, and asking questions. Throughout history, curiosity has driven major discoveries, technological advances, and philosophical ideas. However, routine, fear of failure, and rigid education can weaken curiosity. The discussion asks whether humans are naturally curious or whether curiosity must be continually nurtured.",
+    questions: [
+      "Are humans born with curiosity?",
+      "Why are children generally more curious than adults?",
+      "Can curiosity be lost over time?",
+      "How has curiosity contributed to human progress?",
+      "Should schools encourage curiosity more than memorization?",
+    ],
+  }),
+
+  createTopic({
     title: "What Makes Life Truly Valuable?",
     date: "2026-08-03",
     completed: false,
