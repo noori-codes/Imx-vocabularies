@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Can Anyone Become an Expert?",
+    date: "2026-08-05",
+    completed: false,
+    vocabulary: [
+      "Expertise",
+      "Mastery",
+      "Competence",
+      "Deliberate Practice",
+      "Dedication",
+      "Consistency",
+      "Refinement",
+      "Proficiency",
+      "Aptitude",
+      "Mentorship",
+    ],
+    summary:
+      "This topic explores whether expertise is something people are born with or something they develop through consistent effort. It examines the roles of practice, talent, discipline, mentorship, and continuous improvement in becoming highly skilled.",
+    notes:
+      "While natural talent may provide an advantage, research suggests that becoming an expert depends far more on deliberate practice, consistency, and the willingness to learn from mistakes. Experts are not simply people who know more—they are people who have spent years refining their skills through focused effort and continuous feedback.",
+    questions: [
+      "Can anyone become an expert with enough practice?",
+      "Is talent more important than hard work?",
+      "What is deliberate practice, and why is it effective?",
+      "How does mentorship accelerate learning?",
+      "How many years does it usually take to master a skill?",
+    ],
+  }),
+
+  createTopic({
     title: "Are Humans Naturally Curious?",
     date: "2026-08-04",
     completed: false,
