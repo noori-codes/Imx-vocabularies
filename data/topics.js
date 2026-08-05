@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Is Knowledge More Powerful Than Strength?",
+    date: "2026-08-06",
+    completed: false,
+    vocabulary: [
+      "Wisdom",
+      "Strategy",
+      "Influence",
+      "Judgment",
+      "Authority",
+      "Dominance",
+      "Foresight",
+      "Competence",
+      "Persuasion",
+      "Discernment",
+    ],
+    summary:
+      "This topic explores whether knowledge is ultimately more powerful than physical strength. It compares intelligence, strategy, and wisdom with force, showing how informed decisions and critical thinking have shaped history, leadership, science, and society.",
+    notes:
+      "Throughout history, physical strength has been important for survival and protection. However, knowledge has consistently transformed civilizations through science, technology, medicine, and innovation. Great leaders and inventors often succeeded because of their wisdom, strategy, and ability to influence others rather than their physical power. The discussion examines how knowledge and strength complement each other while arguing that knowledge often has the greater long-term impact.",
+    questions: [
+      "Can knowledge defeat physical strength?",
+      "Why is strategy often more effective than force?",
+      "How has knowledge changed human history?",
+      "Can strength exist without intelligence?",
+      "Which is more valuable in today's world: knowledge or strength?",
+    ],
+  }),
+
+  createTopic({
     title: "Can Anyone Become an Expert?",
     date: "2026-08-05",
     completed: false,
