@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Why Do People Seek Approval?",
+    date: "2026-08-08",
+    completed: false,
+    vocabulary: [
+      "Validation",
+      "Acceptance",
+      "Reassurance",
+      "Insecurity",
+      "Self-Worth",
+      "Conformity",
+      "Recognition",
+      "Criticism",
+      "Rejection",
+      "Independence",
+    ],
+    summary:
+      "This topic explores why people care about other people's opinions and seek approval from friends, family, colleagues, and society. It examines the role of belonging, insecurity, self-worth, social pressure, and the desire for recognition.",
+    notes:
+      "Humans are social beings, so wanting acceptance is a natural part of life. However, constantly depending on other people's approval can weaken confidence and make people change their behavior simply to please others. Healthy relationships involve caring about other people's opinions without allowing those opinions to determine our identity or self-worth.",
+    questions: [
+      "Why do people care about others' opinions?",
+      "Why is approval especially important during adolescence?",
+      "Can seeking approval become unhealthy?",
+      "How does social media increase the need for validation?",
+      "How can people become less dependent on approval?",
+    ],
+  }),
+
+  createTopic({
     title: "Is Knowledge More Powerful Than Strength?",
     date: "2026-08-06",
     completed: false,
