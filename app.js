@@ -173,11 +173,74 @@ let baseTopics = [];
 let vocabularyData = [];
 let topicData = [];
 let speakingTimerId = null;
+let lastModalActiveElement = null;
+let modalTrapKeydown = null;
 
 const clearSpeakingTimer = () => {
   if (speakingTimerId) {
     clearInterval(speakingTimerId);
     speakingTimerId = null;
+  }
+};
+
+const getFocusableElements = (container) => {
+  if (!(container instanceof HTMLElement)) return [];
+  const focusables = Array.from(
+    container.querySelectorAll(
+      [
+        'a[href]',
+        'button:not([disabled])',
+        'textarea:not([disabled])',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(","),
+    ),
+  ).filter((el) => {
+    const style = window.getComputedStyle(el);
+    return style.visibility !== "hidden" && style.display !== "none";
+  });
+  return focusables;
+};
+
+const enableModalFocusTrap = () => {
+  if (!els.modalRoot) return;
+
+  const panel = els.modalRoot.querySelector(".modal__panel");
+  if (!panel) return;
+
+  // Ensure tabbing stays inside the dialog.
+  modalTrapKeydown = (event) => {
+    if (event.key !== "Tab") return;
+    if (els.modalRoot.hidden) return;
+
+    const focusables = getFocusableElements(panel);
+    if (!focusables.length) return;
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+
+    if (event.shiftKey) {
+      if (active === first || !panel.contains(active)) {
+        event.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  };
+
+  document.addEventListener("keydown", modalTrapKeydown);
+};
+
+const disableModalFocusTrap = () => {
+  if (modalTrapKeydown) {
+    document.removeEventListener("keydown", modalTrapKeydown);
+    modalTrapKeydown = null;
   }
 };
 
@@ -435,18 +498,24 @@ const updateScrollChrome = () => {
 
 const closeModal = () => {
   clearSpeakingTimer();
+  disableModalFocusTrap();
   els.modalRoot.hidden = true;
   els.modalBody.innerHTML = "";
   state.editingWord = null;
   state.editingTopic = null;
+  // Restore keyboard focus to where the user opened the modal.
+  lastModalActiveElement?.focus?.();
+  lastModalActiveElement = null;
 };
 
 const openModal = (title, bodyHtml) => {
   els.modalTitle.textContent = title;
   els.modalBody.innerHTML = bodyHtml;
+  lastModalActiveElement = document.activeElement;
   els.modalRoot.hidden = false;
   const firstField = els.modalBody.querySelector("input, textarea, select");
   firstField?.focus();
+  enableModalFocusTrap();
 };
 
 const categoryOptions = (selected = "Learning") =>
@@ -2185,9 +2254,15 @@ const attachListeners = () => {
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && els.modalRoot && !els.modalRoot.hidden) {
-      closeModal();
-      return;
+    if (event.key === "Escape") {
+      if (els.navMoreMenu && !els.navMoreMenu.hidden) {
+        closeNavMore();
+        return;
+      }
+      if (els.modalRoot && !els.modalRoot.hidden) {
+        closeModal();
+        return;
+      }
     }
 
     if (state.activePage !== "quiz" || (els.modalRoot && !els.modalRoot.hidden)) return;
