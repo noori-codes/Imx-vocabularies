@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "How Does Learning Change the Brain?",
+    date: "2026-08-11",
+    completed: false,
+    vocabulary: [
+      "Neuroplasticity",
+      "Neural Pathway",
+      "Retention",
+      "Recall",
+      "Adaptation",
+      "Concentration",
+      "Cognitive",
+      "Reinforcement",
+      "Stimulate",
+      "Acquisition",
+    ],
+    summary:
+      "This topic explores how learning physically and functionally changes the brain. It explains how repeated practice strengthens neural connections, how memory develops, and why concentration, repetition, and active recall can make learning more effective.",
+    notes:
+      "The brain is not a fixed structure. When we learn something new, neurons communicate in new ways and existing connections can become stronger. This ability, known as neuroplasticity, allows the brain to adapt throughout life. Repetition and practice can strengthen neural pathways, while sleep and active recall help the brain retain and retrieve information more effectively.",
+    questions: [
+      "What happens to the brain when we learn?",
+      "Can the brain change at any age?",
+      "Why does repetition make learning easier?",
+      "How does sleep affect memory?",
+      "What is the most effective way to strengthen learning?",
+    ],
+  }),
+
+  createTopic({
     title: "Why Do People Seek Approval?",
     date: "2026-08-08",
     completed: false,

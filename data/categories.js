@@ -30,6 +30,8 @@ const CATEGORY_ALIASES = {
   Science: "Learning",
   Discovery: "Learning",
   Education: "Learning",
+  Memory: "Learning",
+  Neuroscience: "Learning",
   Speaking: "Speaking",
   Communication: "Speaking",
   Lifestyle: "Lifestyle",
