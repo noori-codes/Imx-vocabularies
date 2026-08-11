@@ -104,6 +104,7 @@ const els = {
   quizProgressText: document.getElementById("quizProgressText"),
   quizCard: document.getElementById("quizCard"),
   quizEmpty: document.getElementById("quizEmpty"),
+  quizEmptyRestartBtn: document.getElementById("quizEmptyRestartBtn"),
   quizWord: document.getElementById("quizWord"),
   quizPronunciation: document.getElementById("quizPronunciation"),
   quizCategory: document.getElementById("quizCategory"),
@@ -161,6 +162,7 @@ const els = {
   modalTitle: document.getElementById("modalTitle"),
   modalBody: document.getElementById("modalBody"),
   appBanner: document.getElementById("appBanner"),
+  offlineBanner: document.getElementById("offlineBanner"),
   restoreBuiltInBtn: document.getElementById("restoreBuiltInBtn"),
 };
 
@@ -175,6 +177,8 @@ let topicData = [];
 let speakingTimerId = null;
 let lastModalActiveElement = null;
 let modalTrapKeydown = null;
+let lastNavMoreActiveElement = null;
+let navMoreTrapKeydown = null;
 
 const clearSpeakingTimer = () => {
   if (speakingTimerId) {
@@ -241,6 +245,45 @@ const disableModalFocusTrap = () => {
   if (modalTrapKeydown) {
     document.removeEventListener("keydown", modalTrapKeydown);
     modalTrapKeydown = null;
+  }
+};
+
+const enableNavMoreFocusTrap = () => {
+  if (!els.navMoreMenu) return;
+  if (els.navMoreMenu.hidden) return;
+
+  const panel = els.navMoreMenu;
+  navMoreTrapKeydown = (event) => {
+    if (event.key !== "Tab") return;
+    if (panel.hidden) return;
+
+    const focusables = getFocusableElements(panel);
+    if (!focusables.length) return;
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+
+    if (event.shiftKey) {
+      if (active === first || !panel.contains(active)) {
+        event.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  };
+
+  document.addEventListener("keydown", navMoreTrapKeydown);
+};
+
+const disableNavMoreFocusTrap = () => {
+  if (navMoreTrapKeydown) {
+    document.removeEventListener("keydown", navMoreTrapKeydown);
+    navMoreTrapKeydown = null;
   }
 };
 
@@ -464,13 +507,29 @@ const closeNavMore = () => {
   if (!els.navMoreBtn || !els.navMoreMenu) return;
   els.navMoreMenu.hidden = true;
   els.navMoreBtn.setAttribute("aria-expanded", "false");
+  disableNavMoreFocusTrap();
+  if (lastNavMoreActiveElement && typeof lastNavMoreActiveElement.focus === "function") {
+    lastNavMoreActiveElement.focus();
+  }
+  lastNavMoreActiveElement = null;
 };
 
 const toggleNavMore = () => {
   if (!els.navMoreBtn || !els.navMoreMenu) return;
-  const open = els.navMoreMenu.hidden;
-  els.navMoreMenu.hidden = !open;
-  els.navMoreBtn.setAttribute("aria-expanded", String(open));
+  const currentlyOpen = !els.navMoreMenu.hidden;
+  if (currentlyOpen) {
+    closeNavMore();
+    return;
+  }
+
+  lastNavMoreActiveElement = document.activeElement;
+  els.navMoreMenu.hidden = false;
+  els.navMoreBtn.setAttribute("aria-expanded", "true");
+
+  enableNavMoreFocusTrap();
+  const focusables = getFocusableElements(els.navMoreMenu);
+  const first = focusables[0];
+  first?.focus();
 };
 
 const setQuizSettingsOpen = (open) => {
@@ -485,13 +544,8 @@ const syncQuizFocusMode = () => {
   const summaryVisible = Boolean(els.quizSummary && !els.quizSummary.hidden);
   const inSession =
     state.activePage === "quiz" && Boolean(currentQuizItem()) && !summaryVisible;
-  const wasFocus = quizPage.classList.contains("is-focus");
   quizPage.classList.toggle("is-focus", inSession);
-  if (inSession && !wasFocus) setQuizSettingsOpen(false);
-  if (!inSession && state.activePage === "quiz" && !summaryVisible) {
-    // Idle quiz page: keep settings reachable.
-    if (els.quizToolbarPanel?.hidden && wasFocus) setQuizSettingsOpen(true);
-  }
+  if (inSession) setQuizSettingsOpen(false);
 };
 
 const updateScrollChrome = () => {
@@ -1554,6 +1608,24 @@ const describeQuizMode = () => {
   return modes[state.quizMode] || modes.flashcard;
 };
 
+const clearQuizAdvanceTimer = () => {
+  if (quizAdvanceTimer) {
+    clearTimeout(quizAdvanceTimer);
+    quizAdvanceTimer = null;
+  }
+};
+
+const getQuizShortcutsHint = () => {
+  const mode = state.quizMode;
+  if (mode === "mcq") return "";
+  if (mode === "type" || mode === "cloze") {
+    return state.quizTypeChecked
+      ? "Shortcuts: <kbd>1</kbd> know · <kbd>2</kbd> again"
+      : "Shortcuts: <kbd>Enter</kbd> check answer";
+  }
+  return "Shortcuts: <kbd>Space</kbd> reveal · <kbd>1</kbd> know · <kbd>2</kbd> again";
+};
+
 const clearQuizCardTimer = () => {
   if (state.quizCardTimerId) {
     clearInterval(state.quizCardTimerId);
@@ -1635,13 +1707,12 @@ const wordsMatchTyped = (typed, word) =>
 
 const updateQuizProgressBar = () => {
   if (!els.quizProgressBar || !els.quizProgressFill) return;
-  const total = state.quizSessionStats.total || state.quizQueue.length;
+  const total = state.quizQueue.length;
   if (!total || !currentQuizItem()) {
     els.quizProgressBar.hidden = true;
     return;
   }
-  const done = state.quizSessionStats.known + state.quizSessionStats.again;
-  const current = Math.min(done + 1, total);
+  const current = state.quizIndex + 1;
   const pct = Math.round((current / total) * 100);
   els.quizProgressBar.hidden = false;
   els.quizProgressBar.setAttribute("aria-valuenow", String(pct));
@@ -1676,6 +1747,7 @@ const showQuizSummary = () => {
   if (els.quizStatusText) els.quizStatusText.textContent = "Session complete";
   if (els.quizProgressText) els.quizProgressText.textContent = describeQuizScope();
   if (els.quizProgressBar) els.quizProgressBar.hidden = true;
+  if (els.quizShortcutsHint) els.quizShortcutsHint.hidden = true;
   syncQuizFocusMode();
 };
 
@@ -1737,6 +1809,9 @@ const renderQuizCard = () => {
     }
     if (els.quizProgressText) els.quizProgressText.textContent = describeQuizScope();
     if (els.quizProgressBar) els.quizProgressBar.hidden = true;
+    if (els.quizShortcutsHint) els.quizShortcutsHint.hidden = true;
+    if (els.quizTimerText) els.quizTimerText.hidden = true;
+    syncQuizFocusMode();
     return;
   }
 
@@ -1813,22 +1888,26 @@ const renderQuizCard = () => {
   }
   if (els.quizSpeakBtn) els.quizSpeakBtn.hidden = isReverse || isType || isMcq || isCloze;
 
+  const hint = getQuizShortcutsHint();
   if (els.quizShortcutsHint) {
-    els.quizShortcutsHint.hidden = isMcq;
+    els.quizShortcutsHint.hidden = !hint;
+    els.quizShortcutsHint.innerHTML = hint;
   }
 
   if (els.quizStatusText) {
-    els.quizStatusText.textContent = `${describeQuizScope()} · ${describeQuizMode()}`;
+    const remaining = state.quizQueue.length - state.quizIndex;
+    els.quizStatusText.textContent = `${describeQuizScope()} · ${describeQuizMode()} · ${remaining} left`;
   }
   if (els.quizProgressText) {
-    els.quizProgressText.textContent = `Card ${Math.min(
-      state.quizSessionStats.known + state.quizSessionStats.again + 1,
-      state.quizSessionStats.total || state.quizQueue.length,
-    )} of ${state.quizSessionStats.total || state.quizQueue.length}`;
+    els.quizProgressText.textContent = `Card ${state.quizIndex + 1} of ${state.quizQueue.length}`;
   }
   updateQuizProgressBar();
   startQuizCardTimer();
   syncQuizFocusMode();
+
+  if ((isType || isCloze) && els.quizTypeInput && !state.quizTypeChecked) {
+    requestAnimationFrame(() => els.quizTypeInput.focus());
+  }
 };
 
 const prepareQuiz = ({ forceAll = false, preserveForce = false, limit = null } = {}) => {
@@ -1840,6 +1919,7 @@ const prepareQuiz = ({ forceAll = false, preserveForce = false, limit = null } =
 
   hideQuizSummary();
   clearQuizCardTimer();
+  clearQuizAdvanceTimer();
 
   const pool = getQuizWordPool();
   const useAllInScope =
@@ -1918,6 +1998,7 @@ const advanceQuiz = (knewIt) => {
   const current = currentQuizItem();
   if (!current) return;
 
+  clearQuizAdvanceTimer();
   clearQuizCardTimer();
   recordStudyActivity();
 
@@ -1972,8 +2053,18 @@ const checkTypedQuizAnswer = () => {
   els.quizKnowBtn.hidden = false;
   els.quizAgainBtn.hidden = false;
 
+  if (els.quizShortcutsHint) {
+    const hint = getQuizShortcutsHint();
+    els.quizShortcutsHint.hidden = !hint;
+    els.quizShortcutsHint.innerHTML = hint;
+  }
+
   if (correct) {
-    setTimeout(() => advanceQuiz(true), 650);
+    clearQuizAdvanceTimer();
+    quizAdvanceTimer = setTimeout(() => {
+      quizAdvanceTimer = null;
+      advanceQuiz(true);
+    }, 650);
   }
 };
 
@@ -2087,6 +2178,8 @@ const importBackup = async (file) => {
 };
 
 let listenersReady = false;
+let searchDebounceTimer = null;
+let quizAdvanceTimer = null;
 
 const attachListeners = () => {
   if (listenersReady) return;
@@ -2136,7 +2229,10 @@ const attachListeners = () => {
 
   els.globalSearchInput?.addEventListener("input", (event) => {
     state.searchTerm = event.target.value;
-    applySearch();
+    window.clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = window.setTimeout(() => {
+      applySearch();
+    }, 130);
   });
 
   els.themeToggle?.addEventListener("click", () => {
@@ -2179,6 +2275,7 @@ const attachListeners = () => {
     if (current) speakWordFromUi(current.word, event.currentTarget);
   });
   els.quizRestartBtn?.addEventListener("click", () => prepareQuiz({ forceAll: true }));
+  els.quizEmptyRestartBtn?.addEventListener("click", () => prepareQuiz({ forceAll: true }));
   els.quizScopeSelect?.addEventListener("change", (event) => {
     state.quizScope = event.target.value;
     persistQuizSettings();
@@ -2257,6 +2354,10 @@ const attachListeners = () => {
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
+      if (els.quizToolbarPanel && !els.quizToolbarPanel.hidden) {
+        setQuizSettingsOpen(false);
+        return;
+      }
       if (els.navMoreMenu && !els.navMoreMenu.hidden) {
         closeNavMore();
         return;
@@ -2268,7 +2369,7 @@ const attachListeners = () => {
     }
 
     if (state.activePage !== "quiz" || (els.modalRoot && !els.modalRoot.hidden)) return;
-    if (isTypingTarget(event.target) && state.quizMode !== "type" && state.quizMode !== "cloze") return;
+    if (isTypingTarget(event.target)) return;
 
     if (event.key === " " || event.code === "Space") {
       event.preventDefault();
@@ -2293,6 +2394,15 @@ const attachListeners = () => {
       if (state.quizRevealed && currentQuizItem()) advanceQuiz(false);
     }
   });
+
+  const syncOfflineBanner = () => {
+    if (!els.offlineBanner) return;
+    const offline = !navigator.onLine;
+    els.offlineBanner.hidden = !offline;
+  };
+  syncOfflineBanner();
+  window.addEventListener("online", syncOfflineBanner);
+  window.addEventListener("offline", syncOfflineBanner);
 };
 
 const maybeRemindBackup = () => {
@@ -2314,7 +2424,7 @@ const maybeRemindBackup = () => {
 const registerServiceWorker = async () => {
   if (!("serviceWorker" in navigator)) return;
   try {
-    await navigator.serviceWorker.register("./sw.js?v=15");
+    await navigator.serviceWorker.register("./sw.js?v=17");
   } catch (error) {
     console.warn("Service worker registration failed", error);
   }

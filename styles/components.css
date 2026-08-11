@@ -541,10 +541,11 @@ body.light .form-grid select option {
 }
 
 .about-card {
-  padding: var(--space-3) 0 0;
-  border: 0;
-  border-top: 1px solid var(--border);
-  border-radius: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: none;
 }
 
 .about-card p {
@@ -556,11 +557,30 @@ body.light .form-grid select option {
 
 .about-list {
   margin: 0;
-  padding-left: 18px;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
 }
 
 .about-list li {
-  margin-bottom: var(--space-1);
+  margin-bottom: 0;
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 10px;
+  align-items: start;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.about-list li::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin-top: 0.55em;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: 0.6;
 }
 
 .footer {
@@ -761,6 +781,34 @@ body.light .form-grid select option {
   transition:
     opacity 0.2s ease,
     transform 0.2s ease;
+}
+
+.offline-banner {
+  position: fixed;
+  left: 50%;
+  bottom: max(24px, env(safe-area-inset-bottom, 0px) + 64px);
+  transform: translateX(-50%) translateY(10px);
+  z-index: 79;
+  max-width: min(720px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.offline-banner[hidden] {
+  display: block;
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+}
+
+.offline-banner:not([hidden]) {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .speak-toast.is-visible {

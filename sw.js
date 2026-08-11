@@ -1,4 +1,4 @@
-const CACHE_NAME = "imx-hub-v15";
+const CACHE_NAME = "imx-hub-v17";
 const CORE_ASSETS = [
   "./",
   "./index.html",
