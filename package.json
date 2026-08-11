@@ -4,7 +4,8 @@
   "description": "Personal English study journal for vocabulary, presentation topics, quizzes, favorites, and daily motivation quotes.",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "validate:content": "node scripts/validate-library.js"
   },
   "repository": {
     "type": "git",

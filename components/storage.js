@@ -154,6 +154,8 @@ export const upsertCustomWord = (wordData, { previousWord } = {}) => {
     : [];
   const normalized = normalizeWord({ ...wordData, custom: true });
   if (!normalized.word) throw new Error("Word is required");
+  if (!normalized.meaning) throw new Error("Meaning is required");
+  if (!normalized.category) throw new Error("Category is required");
 
   const previousKey = (previousWord || normalized.word).toLowerCase();
   const next = custom.filter(
@@ -196,6 +198,12 @@ export const upsertCustomTopic = (topicData, { previousTitle } = {}) => {
     : [];
   const normalized = normalizeTopic({ ...topicData, custom: true });
   if (!normalized.title) throw new Error("Title is required");
+  if (!Array.isArray(normalized.vocabulary) || normalized.vocabulary.length === 0) {
+    throw new Error("At least one vocabulary word is required");
+  }
+  if (!Array.isArray(normalized.questions) || normalized.questions.length === 0) {
+    throw new Error("At least one question is required");
+  }
 
   const previousKey = (previousTitle || normalized.title).toLowerCase();
   const next = custom.filter(

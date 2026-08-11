@@ -353,7 +353,7 @@ const applyTheme = (theme) => {
     isLight ? "Switch to dark theme" : "Switch to light theme",
   );
   const themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) themeMeta.setAttribute("content", isLight ? "#f3f2ef" : "#0c0b0a");
+  if (themeMeta) themeMeta.setAttribute("content", isLight ? "#f6f3f1" : "#12100e");
 };
 
 const loadTheme = () => {
@@ -2237,7 +2237,7 @@ const maybeRemindBackup = () => {
 const registerServiceWorker = async () => {
   if (!("serviceWorker" in navigator)) return;
   try {
-    await navigator.serviceWorker.register("./sw.js?v=14");
+    await navigator.serviceWorker.register("./sw.js?v=15");
   } catch (error) {
     console.warn("Service worker registration failed", error);
   }

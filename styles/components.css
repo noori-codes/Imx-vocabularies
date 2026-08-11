@@ -23,49 +23,39 @@
   transition:
     background 0.2s var(--ease),
     border-color 0.2s var(--ease),
-    color 0.2s var(--ease),
-    transform 0.2s var(--ease);
+    color 0.2s var(--ease);
 }
 
 .primary-btn {
   background: var(--accent);
-  border-color: transparent;
+  border-color: var(--accent);
   color: var(--accent-ink);
-  box-shadow: none;
 }
 
 .primary-btn:hover {
-  transform: translateY(-1px);
   background: var(--accent-strong);
-  box-shadow: none;
-}
-
-body.light .primary-btn {
-  color: var(--accent-ink);
+  border-color: var(--accent-strong);
 }
 
 .ghost-btn:hover,
 .quote-btn:hover,
-.file-btn:hover {
-  background: var(--accent-soft);
-  border-color: color-mix(in srgb, var(--accent) 25%, var(--border));
-}
-
-.success-btn {
-  border-color: color-mix(in srgb, var(--success) 40%, transparent);
-  color: var(--success);
-}
-
-.danger-btn {
-  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
-  color: var(--danger);
+.file-btn:hover,
+.pill-toggle:hover {
+  background: var(--surface);
+  border-color: var(--border-strong);
 }
 
 .pill-toggle.active,
 .filter-btn.is-active {
   color: var(--text);
-  background: var(--accent-soft);
-  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  background: var(--surface);
+  border-color: var(--border-strong);
+}
+
+.filter-btn.is-active[class*="cat-"] {
+  color: var(--text);
+  background: color-mix(in srgb, var(--cat-color) 8%, var(--surface));
+  border-color: color-mix(in srgb, var(--cat-color) 25%, var(--border));
 }
 
 .filter-btn.cat-emotions.is-active,
@@ -85,10 +75,14 @@ body.light .primary-btn {
 .filter-btn.cat-growth.is-active,
 .filter-btn.cat-growth:hover { --cat-color: var(--cat-growth); }
 
-.filter-btn.is-active[class*="cat-"] {
-  color: color-mix(in srgb, var(--cat-color) 80%, var(--text));
-  background: color-mix(in srgb, var(--cat-color) 10%, transparent);
-  border-color: color-mix(in srgb, var(--cat-color) 22%, transparent);
+.success-btn {
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+  color: var(--success);
+}
+
+.danger-btn {
+  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  color: var(--danger);
 }
 
 .select-wrap {
@@ -131,8 +125,8 @@ body.light .primary-btn {
 
 body.light .select-wrap select option,
 body.light .form-grid select option {
-  background-color: #f4efe4;
-  color: #1a1612;
+  background-color: var(--surface-raised);
+  color: var(--text);
 }
 
 .filters {
@@ -162,40 +156,34 @@ body.light .form-grid select option {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0;
   min-width: 0;
   height: 100%;
-  padding: calc(var(--space-2) + 4px) var(--space-2) var(--space-2);
-  background: var(--surface-raised);
+  padding: var(--space-2);
+  padding-top: calc(var(--space-2) + 6px);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: none;
   overflow: hidden;
   transition:
-    transform 0.25s var(--ease),
-    border-color 0.25s var(--ease),
-    background 0.25s var(--ease);
+    border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
 }
 
 .vocab-card::before {
   content: "";
   position: absolute;
-  left: 16px;
-  right: 16px;
+  left: var(--space-2);
+  right: var(--space-2);
   top: 0;
-  bottom: auto;
   height: 2px;
-  width: auto;
-  border-radius: 0 0 2px 2px;
+  border-radius: 0 0 1px 1px;
   background: var(--cat-color, var(--accent));
-  opacity: 0.85;
+  opacity: 0.7;
 }
 
 .vocab-card:hover {
-  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--cat-color, var(--accent)) 22%, var(--border-strong));
   background: var(--surface-raised);
-  border-color: color-mix(in srgb, var(--cat-color, var(--accent)) 28%, var(--border));
-  box-shadow: var(--shadow-soft);
 }
 
 .vocab-card.cat-emotions { --cat-color: var(--cat-emotions); }
@@ -297,10 +285,9 @@ body.light .form-grid select option {
 
 .favorite-btn.is-favorite,
 .topic-favorite-btn.is-favorite {
-  color: var(--accent-strong);
+  color: var(--accent);
   background: var(--accent-soft);
-  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
-  animation: star-pop 0.35s ease;
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
 }
 
 @keyframes star-pop {
@@ -340,15 +327,13 @@ body.light .form-grid select option {
   display: inline-flex;
   align-items: center;
   max-width: 100%;
-  margin-top: 0;
-  padding: 4px 0;
-  border-radius: 0;
-  font-size: 0.72rem;
+  padding: 2px 0;
+  font-size: var(--fs-xs);
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   background: transparent;
-  color: color-mix(in srgb, var(--cat-color, var(--accent)) 70%, var(--muted));
+  color: color-mix(in srgb, var(--cat-color, var(--muted)) 75%, var(--muted));
   border: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -393,12 +378,12 @@ body.light .form-grid select option {
 }
 
 .topic-card.is-open {
-  background: color-mix(in srgb, var(--surface-raised) 80%, transparent);
-  border-bottom-color: var(--border);
+  background: var(--surface);
+  border-bottom-color: transparent;
   border-radius: var(--radius);
   box-shadow: inset 2px 0 0 var(--accent);
-  padding: 0 4px 0 14px;
-  margin: 6px 0;
+  padding: 0 4px 0 12px;
+  margin: 4px 0;
 }
 
 .topic-card.is-open .topic-headline h3 {
@@ -709,9 +694,8 @@ body.light .form-grid select option {
   overflow: auto;
   background: var(--surface-raised);
   border: 1px solid var(--border);
-  border-radius: calc(var(--radius) + 4px);
+  border-radius: var(--radius-lg);
   padding: 22px;
-  box-shadow: var(--shadow);
   animation: page-in 0.3s var(--ease);
 }
 
@@ -768,10 +752,9 @@ body.light .form-grid select option {
   z-index: 80;
   max-width: min(520px, calc(100vw - 32px));
   padding: 12px 16px;
-  border-radius: 14px;
+  border-radius: var(--radius);
   background: var(--surface-raised);
   border: 1px solid var(--border-strong);
-  box-shadow: var(--shadow-soft);
   color: var(--text);
   opacity: 0;
   pointer-events: none;
