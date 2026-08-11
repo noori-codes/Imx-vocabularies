@@ -263,6 +263,8 @@ const showToast = (message, isError = false) => {
     toast.id = "speakToast";
     toast.className = "speak-toast";
     toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
+    toast.setAttribute("aria-atomic", "true");
     document.body.appendChild(toast);
   }
   toast.textContent = message;
