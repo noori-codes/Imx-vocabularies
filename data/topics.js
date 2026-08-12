@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Do Our Choices Define Who We Are?",
+    date: "2026-08-12",
+    completed: false,
+    vocabulary: [
+      "Consequence",
+      "Integrity",
+      "Intention",
+      "Compromise",
+      "Priorities",
+      "Accountability",
+      "Character",
+      "Temptation",
+      "Conviction",
+      "Dilemma",
+    ],
+    summary:
+      "This topic explores whether our choices reveal and shape our identity. It examines how decisions, values, consequences, social pressure, and difficult situations influence the person we become.",
+    notes:
+      "Our choices are influenced by our values, circumstances, emotions, and other people, so a single decision does not necessarily define an entire person. However, repeated choices can form habits, reveal priorities, and gradually shape character. The topic also considers whether people should be judged by their worst decisions or by their willingness to take responsibility and change.",
+    questions: [
+      "Do our choices reveal our true character?",
+      "Can one bad decision define a person's identity?",
+      "How much do circumstances influence our choices?",
+      "Should people be judged by their intentions or their consequences?",
+      "Can changing our choices change who we become?",
+    ],
+  }),
+
+  createTopic({
     title: "How Does Learning Change the Brain?",
     date: "2026-08-11",
     completed: false,
