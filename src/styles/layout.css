@@ -280,6 +280,8 @@ body.light .nav-link.active {
 }
 
 .hero-card {
+  position: relative;
+  overflow: hidden;
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.65fr);
   gap: var(--space-4);

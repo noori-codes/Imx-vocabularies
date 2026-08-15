@@ -21,7 +21,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=17" />
+    <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
     <div id="appBanner" class="app-banner" hidden role="status"></div>
@@ -96,6 +96,7 @@
           <button class="nav-link" data-page="vocabulary">Words</button>
           <button class="nav-link" data-page="topics">Topics</button>
           <button class="nav-link" data-page="quiz">Exam</button>
+          <button class="nav-link" data-page="progress">Progress</button>
           <button class="nav-link nav-link--aside" data-page="favorites">Favorites</button>
           <button class="nav-link nav-link--aside" data-page="data">Data</button>
           <button class="nav-link nav-link--aside" data-page="about">About</button>
@@ -123,22 +124,22 @@
         <section id="home" class="page page--active">
           <div class="hero-card">
             <div class="hero-copy">
-              <p class="eyebrow">Personal study journal</p>
-              <h2 class="brand-hero">IMX</h2>
-              <p class="hero-subtitle">
+              <p class="eyebrow animate-fade-up">Personal study journal</p>
+              <h2 class="brand-hero animate-fade-up animate-delay-1">IMX</h2>
+              <p class="hero-subtitle animate-fade-up animate-delay-2">
                 Vocabulary, presentations, and daily practice — kept in one
                 quiet place to review and grow.
               </p>
-              <div class="hero-actions">
+              <div class="hero-actions animate-fade-up animate-delay-3">
                 <button type="button" class="primary-btn" data-jump="quiz">
                   Start exam
                 </button>
-                <button type="button" class="ghost-btn" data-jump="vocabulary">
-                  Browse words
+                <button type="button" class="ghost-btn" data-jump="progress">
+                  View progress
                 </button>
               </div>
             </div>
-            <aside class="hero-aside" aria-label="Study note">
+            <aside class="hero-aside animate-fade-up animate-delay-2" aria-label="Study note">
               <p class="hero-aside__label">Today</p>
               <p class="hero-aside__text" id="homeStudyStreak">
                 Open exam practice when you are ready.
@@ -174,6 +175,13 @@
               <strong id="homeDueWords">0</strong>
             </button>
           </div>
+
+          <section
+            id="homeWeekStrip"
+            class="week-strip home-panel"
+            aria-label="This week’s progress"
+            hidden
+          ></section>
 
           <section
             id="homeWeakWords"
@@ -283,6 +291,7 @@
                       <option value="type">Type the word</option>
                       <option value="mcq">Pick the word</option>
                       <option value="cloze">Fill the blank</option>
+                      <option value="listening">Listen → meaning</option>
                     </select>
                   </label>
                   <label class="select-wrap">
@@ -407,6 +416,9 @@
             </div>
 
             <div class="quiz-actions">
+              <button id="quizListenBtn" class="primary-btn" type="button" hidden>
+                Play audio
+              </button>
               <button id="quizRevealBtn" class="primary-btn" type="button">
                 Show answer
               </button>
@@ -451,6 +463,10 @@
           </div>
         </section>
 
+        <section id="progress" class="page">
+          <!-- Filled by src/pages/progress.js -->
+        </section>
+
         <section id="favorites" class="page">
           <div class="page-header">
             <div>
@@ -490,6 +506,25 @@
               <button id="exportBtn" class="primary-btn" type="button">
                 Download backup
               </button>
+            </article>
+
+            <article class="data-card">
+              <h3>Import vocabulary CSV</h3>
+              <p>
+                Upload a CSV with columns for word, meaning, category, and
+                sentence (header row optional). Rows merge into your custom
+                library.
+              </p>
+              <label class="file-btn">
+                Choose CSV file
+                <input
+                  id="csvImportInput"
+                  type="file"
+                  accept=".csv,text/csv"
+                  hidden
+                />
+              </label>
+              <p id="csvImportStatus" class="data-status" role="status"></p>
             </article>
 
             <article class="data-card">
@@ -534,11 +569,12 @@
             <ul class="about-list">
               <li>Eight focused vocabulary categories</li>
               <li>In-app add/edit for words and topics</li>
-              <li>Spaced-repetition quiz, cloze mode, and topic practice</li>
-              <li>Speaking drills for discussion questions</li>
-              <li>Export/import JSON backups (with reminders)</li>
+              <li>Spaced-repetition quiz, cloze, listening, and topic practice</li>
+              <li>Speaking drills and writing prompts for discussion questions</li>
+              <li>Progress calendar, streaks, and study goals</li>
+              <li>CSV vocab import plus JSON export/import backups</li>
               <li>Installable offline app (PWA)</li>
-              <li>Base content still lives in <code>data/*.js</code></li>
+              <li>Base content still lives in <code>src/data/*.js</code></li>
             </ul>
           </div>
         </section>
@@ -582,6 +618,6 @@
       </div>
     </div>
 
-    <script type="module" src="app.js"></script>
+    <script type="module" src="/src/main.js"></script>
   </body>
 </html>

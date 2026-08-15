@@ -1,0 +1,319 @@
+/* Progress, goals, speaking ring, motion */
+
+.week-strip {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
+}
+
+.week-strip__copy {
+  display: grid;
+  gap: 8px;
+  min-width: min(100%, 280px);
+  flex: 1;
+}
+
+.week-strip__line {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+
+.progress-hero {
+  display: grid;
+  grid-template-columns: minmax(140px, 200px) 1fr;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  align-items: stretch;
+}
+
+.progress-streak {
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 80% at 10% 0%, var(--accent-soft), transparent 55%),
+    var(--surface);
+}
+
+.progress-streak__value {
+  margin: 4px 0 0;
+  font-family: var(--font-serif);
+  font-size: clamp(2.8rem, 8vw, 4rem);
+  line-height: 1;
+  color: var(--accent-strong);
+  animation: streak-pulse 2.8s var(--ease) infinite;
+}
+
+.progress-muted {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.progress-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.progress-stat {
+  padding: 14px 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+  display: grid;
+  gap: 6px;
+}
+
+.progress-stat strong {
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.progress-panel {
+  margin-bottom: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.heat-calendar {
+  display: grid;
+  grid-template-columns: repeat(28, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.heat-cell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  border: 1px solid var(--border-subtle);
+}
+
+.heat-cell.heat-1 { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+.heat-cell.heat-2 { background: color-mix(in srgb, var(--accent) 48%, transparent); }
+.heat-cell.heat-3 { background: color-mix(in srgb, var(--accent) 68%, transparent); }
+.heat-cell.heat-4 { background: var(--accent); border-color: transparent; }
+
+.heat-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+
+.heat-legend .heat-cell {
+  width: 12px;
+  height: 12px;
+  aspect-ratio: auto;
+}
+
+.goal-bars {
+  display: grid;
+  gap: 14px;
+  margin: 12px 0 18px;
+}
+
+.goal-bar__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.goal-bar__track {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  overflow: hidden;
+}
+
+.goal-bar__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+  transition: width 0.45s var(--ease);
+}
+
+.goal-bar--compact .goal-bar__track {
+  height: 6px;
+}
+
+.goals-form {
+  margin-top: 8px;
+}
+
+.progress-mix {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.progress-mix li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.progress-mix strong {
+  color: var(--text);
+}
+
+.speaking-ring-wrap {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  margin: 12px auto;
+}
+
+.speaking-ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.speaking-ring__track,
+.speaking-ring__fill {
+  fill: none;
+  stroke-width: 8;
+}
+
+.speaking-ring__track {
+  stroke: color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.speaking-ring__fill {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s linear;
+}
+
+.speaking-ring-wrap .speaking-timer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+}
+
+.writing-practice {
+  display: grid;
+  gap: 16px;
+}
+
+.writing-list {
+  display: grid;
+  gap: 14px;
+}
+
+.writing-item {
+  padding: 12px 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.writing-question {
+  margin: 0 0 8px;
+  font-weight: 500;
+}
+
+.writing-input {
+  width: 100%;
+  min-height: 84px;
+  resize: vertical;
+}
+
+.writing-grade-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+  margin-top: 10px;
+}
+
+.page--active {
+  animation: page-enter 0.35s var(--ease) both;
+}
+
+.animate-fade-up {
+  animation: fade-up 0.55s var(--ease) both;
+}
+
+.animate-delay-1 { animation-delay: 0.06s; }
+.animate-delay-2 { animation-delay: 0.12s; }
+.animate-delay-3 { animation-delay: 0.18s; }
+
+.home-weak-list li {
+  animation: fade-up 0.4s var(--ease) both;
+}
+
+.home-weak-list li:nth-child(2) { animation-delay: 0.05s; }
+.home-weak-list li:nth-child(3) { animation-delay: 0.1s; }
+.home-weak-list li:nth-child(4) { animation-delay: 0.15s; }
+.home-weak-list li:nth-child(5) { animation-delay: 0.2s; }
+.home-weak-list li:nth-child(6) { animation-delay: 0.25s; }
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes streak-pulse {
+  0%,
+  100% {
+    text-shadow: 0 0 0 transparent;
+  }
+  50% {
+    text-shadow: 0 0 24px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+}
+
+@media (max-width: 720px) {
+  .progress-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .heat-calendar {
+    grid-template-columns: repeat(14, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page--active,
+  .animate-fade-up,
+  .home-weak-list li,
+  .progress-streak__value {
+    animation: none;
+  }
+}

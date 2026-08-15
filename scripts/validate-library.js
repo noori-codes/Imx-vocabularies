@@ -2,7 +2,7 @@ import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), "../..");
-const dataDir = path.join(repoRoot, "data");
+const dataDir = path.join(repoRoot, "src", "data");
 
 const vocabularyPath = pathToFileURL(path.join(dataDir, "vocabulary.js")).href;
 const topicsPath = pathToFileURL(path.join(dataDir, "topics.js")).href;

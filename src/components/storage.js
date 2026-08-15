@@ -14,7 +14,12 @@ const STORAGE = {
   studyStreak: "imx-hub-study-streak",
   lastBackupAt: "imx-hub-last-backup-at",
   speakingPractice: "imx-hub-speaking-practice",
+  studyHistory: "imx-hub-study-history",
+  studyGoals: "imx-hub-study-goals",
+  writingResponses: "imx-hub-writing-responses",
 };
+
+const HISTORY_MAX = 2000;
 
 export { STORAGE, CATEGORIES, normalizeCategory };
 
@@ -44,6 +49,16 @@ export const readStringList = (key) => {
   return Array.isArray(value) ? value.map(String) : [];
 };
 
+const normalizeTags = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((tag) => String(tag).trim()).filter(Boolean);
+  }
+  return String(value || "")
+    .split(/[,;]/)
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+};
+
 const normalizeWord = (item = {}) => ({
   word: String(item.word || "").trim(),
   pronunciation: String(item.pronunciation || "").trim(),
@@ -52,6 +67,8 @@ const normalizeWord = (item = {}) => ({
   antonym: String(item.antonym || "").trim(),
   wordFamily: String(item.wordFamily || "").trim(),
   sentence: String(item.sentence || "").trim(),
+  notes: String(item.notes || "").trim(),
+  tags: normalizeTags(item.tags),
   category: normalizeCategory(item.category),
   custom: Boolean(item.custom),
 });
@@ -427,8 +444,286 @@ export const gradeWord = (word, knewIt) => {
   return progress[word];
 };
 
+const defaultStudyGoals = () => ({
+  dailyReviews: 15,
+  weeklyMinutes: 60,
+});
+
+export const getStudyHistory = () => {
+  const data = readJson(STORAGE.studyHistory, []);
+  return Array.isArray(data) ? data : [];
+};
+
+export const appendStudyEvent = (event = {}) => {
+  const type = String(event.type || "activity").trim() || "activity";
+  const entry = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    type,
+    at: event.at || new Date().toISOString(),
+    date: (event.at || new Date().toISOString()).slice(0, 10),
+    meta: event.meta && typeof event.meta === "object" ? event.meta : {},
+  };
+  const history = getStudyHistory();
+  history.push(entry);
+  writeJson(STORAGE.studyHistory, history.slice(-HISTORY_MAX));
+  return entry;
+};
+
+export const getStudyGoals = () => {
+  const raw = readJson(STORAGE.studyGoals, null);
+  if (!raw || typeof raw !== "object") return defaultStudyGoals();
+  return {
+    dailyReviews: Math.max(1, Number(raw.dailyReviews) || 15),
+    weeklyMinutes: Math.max(5, Number(raw.weeklyMinutes) || 60),
+  };
+};
+
+export const saveStudyGoals = (goals = {}) => {
+  const next = {
+    ...getStudyGoals(),
+    ...goals,
+  };
+  next.dailyReviews = Math.max(1, Number(next.dailyReviews) || 15);
+  next.weeklyMinutes = Math.max(5, Number(next.weeklyMinutes) || 60);
+  writeJson(STORAGE.studyGoals, next);
+  return next;
+};
+
+export const getWritingResponses = () => {
+  const data = readJson(STORAGE.writingResponses, {});
+  return data && typeof data === "object" ? data : {};
+};
+
+export const getWritingResponsesForTopic = (topicTitle) => {
+  const all = getWritingResponses();
+  const entry = all[String(topicTitle || "")];
+  return entry && typeof entry === "object" ? entry : {};
+};
+
+export const saveWritingResponse = (topicTitle, questionIndex, payload = {}) => {
+  const title = String(topicTitle || "").trim();
+  if (!title) return null;
+  const all = getWritingResponses();
+  const topic = { ...(all[title] || {}) };
+  topic[String(questionIndex)] = {
+    text: String(payload.text || "").trim(),
+    grade: payload.grade || "",
+    updatedAt: new Date().toISOString(),
+  };
+  all[title] = topic;
+  writeJson(STORAGE.writingResponses, all);
+  return topic[String(questionIndex)];
+};
+
+/** Parse CSV text into vocab word objects. Header row optional. */
+export const parseVocabularyCsv = (text) => {
+  const raw = String(text || "").replace(/^\uFEFF/, "").trim();
+  if (!raw) return { words: [], errors: ["File is empty"] };
+
+  const rows = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < raw.length; i += 1) {
+    const ch = raw[i];
+    const next = raw[i + 1];
+    if (ch === '"' && inQuotes && next === '"') {
+      current += '"';
+      i += 1;
+      continue;
+    }
+    if (ch === '"') {
+      inQuotes = !inQuotes;
+      continue;
+    }
+    if ((ch === "\n" || ch === "\r") && !inQuotes) {
+      if (ch === "\r" && next === "\n") i += 1;
+      rows.push(current);
+      current = "";
+      continue;
+    }
+    if (ch === "," && !inQuotes) {
+      // handled below via split of completed rows — store cells differently
+    }
+    current += ch;
+  }
+  if (current.length) rows.push(current);
+
+  const splitRow = (line) => {
+    const cells = [];
+    let cell = "";
+    let quoted = false;
+    for (let i = 0; i < line.length; i += 1) {
+      const ch = line[i];
+      const next = line[i + 1];
+      if (ch === '"' && quoted && next === '"') {
+        cell += '"';
+        i += 1;
+        continue;
+      }
+      if (ch === '"') {
+        quoted = !quoted;
+        continue;
+      }
+      if (ch === "," && !quoted) {
+        cells.push(cell.trim());
+        cell = "";
+        continue;
+      }
+      cell += ch;
+    }
+    cells.push(cell.trim());
+    return cells;
+  };
+
+  const parsedRows = rows.map(splitRow).filter((r) => r.some((c) => c));
+  if (!parsedRows.length) return { words: [], errors: ["No rows found"] };
+
+  const header = parsedRows[0].map((h) => h.toLowerCase());
+  const hasHeader = header.some((h) =>
+    ["word", "meaning", "category", "sentence", "pronunciation", "tags", "notes"].includes(h),
+  );
+  const dataRows = hasHeader ? parsedRows.slice(1) : parsedRows;
+  const indexOf = (name, fallback) => {
+    const idx = header.indexOf(name);
+    return idx >= 0 ? idx : fallback;
+  };
+
+  const col = {
+    word: hasHeader ? indexOf("word", 0) : 0,
+    meaning: hasHeader ? indexOf("meaning", 1) : 1,
+    category: hasHeader ? indexOf("category", 2) : 2,
+    sentence: hasHeader ? indexOf("sentence", 3) : 3,
+    pronunciation: hasHeader ? indexOf("pronunciation", -1) : -1,
+    synonym: hasHeader ? indexOf("synonym", -1) : -1,
+    antonym: hasHeader ? indexOf("antonym", -1) : -1,
+    tags: hasHeader ? indexOf("tags", -1) : -1,
+    notes: hasHeader ? indexOf("notes", -1) : -1,
+  };
+
+  const words = [];
+  const errors = [];
+  dataRows.forEach((cells, idx) => {
+    const word = cells[col.word] || "";
+    const meaning = cells[col.meaning] || "";
+    if (!word || !meaning) {
+      errors.push(`Row ${idx + (hasHeader ? 2 : 1)}: need word and meaning`);
+      return;
+    }
+    words.push(
+      normalizeWord({
+        word,
+        meaning,
+        category: col.category >= 0 ? cells[col.category] : "Learning",
+        sentence: col.sentence >= 0 ? cells[col.sentence] : "",
+        pronunciation: col.pronunciation >= 0 ? cells[col.pronunciation] : "",
+        synonym: col.synonym >= 0 ? cells[col.synonym] : "",
+        antonym: col.antonym >= 0 ? cells[col.antonym] : "",
+        tags: col.tags >= 0 ? cells[col.tags] : "",
+        notes: col.notes >= 0 ? cells[col.notes] : "",
+        custom: true,
+      }),
+    );
+  });
+
+  return { words, errors };
+};
+
+export const importVocabularyWords = (words = []) => {
+  let imported = 0;
+  words.forEach((item) => {
+    try {
+      upsertCustomWord(item);
+      imported += 1;
+    } catch (error) {
+      console.warn("CSV word skipped", item?.word, error);
+    }
+  });
+  return imported;
+};
+
+export const getActivityByDate = (days = 84) => {
+  const history = getStudyHistory();
+  const map = new Map();
+  const today = new Date();
+  for (let i = 0; i < days; i += 1) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (days - 1 - i));
+    map.set(d.toISOString().slice(0, 10), 0);
+  }
+  history.forEach((event) => {
+    const key = event.date || String(event.at || "").slice(0, 10);
+    if (!map.has(key)) return;
+    const weight =
+      event.type === "quiz_grade"
+        ? 1
+        : event.type === "quiz_session"
+          ? Number(event.meta?.total) || 3
+          : event.type === "speaking"
+            ? 2
+            : event.type === "writing"
+              ? 2
+              : 1;
+    map.set(key, (map.get(key) || 0) + weight);
+  });
+  return [...map.entries()].map(([date, count]) => ({ date, count }));
+};
+
+export const getProgressStats = () => {
+  const history = getStudyHistory();
+  const today = new Date().toISOString().slice(0, 10);
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 6);
+  const weekStart = weekAgo.toISOString().slice(0, 10);
+
+  let reviewsToday = 0;
+  let reviewsWeek = 0;
+  let knownWeek = 0;
+  let againWeek = 0;
+  let sessionsWeek = 0;
+  let speakingWeek = 0;
+  let writingWeek = 0;
+  let minutesWeek = 0;
+
+  history.forEach((event) => {
+    const date = event.date || String(event.at || "").slice(0, 10);
+    if (event.type === "quiz_grade") {
+      if (date === today) reviewsToday += 1;
+      if (date >= weekStart) {
+        reviewsWeek += 1;
+        if (event.meta?.knewIt) knownWeek += 1;
+        else againWeek += 1;
+      }
+    }
+    if (event.type === "quiz_session" && date >= weekStart) {
+      sessionsWeek += 1;
+      minutesWeek += Number(event.meta?.minutes) || 5;
+    }
+    if (event.type === "speaking" && date >= weekStart) {
+      speakingWeek += 1;
+      minutesWeek += Number(event.meta?.minutes) || 3;
+    }
+    if (event.type === "writing" && date >= weekStart) {
+      writingWeek += 1;
+      minutesWeek += Number(event.meta?.minutes) || 4;
+    }
+  });
+
+  const graded = knownWeek + againWeek;
+  return {
+    reviewsToday,
+    reviewsWeek,
+    sessionsWeek,
+    speakingWeek,
+    writingWeek,
+    minutesWeek,
+    accuracyWeek: graded ? Math.round((knownWeek / graded) * 100) : null,
+    knownWeek,
+    againWeek,
+  };
+};
+
 export const buildExportPayload = ({ favoriteWords, favoriteTopics, completedTopics }) => ({
-  version: 1,
+  version: 2,
   exportedAt: new Date().toISOString(),
   favorites: {
     words: [...favoriteWords],
@@ -440,6 +735,11 @@ export const buildExportPayload = ({ favoriteWords, favoriteTopics, completedTop
   deletedWords: readStringList(STORAGE.deletedWords),
   deletedTopics: readStringList(STORAGE.deletedTopics),
   quizProgress: getQuizProgress(),
+  studyHistory: getStudyHistory(),
+  studyGoals: getStudyGoals(),
+  writingResponses: getWritingResponses(),
+  speakingPractice: getSpeakingPractice(),
+  studyStreak: readJson(STORAGE.studyStreak, { lastDate: "", streak: 0 }),
 });
 
 export const applyImportPayload = (payload, { mode = "merge" } = {}) => {
@@ -456,6 +756,10 @@ export const applyImportPayload = (payload, { mode = "merge" } = {}) => {
     writeJson(STORAGE.favoritesWords, []);
     writeJson(STORAGE.favoritesTopics, []);
     writeJson(STORAGE.completedTopics, []);
+    writeJson(STORAGE.studyHistory, []);
+    writeJson(STORAGE.studyGoals, defaultStudyGoals());
+    writeJson(STORAGE.writingResponses, {});
+    writeJson(STORAGE.speakingPractice, {});
   }
 
   if (Array.isArray(payload.customVocabulary)) {
@@ -521,5 +825,33 @@ export const applyImportPayload = (payload, { mode = "merge" } = {}) => {
     );
     payload.completedTopics.forEach((title) => current.add(String(title)));
     writeJson(STORAGE.completedTopics, [...current]);
+  }
+
+  if (Array.isArray(payload.studyHistory)) {
+    if (mode === "replace") {
+      writeJson(STORAGE.studyHistory, payload.studyHistory.slice(-HISTORY_MAX));
+    } else {
+      const merged = [...getStudyHistory(), ...payload.studyHistory];
+      writeJson(STORAGE.studyHistory, merged.slice(-HISTORY_MAX));
+    }
+  }
+
+  if (payload.studyGoals && typeof payload.studyGoals === "object") {
+    const current = mode === "replace" ? defaultStudyGoals() : getStudyGoals();
+    writeJson(STORAGE.studyGoals, { ...current, ...payload.studyGoals });
+  }
+
+  if (payload.writingResponses && typeof payload.writingResponses === "object") {
+    const current = mode === "replace" ? {} : getWritingResponses();
+    writeJson(STORAGE.writingResponses, { ...current, ...payload.writingResponses });
+  }
+
+  if (payload.speakingPractice && typeof payload.speakingPractice === "object") {
+    const current = mode === "replace" ? {} : getSpeakingPractice();
+    writeJson(STORAGE.speakingPractice, { ...current, ...payload.speakingPractice });
+  }
+
+  if (payload.studyStreak && typeof payload.studyStreak === "object" && mode === "replace") {
+    writeJson(STORAGE.studyStreak, payload.studyStreak);
   }
 };
