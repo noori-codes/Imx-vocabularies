@@ -731,7 +731,7 @@ const openTopicFromTemplate = () => {
   );
 };
 
-const DATA_VERSION = "2026-08-12-choices-identity";
+const DATA_VERSION = "2026-08-15-reading-videos";
 
 const importDataModule = async (path) => {
   try {

@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Is Reading Better Than Watching Videos?",
+    date: "2026-08-15",
+    completed: false,
+    vocabulary: [
+      "Comprehension",
+      "Retention",
+      "Immersion",
+      "Distraction",
+      "Passive",
+      "Engagement",
+      "Interpretation",
+      "Depth",
+      "Stimulus",
+      "Attention Span",
+    ],
+    summary:
+      "This topic compares reading and watching videos as two different ways of learning and consuming information. It explores how each method affects comprehension, memory, concentration, engagement, and the depth of understanding.",
+    notes:
+      "Reading usually requires more active mental effort because readers must construct images, interpret ideas, and control their own pace. Videos can communicate complicated visual information quickly and may be especially useful for demonstrations. However, videos can also encourage passive consumption and make it easier to lose focus. The best method depends on the purpose, the type of information, and how actively the learner engages with the material.",
+    questions: [
+      "Does reading help people understand information more deeply?",
+      "Are videos more effective for learning practical skills?",
+      "Why do people often remember information differently from books and videos?",
+      "Can watching educational videos become a form of passive learning?",
+      "Should people combine reading and videos when learning something new?",
+    ],
+  }),
+
+  createTopic({
     title: "Do Our Choices Define Who We Are?",
     date: "2026-08-12",
     completed: false,

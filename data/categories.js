@@ -63,6 +63,7 @@ const CATEGORY_ALIASES = {
   Decisions: "Mindset",
   Personality: "Character",
   Behavior: "Character",
+  Experience: "Learning",
 };
 
 export const normalizeCategory = (category) => {
