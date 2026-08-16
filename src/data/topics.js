@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Why Do Some People Never Reach Their Potential?",
+    date: "2026-08-16",
+    completed: false,
+    vocabulary: [
+      "Potential",
+      "Procrastination",
+      "Self-Doubt",
+      "Consistency",
+      "Perseverance",
+      "Apathy",
+      "Setback",
+      "Mediocrity",
+      "Ambition",
+      "Self-Sabotage",
+    ],
+    summary:
+      "This topic explores why some people fail to develop their abilities despite having talent or opportunities. It examines fear, procrastination, comfort, self-doubt, lack of consistency, and the importance of taking action.",
+    notes:
+      "Having potential does not guarantee achievement. People can hold themselves back through procrastination, fear of failure, self-doubt, or becoming too comfortable with their current situation. Reaching one's potential usually requires consistent effort, perseverance, discipline, and the willingness to face setbacks rather than avoid them.",
+    questions: [
+      "Why do some talented people never achieve their goals?",
+      "How does fear of failure prevent people from reaching their potential?",
+      "Can comfort become an obstacle to personal growth?",
+      "How important are consistency and perseverance?",
+      "Is potential meaningless without action?",
+    ],
+  }),
+
+  createTopic({
     title: "Is Reading Better Than Watching Videos?",
     date: "2026-08-15",
     completed: false,
