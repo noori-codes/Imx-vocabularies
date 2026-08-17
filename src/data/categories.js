@@ -66,6 +66,9 @@ const CATEGORY_ALIASES = {
   Experience: "Learning",
   Habits: "Lifestyle",
   Motivation: "Growth",
+  "Decision-Making": "Mindset",
+  Consequences: "Mindset",
+  Progress: "Growth",
 };
 
 export const normalizeCategory = (category) => {

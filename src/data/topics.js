@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Can Small Decisions Shape Your Future?",
+    date: "2026-08-17",
+    completed: false,
+    vocabulary: [
+      "Trajectory",
+      "Impulsive",
+      "Deliberate",
+      "Ripple",
+      "Accumulation",
+      "Trade-off",
+      "Prioritize",
+      "Long-Term",
+      "Momentum",
+      "Intentional",
+    ],
+    summary:
+      "This topic explores how small decisions made every day can gradually influence a person's future. It examines habits, consequences, short-term choices, long-term goals, and how repeated actions can shape the direction of our lives.",
+    notes:
+      "Small decisions may seem insignificant when they happen, but their effects can accumulate over time. Repeated choices can create habits, habits can influence behavior, and behavior can shape long-term outcomes. Making deliberate and intentional decisions can help people create a future that reflects their goals and values.",
+    questions: [
+      "Can small decisions really change the direction of someone's life?",
+      "How do repeated choices become habits?",
+      "Why do people often prioritize short-term comfort over long-term goals?",
+      "Can one small decision create a chain of unexpected consequences?",
+      "How can people make more intentional decisions about their future?",
+    ],
+  }),
+
+  createTopic({
     title: "Why Do Some People Never Reach Their Potential?",
     date: "2026-08-16",
     completed: false,
