@@ -217,7 +217,6 @@ body.light .form-grid select option {
 }
 
 .card-top h3,
-.topic-headline h3,
 .mini-vocab-head h5,
 .card-top h3 {
   font-size: 1.2rem;
@@ -230,11 +229,10 @@ body.light .form-grid select option {
 
 .topic-headline h3 {
   font-size: 1.2rem;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-clamp: 2;
-  overflow: hidden;
+  margin: 0;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .card-body {

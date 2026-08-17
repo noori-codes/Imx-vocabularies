@@ -127,6 +127,24 @@
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
+  .topic-card__header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-1);
+  }
+
+  .topic-card__actions {
+    order: -1;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .topic-headline h3 {
+    font-size: 1.15rem;
+    line-height: 1.35;
+  }
+
   .card-actions,
   .topic-card__actions {
     width: auto;
