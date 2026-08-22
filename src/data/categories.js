@@ -69,6 +69,9 @@ const CATEGORY_ALIASES = {
   "Decision-Making": "Mindset",
   Consequences: "Mindset",
   Progress: "Growth",
+  Mind: "Mindset",
+  "Mental Skills": "Learning",
+  "Emotional Control": "Emotions",
 };
 
 export const normalizeCategory = (category) => {

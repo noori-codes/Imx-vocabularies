@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Can You Really Control Your Thoughts?",
+    date: "2026-08-22",
+    completed: false,
+    vocabulary: [
+      "Intrusive",
+      "Rumination",
+      "Cognition",
+      "Mindfulness",
+      "Impulse",
+      "Self-Awareness",
+      "Perception",
+      "Reframe",
+      "Detachment",
+      "Metacognition",
+    ],
+    summary:
+      "This topic explores whether people can truly control their thoughts or whether they can only control how they respond to them. It examines automatic thoughts, negative thinking, mindfulness, self-awareness, and the relationship between thoughts, emotions, and actions.",
+    notes:
+      "Not every thought that enters our mind is within our control. Thoughts can appear automatically, especially when we are stressed or emotionally triggered. However, we can become more aware of our thoughts and choose whether to believe them, react to them, or let them pass. The goal is not necessarily to control every thought, but to develop control over our attention, reactions, and behavior.",
+    questions: [
+      "Can we control the thoughts that appear in our minds?",
+      "What is the difference between controlling a thought and controlling your reaction to it?",
+      "Why do negative thoughts often feel more powerful than positive ones?",
+      "Can changing the way we think change our emotions and behavior?",
+      "Is it possible to become completely aware of everything happening in our own mind?",
+    ],
+  }),
+
+  createTopic({
     title: "Can Small Decisions Shape Your Future?",
     date: "2026-08-17",
     completed: false,
