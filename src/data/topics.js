@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "What If Everyone Could Read Your Mind?",
+    date: "2026-08-24",
+    completed: false,
+    vocabulary: [
+      "Privacy",
+      "Vulnerability",
+      "Inhibition",
+      "Intuition",
+      "Conceal",
+      "Transparency",
+      "Misinterpretation",
+      "Intrusion",
+      "Empathy",
+      "Consequence",
+    ],
+    summary:
+      "This topic explores what would happen if humans could read each other's thoughts. It examines privacy, relationships, trust, honesty, social behavior, and the possible benefits and dangers of knowing what everyone truly thinks.",
+    notes:
+      "If everyone could read minds, communication and relationships would change dramatically. People would no longer be able to hide their private opinions, emotions, or intentions. This could create greater honesty and understanding, but it could also lead to conflict, embarrassment, mistrust, and a complete loss of personal privacy. The ability to know someone's thoughts would not necessarily mean understanding their true intentions.",
+    questions: [
+      "Would society become more honest if everyone could read minds?",
+      "Would you want your closest friends to know everything you think?",
+      "Could mind reading destroy relationships?",
+      "Would knowing someone's true thoughts make you trust them more or less?",
+      "What would be the biggest advantage and disadvantage of being able to read minds?",
+    ],
+  }),
+
+  createTopic({
     title: "Can You Really Control Your Thoughts?",
     date: "2026-08-22",
     completed: false,
