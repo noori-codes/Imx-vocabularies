@@ -72,6 +72,9 @@ const CATEGORY_ALIASES = {
   Mind: "Mindset",
   "Mental Skills": "Learning",
   "Emotional Control": "Emotions",
+  Fear: "Mindset",
+  Life: "Lifestyle",
+  "Personal Growth": "Growth",
   Privacy: "Society",
 };
 

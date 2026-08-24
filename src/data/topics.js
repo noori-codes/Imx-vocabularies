@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "What Is More Dangerous: Fear or Regret?",
+    date: "2026-08-25",
+    completed: false,
+    vocabulary: [
+      "Hesitation",
+      "Apprehension",
+      "Dread",
+      "Reluctance",
+      "Remorse",
+      "Consequence",
+      "Courage",
+      "Risk-Taking",
+      "Opportunity",
+      "Repercussion",
+    ],
+    summary:
+      "This topic explores whether fear or regret has a greater influence on our lives. It examines how fear can prevent people from taking risks and pursuing opportunities, while regret can come from choices they avoided or decisions they wish they had made differently.",
+    notes:
+      "Fear often protects us from danger, but excessive fear can prevent us from experiencing growth and new opportunities. Regret, on the other hand, usually appears after a decision or missed opportunity and can remain in our minds for a long time. The challenge is finding the courage to act despite uncertainty while accepting that every decision carries consequences.",
+    questions: [
+      "Is fear more dangerous than regret?",
+      "Why do people sometimes regret the things they did not do more than the things they did?",
+      "Can fear ever be useful when making important decisions?",
+      "How can someone distinguish between a reasonable fear and an unnecessary one?",
+      "Would you rather fail after taking a risk or live with the regret of never trying?",
+    ],
+  }),
+
+  createTopic({
     title: "What If Everyone Could Read Your Mind?",
     date: "2026-08-24",
     completed: false,
