@@ -76,6 +76,8 @@ const CATEGORY_ALIASES = {
   Life: "Lifestyle",
   "Personal Growth": "Growth",
   Privacy: "Society",
+  Happiness: "Emotions",
+  Purpose: "Growth",
 };
 
 export const normalizeCategory = (category) => {

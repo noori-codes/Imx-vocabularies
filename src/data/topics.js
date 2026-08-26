@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Is a Comfortable Life a Good Life?",
+    date: "2026-08-27",
+    completed: false,
+    vocabulary: [
+      "Contentment",
+      "Complacency",
+      "Fulfillment",
+      "Adversity",
+      "Prosperity",
+      "Resilience",
+      "Convenience",
+      "Stagnation",
+      "Ambition",
+      "Well-being",
+    ],
+    summary:
+      "This topic explores whether living a comfortable and secure life is enough to make someone truly happy. It examines the relationship between comfort, personal growth, challenges, ambition, fulfillment, and the search for meaning.",
+    notes:
+      "Comfort can provide stability, peace, and freedom from unnecessary stress, but too much comfort can sometimes lead to complacency and a lack of motivation. Challenges and difficult experiences can develop resilience and character, while comfort can give people the opportunity to enjoy the results of their efforts. A good life may require finding a balance between feeling secure and continuing to grow.",
+    questions: [
+      "Does having a comfortable life automatically make someone happy?",
+      "Can too much comfort prevent people from growing?",
+      "Why do people sometimes choose comfort over their ambitions?",
+      "Do difficult experiences make life more meaningful?",
+      "What is more important for a good life: comfort, success, or fulfillment?",
+    ],
+  }),
+
+  createTopic({
     title: "What Is More Dangerous: Fear or Regret?",
     date: "2026-08-25",
     completed: false,
