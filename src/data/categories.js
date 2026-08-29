@@ -78,6 +78,7 @@ const CATEGORY_ALIASES = {
   Privacy: "Society",
   Happiness: "Emotions",
   Purpose: "Growth",
+  Healing: "Emotions",
 };
 
 export const normalizeCategory = (category) => {

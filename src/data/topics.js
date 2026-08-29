@@ -29,6 +29,35 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "What If You Could Delete One Memory?",
+    date: "2026-08-30",
+    completed: false,
+    vocabulary: [
+      "Trauma",
+      "Nostalgia",
+      "Recollection",
+      "Distress",
+      "Lingering",
+      "Suppression",
+      "Identity",
+      "Closure",
+      "Haunting",
+      "Reminiscence",
+    ],
+    summary:
+      "This topic explores what people might do if they had the ability to permanently erase one memory. It examines painful experiences, emotional healing, identity, nostalgia, and whether difficult memories should be forgotten or accepted as part of our lives.",
+    notes:
+      "Some memories bring happiness, while others can cause pain, regret, or embarrassment. Erasing a painful memory might seem like an easy way to find peace, but difficult experiences can also teach us important lessons and influence who we become. If we removed a significant memory, we might also change the person we are today. The question is whether forgetting pain would truly help us heal or simply remove an important part of our story.",
+    questions: [
+      "If you could delete one memory, would you actually do it?",
+      "Would deleting a painful memory make you happier?",
+      "Can difficult memories help shape our personality?",
+      "Would you rather forget a painful experience or learn to live with it?",
+      "Could deleting one memory change who you are as a person?",
+    ],
+  }),
+
+  createTopic({
     title: "Is a Comfortable Life a Good Life?",
     date: "2026-08-27",
     completed: false,
