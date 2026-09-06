@@ -29,6 +29,40 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Is Honesty Always the Best Policy?",
+    date: "2026-09-07",
+    completed: false,
+    vocabulary: [
+      "Candor",
+      "Deception",
+      "Integrity",
+      "Tact",
+      "Diplomacy",
+      "Sincerity",
+      "Disclosure",
+      "Bluntness",
+      "Ethical",
+      "Credibility",
+    ],
+    summary:
+      "Honesty is generally considered an important quality, but telling the truth is not always simple. Sometimes complete honesty can hurt someone unnecessarily, while hiding the truth can protect them temporarily but create bigger problems later. The real challenge is knowing when to speak, what to say, and how to say it.",
+    notes:
+      "Consider situations where honesty can build trust, situations where the truth can cause unnecessary pain, and whether a kind lie can ever be morally acceptable. Think about the difference between being honest and being brutally honest.",
+    questions: [
+      "Is it possible to be too honest?",
+      "Can a lie ever be more ethical than the truth?",
+      "Should we always tell someone the truth if we know it will hurt them?",
+      "What is the difference between honesty and bluntness?",
+      "Is honesty more important in friendships or relationships?",
+      "Can you trust someone who lies to protect your feelings?",
+      "Should people have the right to keep certain truths private?",
+      "Does honesty always build stronger relationships?",
+      "What would happen if everyone told the complete truth all the time?",
+      "Is honesty more about what we say or how we say it?",
+    ],
+  }),
+
+  createTopic({
     title: "Is Loneliness a Problem or a Necessary Part of Life?",
     date: "2026-09-06",
     completed: false,
