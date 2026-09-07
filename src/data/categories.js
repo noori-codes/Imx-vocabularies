@@ -82,6 +82,10 @@ const CATEGORY_ALIASES = {
   Honesty: "Character",
   Morality: "Character",
   Trust: "Character",
+  Wealth: "Lifestyle",
+  Finance: "Lifestyle",
+  Economics: "Society",
+  Spending: "Lifestyle",
 };
 
 export const normalizeCategory = (category) => {

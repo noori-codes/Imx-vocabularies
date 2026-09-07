@@ -29,6 +29,40 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Can Money Actually Buy Happiness?",
+    date: "2026-09-08",
+    completed: false,
+    vocabulary: [
+      "Affluence",
+      "Materialism",
+      "Satisfaction",
+      "Security",
+      "Scarcity",
+      "Extravagance",
+      "Well-being",
+      "Gratification",
+      "Privilege",
+      "Sustainable",
+    ],
+    summary:
+      "Money can provide comfort, security, freedom, and access to experiences, but it does not automatically create lasting happiness. Having enough money can reduce financial stress, while excessive focus on wealth can create new problems. The relationship between money and happiness depends on how people earn, spend, and value it.",
+    notes:
+      "Think about whether happiness comes from having money or from what money allows us to do. Consider basic needs, financial security, experiences, relationships, freedom, and the possible negative effects of becoming obsessed with wealth.",
+    questions: [
+      "Can money make someone genuinely happy?",
+      "Does having more money always improve someone's life?",
+      "How much money is enough to live happily?",
+      "Can money reduce stress and increase happiness?",
+      "Are experiences more valuable than expensive possessions?",
+      "Can a poor person be happier than a wealthy person?",
+      "Does wealth create freedom or more responsibilities?",
+      "Can too much money make people less satisfied with life?",
+      "What would you do if you suddenly became very wealthy?",
+      "Is happiness something money can buy, or something we create ourselves?",
+    ],
+  }),
+
+  createTopic({
     title: "Is Honesty Always the Best Policy?",
     date: "2026-09-07",
     completed: false,
