@@ -29,6 +29,40 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "When Should You Stop Fighting for Something?",
+    date: "2026-09-13",
+    completed: false,
+    vocabulary: [
+      "Perseverance",
+      "Futility",
+      "Sacrifice",
+      "Endurance",
+      "Deteriorate",
+      "Yield",
+      "Adaptability",
+      "Obstinacy",
+      "Reassess",
+      "Letting Go",
+    ],
+    summary:
+      "Fighting for something can show determination, but continuing forever is not always a sign of strength. Sometimes circumstances change, the cost becomes too high, or the goal is no longer worth pursuing. Knowing when to continue and when to walk away requires self-awareness, patience, and the ability to reassess our priorities.",
+    notes:
+      "Think about the difference between giving up and making a wise decision to move on. Consider relationships, careers, personal goals, failure, sacrifice, and situations where persistence can become harmful.",
+    questions: [
+      "How can you know when it is time to stop?",
+      "Is giving up always a sign of weakness?",
+      "When does persistence become unhealthy?",
+      "Should we continue fighting if success seems almost impossible?",
+      "How much should we sacrifice for something we want?",
+      "Can walking away sometimes be an act of courage?",
+      "How do emotions affect our decision to keep fighting?",
+      "Should failure change our goals or make us try harder?",
+      "Is it harder to let go of something after investing years in it?",
+      "How can we tell the difference between perseverance and stubbornness?",
+    ],
+  }),
+
+  createTopic({
     title: "Can Money Actually Buy Happiness?",
     date: "2026-09-08",
     completed: false,

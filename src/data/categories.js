@@ -86,6 +86,9 @@ const CATEGORY_ALIASES = {
   Finance: "Lifestyle",
   Economics: "Society",
   Spending: "Lifestyle",
+  Determination: "Character",
+  Strength: "Character",
+  Change: "Growth",
 };
 
 export const normalizeCategory = (category) => {
