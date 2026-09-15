@@ -29,6 +29,40 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "What Makes a Person Impossible to Forget?",
+    date: "2026-09-16",
+    completed: false,
+    vocabulary: [
+      "Impression",
+      "Influence",
+      "Fascination",
+      "Distinctive",
+      "Enduring",
+      "Attachment",
+      "Presence",
+      "Resonance",
+      "Significance",
+      "Reminisce",
+    ],
+    summary:
+      "Some people remain in our minds long after they leave our lives. Their personality, actions, words, or the emotions they created can leave a powerful psychological impression. Sometimes we remember someone because of positive experiences, while other times difficult or unfinished experiences make them difficult to forget.",
+    notes:
+      "Think about whether unforgettable people are naturally special or whether our experiences with them make them memorable. Consider personality, emotional impact, shared experiences, first impressions, unfinished relationships, and the role of time and memory.",
+    questions: [
+      "What makes certain people more memorable than others?",
+      "Do strong emotions make people harder to forget?",
+      "Can someone be unforgettable even if we only knew them for a short time?",
+      "Why do we sometimes remember people we no longer want to remember?",
+      "Does a person's personality matter more than their appearance?",
+      "Can a single moment make someone unforgettable?",
+      "Why do unfinished relationships often stay in our minds?",
+      "Can someone influence our life without realizing it?",
+      "Does time always make memories weaker?",
+      "Is being unforgettable a good thing or can it become painful?",
+    ],
+  }),
+
+  createTopic({
     title: "When Should You Stop Fighting for Something?",
     date: "2026-09-13",
     completed: false,
