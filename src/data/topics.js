@@ -29,6 +29,40 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Can You Love Someone and Still Need to Leave Them?",
+    date: "2026-09-20",
+    completed: false,
+    vocabulary: [
+      "Incompatibility",
+      "Prioritize",
+      "Boundaries",
+      "Resentment",
+      "Compromise",
+      "Drift Apart",
+      "Turmoil",
+      "Reconcile",
+      "Liberation",
+      "Acceptance",
+    ],
+    summary:
+      "Love does not always mean that two people should remain together. Sometimes people genuinely care about each other but have different needs, values, goals, or circumstances. Leaving someone can be painful even when the decision comes from love rather than a lack of it.",
+    notes:
+      "Think about the difference between loving someone and having a healthy relationship with them. Consider incompatible goals, personal boundaries, emotional exhaustion, sacrifice, timing, and whether love alone is enough to maintain a relationship.",
+    questions: [
+      "Can you truly love someone and still decide to leave them?",
+      "Is love enough to maintain a healthy relationship?",
+      "When should personal well-being come before a relationship?",
+      "Can two people love each other but be incompatible?",
+      "Is leaving someone always a sign that the relationship failed?",
+      "How can people know when a relationship is no longer healthy?",
+      "Should people sacrifice their own goals for someone they love?",
+      "Can taking time apart make a relationship stronger?",
+      "Is it possible to leave someone without losing your love for them?",
+      "Why can letting go sometimes be an act of love?",
+    ],
+  }),
+
+  createTopic({
     title: "What Makes a Person Impossible to Forget?",
     date: "2026-09-16",
     completed: false,
