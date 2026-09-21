@@ -29,6 +29,40 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "What Makes Someone Truly Attractive?",
+    date: "2026-09-22",
+    completed: false,
+    vocabulary: [
+      "Charisma",
+      "Authenticity",
+      "Confidence",
+      "Consideration",
+      "Humility",
+      "Magnetism",
+      "Compassion",
+      "Poise",
+      "Wit",
+      "Integrity",
+    ],
+    summary:
+      "Attraction is not only about physical appearance. A person's confidence, kindness, humor, intelligence, communication style, and treatment of others can make them genuinely attractive. Physical beauty may create a first impression, but personality and character often determine whether attraction lasts.",
+    notes:
+      "Discuss the difference between physical attraction and emotional or intellectual attraction. Consider confidence, kindness, humor, self-respect, appearance, communication, honesty, and whether beauty changes as we get to know someone.",
+    questions: [
+      "Is physical appearance necessary for attraction?",
+      "What makes a person attractive beyond their looks?",
+      "Why are confident people often considered attractive?",
+      "Can kindness make someone physically attractive to us?",
+      "How important is a sense of humor?",
+      "Is confidence different from arrogance?",
+      "Can intelligence increase attraction?",
+      "Why does attraction sometimes disappear after getting to know someone?",
+      "Does the way someone treats others reveal their attractiveness?",
+      "What makes attraction last over time?",
+    ],
+  }),
+
+  createTopic({
     title: "Can You Love Someone and Still Need to Leave Them?",
     date: "2026-09-20",
     completed: false,

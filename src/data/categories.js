@@ -90,6 +90,7 @@ const CATEGORY_ALIASES = {
   Strength: "Character",
   Change: "Growth",
   Meaning: "Mindset",
+  Attraction: "Emotions",
 };
 
 export const normalizeCategory = (category) => {
