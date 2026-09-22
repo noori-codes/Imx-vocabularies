@@ -29,6 +29,74 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Would You Rather Be Liked or Respected?",
+    date: "2026-09-24",
+    completed: false,
+    vocabulary: [
+      "Admiration",
+      "Esteem",
+      "Popularity",
+      "Authority",
+      "Affirmation",
+      "Dignity",
+      "Prestige",
+      "Validation",
+      "Reputation",
+      "Regard",
+    ],
+    summary:
+      "Being liked can feel warm and comforting, while being respected can feel meaningful and lasting. Sometimes the two go together, but often they pull in different directions. The choices we make—how honest we are, how we lead, and what we stand for—can decide whether people enjoy us, look up to us, or both.",
+    notes:
+      "Discuss situations where being liked requires compromise, and situations where earning respect requires difficult decisions. Consider friendships, workplaces, leadership, social media, honesty, popularity, and whether long-term respect is more valuable than short-term approval.",
+    questions: [
+      "Would you rather be liked by many people or respected by a few?",
+      "Can someone be widely liked and deeply respected at the same time?",
+      "Does being honest make people like you less but respect you more?",
+      "Is popularity a form of power, or is it mostly temporary attention?",
+      "Why do some leaders choose respect over being liked?",
+      "Can seeking approval stop people from becoming who they want to be?",
+      "Is respect something we earn, or something we demand?",
+      "How does social media change the way people chase being liked?",
+      "Would you respect someone you do not personally like?",
+      "In the long run, which matters more for a meaningful life: being liked or being respected?",
+    ],
+  }),
+
+  createTopic({
+    title: "Can You Really Control Your Thoughts?",
+    date: "2026-09-23",
+    completed: false,
+    vocabulary: [
+      "Subconscious",
+      "Distract",
+      "Suppress",
+      "Awareness",
+      "Trigger",
+      "Redirect",
+      "Intrigue",
+      "Overwhelm",
+      "Mentality",
+      "Regulate",
+    ],
+    summary:
+      "We cannot always choose the thoughts that appear in our minds, but we may have some control over how we respond to them. Thoughts can be influenced by memories, emotions, habits, and our surroundings. Learning to notice, question, and redirect our thinking may give us greater control over our mental life.",
+    notes:
+      "Think about whether thoughts appear automatically or can be deliberately created. Consider overthinking, negative thoughts, distractions, emotions, habits, mindfulness, and the difference between controlling a thought and controlling your response to it.",
+    questions: [
+      "Do we control our thoughts, or do our thoughts control us?",
+      "Why do unwanted thoughts appear in our minds?",
+      "Can we completely stop thinking about something?",
+      "Does trying to suppress a thought make it stronger?",
+      "How can we redirect our attention when our thoughts become negative?",
+      "How much do our surroundings influence what we think about?",
+      "Can our thoughts change our emotions?",
+      "Can changing our habits change the way we think?",
+      "Is controlling our reactions more realistic than controlling our thoughts?",
+      "What does having control over your mind actually mean?",
+    ],
+  }),
+
+  createTopic({
     title: "What Makes Someone Truly Attractive?",
     date: "2026-09-22",
     completed: false,
@@ -378,7 +446,7 @@ export const topicData = [
   }),
 
   createTopic({
-    title: "Can You Really Control Your Thoughts?",
+    title: "Can You Really Control Your Thoughts? (Aug 22)",
     date: "2026-08-22",
     completed: false,
     vocabulary: [

@@ -91,6 +91,7 @@ const CATEGORY_ALIASES = {
   Change: "Growth",
   Meaning: "Mindset",
   Attraction: "Emotions",
+  "Self-Control": "Mindset",
 };
 
 export const normalizeCategory = (category) => {
