@@ -92,6 +92,8 @@ const CATEGORY_ALIASES = {
   Meaning: "Mindset",
   Attraction: "Emotions",
   "Self-Control": "Mindset",
+  Idioms: "Speaking",
+  Idiom: "Speaking",
 };
 
 export const normalizeCategory = (category) => {

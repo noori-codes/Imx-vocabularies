@@ -8,10 +8,14 @@ import {
   writeJson,
   mergeVocabulary,
   mergeTopics,
+  mergeIdioms,
   upsertCustomWord,
   softDeleteWord,
   upsertCustomTopic,
   softDeleteTopic,
+  upsertCustomIdiom,
+  softDeleteIdiom,
+  idiomToQuizItem,
   getDueWords,
   gradeWord,
   buildExportPayload,
@@ -42,13 +46,14 @@ import {
   iconShare,
 } from "./components/dom.js";
 import { speakWord, unlockAudio } from "./components/speech.js";
-import { formatWordShare, formatTopicShare, shareContent } from "./components/share.js";
+import { formatWordShare, formatTopicShare, formatIdiomShare, shareContent } from "./components/share.js";
 import { buildClozePrompt } from "./components/cloze.js";
-import { MOTIVATION_QUOTES, LESSON_TEMPLATE, state } from "./state.js";
+import { MOTIVATION_QUOTES, LESSON_TEMPLATE, IDIOM_TEMPLATE, state } from "./state.js";
 import { renderProgressPage, renderHomeWeekStrip } from "./pages/progress.js";
 import { EMPTY_FLOURISH, emptyStateWithFiltersHint } from "./ui/empty.js";
 import { vocabularyData as seedVocabulary } from "./data/vocabulary.js";
 import { topicData as seedTopics } from "./data/topics.js";
+import { idiomData as seedIdioms } from "./data/idioms.js";
 
 
 const els = {
@@ -60,6 +65,7 @@ const els = {
   motivationQuote: document.getElementById("motivationQuote"),
   homeTotalWords: document.getElementById("homeTotalWords"),
   homeTotalTopics: document.getElementById("homeTotalTopics"),
+  homeTotalIdioms: document.getElementById("homeTotalIdioms"),
   homeFavoriteWords: document.getElementById("homeFavoriteWords"),
   homeDueWords: document.getElementById("homeDueWords"),
   vocabCategoryButtons: document.getElementById("vocabCategoryButtons"),
@@ -72,8 +78,14 @@ const els = {
   topicResultsText: document.getElementById("topicResultsText"),
   topicFavoriteToggle: document.getElementById("topicFavoriteToggle"),
   addTopicBtn: document.getElementById("addTopicBtn"),
+  idiomGrid: document.getElementById("idiomGrid"),
+  idiomResultsText: document.getElementById("idiomResultsText"),
+  idiomFavoriteToggle: document.getElementById("idiomFavoriteToggle"),
+  addIdiomBtn: document.getElementById("addIdiomBtn"),
+  idiomTemplateBtn: document.getElementById("idiomTemplateBtn"),
   favoriteVocabGrid: document.getElementById("favoriteVocabGrid"),
   favoriteTopicGrid: document.getElementById("favoriteTopicGrid"),
+  favoriteIdiomGrid: document.getElementById("favoriteIdiomGrid"),
   quizStatusText: document.getElementById("quizStatusText"),
   quizProgressText: document.getElementById("quizProgressText"),
   quizCard: document.getElementById("quizCard"),
@@ -147,12 +159,16 @@ const els = {
 
 const favoriteWords = new Set(readStringList(STORAGE.favoritesWords));
 const favoriteTopics = new Set(readStringList(STORAGE.favoritesTopics));
+const favoriteIdioms = new Set(readStringList(STORAGE.favoritesIdioms));
 const completedTopics = new Set(readStringList(STORAGE.completedTopics));
+const completedIdioms = new Set(readStringList(STORAGE.completedIdioms));
 
 let baseVocabulary = [];
 let baseTopics = [];
+let baseIdioms = [];
 let vocabularyData = [];
 let topicData = [];
+let idiomData = [];
 let speakingTimerId = null;
 let lastModalActiveElement = null;
 let modalTrapKeydown = null;
@@ -299,8 +315,14 @@ const showToast = (message, isError = false) => {
 };
 
 const shareItem = async (kind, payload) => {
-  const title = kind === "topic" ? payload.title : payload.word;
-  const text = kind === "topic" ? formatTopicShare(payload) : formatWordShare(payload);
+  const title =
+    kind === "topic" ? payload.title : kind === "idiom" ? payload.idiom : payload.word;
+  const text =
+    kind === "topic"
+      ? formatTopicShare(payload)
+      : kind === "idiom"
+        ? formatIdiomShare(payload)
+        : formatWordShare(payload);
   const result = await shareContent({ title: `IMX · ${title}`, text });
   if (result === "copied") showToast("Copied to clipboard");
   else if (result === "failed") showToast("Could not share", true);
@@ -370,13 +392,20 @@ const openWordDetail = (item) => {
 const saveFavorites = () => {
   writeJson(STORAGE.favoritesWords, [...favoriteWords]);
   writeJson(STORAGE.favoritesTopics, [...favoriteTopics]);
+  writeJson(STORAGE.favoritesIdioms, [...favoriteIdioms]);
 };
 
 const saveCompletedTopics = () => {
   writeJson(STORAGE.completedTopics, [...completedTopics]);
 };
 
+const saveCompletedIdioms = () => {
+  writeJson(STORAGE.completedIdioms, [...completedIdioms]);
+};
+
 const isTopicCompleted = (topic) => completedTopics.has(topic.title);
+
+const isIdiomCompleted = (idiom) => completedIdioms.has(idiom.idiom);
 
 const toggleTopicCompleted = (title) => {
   if (completedTopics.has(title)) completedTopics.delete(title);
@@ -387,9 +416,19 @@ const toggleTopicCompleted = (title) => {
   saveCompletedTopics();
 };
 
+const toggleIdiomCompleted = (idiomPhrase) => {
+  if (completedIdioms.has(idiomPhrase)) completedIdioms.delete(idiomPhrase);
+  else {
+    completedIdioms.add(idiomPhrase);
+    appendStudyEvent({ type: "idiom_completed", meta: { idiom: idiomPhrase } });
+  }
+  saveCompletedIdioms();
+};
+
 const rebuildLibrary = () => {
   vocabularyData = mergeVocabulary(baseVocabulary);
   topicData = mergeTopics(baseTopics);
+  idiomData = mergeIdioms(baseIdioms);
 };
 
 const refreshProgressViews = () => {
@@ -414,6 +453,7 @@ const refreshAll = () => {
   refreshProgressViews();
   renderVocabulary();
   renderTopics();
+  renderIdioms();
   renderFavorites();
   prepareQuiz({ preserveForce: true });
 };
@@ -714,6 +754,75 @@ const openTopicFromTemplate = () => {
   );
 };
 
+const openIdiomModal = (item = null, { fromTemplate = false } = {}) => {
+  state.editingIdiom = item?.idiom || null;
+  const values = item || {
+    idiom: "",
+    date: new Date().toISOString().slice(0, 10),
+    meaning: "",
+    pronunciation: "",
+    example: "",
+    usage: "",
+    summary: "",
+    notes: "",
+    questions: [],
+  };
+
+  openModal(item ? "Edit idiom" : fromTemplate ? "New idiom from template" : "Add idiom", `
+    <form id="idiomForm" class="form-grid">
+      <label class="full">Idiom<input name="idiom" required value="${escapeHtml(values.idiom)}" placeholder="Break the ice" /></label>
+      <label>Date<input name="date" type="date" required value="${escapeHtml(values.date)}" /></label>
+      <label>Pronunciation<input name="pronunciation" value="${escapeHtml(values.pronunciation || "")}" placeholder="breɪk ði aɪs" /></label>
+      <label class="full">Meaning<textarea name="meaning" rows="2" required>${escapeHtml(values.meaning)}</textarea></label>
+      <label class="full">Example sentence<textarea name="example" rows="2">${escapeHtml(values.example || "")}</textarea></label>
+      <label class="full">Usage notes<textarea name="usage" rows="2">${escapeHtml(values.usage || "")}</textarea></label>
+      <label class="full">Summary<textarea name="summary" rows="2">${escapeHtml(values.summary || "")}</textarea></label>
+      <label class="full">Personal notes<textarea name="notes" rows="2">${escapeHtml(values.notes || "")}</textarea></label>
+      <label class="full">Discussion questions (one per line)<textarea name="questions" rows="4" required>${escapeHtml(
+        (values.questions || []).join("\n"),
+      )}</textarea></label>
+      <div class="form-actions full">
+        <button type="button" class="ghost-btn" data-close-modal>Cancel</button>
+        <button type="submit" class="primary-btn">Save idiom</button>
+      </div>
+    </form>
+  `);
+
+  els.modalBody.querySelector("#idiomForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const payload = Object.fromEntries(form.entries());
+    try {
+      const previousIdiom = state.editingIdiom;
+      const saved = upsertCustomIdiom(payload, { previousIdiom });
+      if (previousIdiom && previousIdiom !== saved.idiom && favoriteIdioms.has(previousIdiom)) {
+        favoriteIdioms.delete(previousIdiom);
+        favoriteIdioms.add(saved.idiom);
+        saveFavorites();
+      }
+      if (previousIdiom && previousIdiom !== saved.idiom && completedIdioms.has(previousIdiom)) {
+        completedIdioms.delete(previousIdiom);
+        completedIdioms.add(saved.idiom);
+        saveCompletedIdioms();
+      }
+      closeModal();
+      refreshAll();
+    } catch (error) {
+      alert(error.message || "Could not save idiom");
+    }
+  });
+};
+
+const openIdiomFromTemplate = () => {
+  openIdiomModal(
+    {
+      ...IDIOM_TEMPLATE,
+      date: new Date().toISOString().slice(0, 10),
+    },
+    { fromTemplate: true },
+  );
+};
+
 const showAppBanner = (message, { variant = "info" } = {}) => {
   if (!els.appBanner) return;
   els.appBanner.textContent = message;
@@ -731,23 +840,27 @@ const clearViewFilters = () => {
   state.searchTerm = "";
   state.vocabFavoritesOnly = false;
   state.topicFavoritesOnly = false;
+  state.idiomFavoritesOnly = false;
   state.vocabCategory = "All";
   if (els.globalSearchInput) els.globalSearchInput.value = "";
   els.vocabFavoriteToggle?.classList.remove("active");
   els.topicFavoriteToggle?.classList.remove("active");
+  els.idiomFavoriteToggle?.classList.remove("active");
   renderCategoryButtons();
   renderVocabulary();
   renderTopics();
+  renderIdioms();
   renderFavorites();
 };
 
 const restoreBuiltInLibrary = () => {
   writeJson(STORAGE.deletedWords, []);
   writeJson(STORAGE.deletedTopics, []);
+  writeJson(STORAGE.deletedIdioms, []);
   refreshAll();
   hideAppBanner();
   if (els.importStatus) {
-    els.importStatus.textContent = "Built-in words and topics restored.";
+    els.importStatus.textContent = "Built-in words, topics, and idioms restored.";
   }
 };
 
@@ -755,6 +868,7 @@ const loadData = async () => {
   try {
     baseVocabulary = Array.isArray(seedVocabulary) ? seedVocabulary : [];
     baseTopics = Array.isArray(seedTopics) ? seedTopics : [];
+    baseIdioms = Array.isArray(seedIdioms) ? seedIdioms : [];
     if (!baseVocabulary.length || !baseTopics.length) {
       throw new Error("Built-in library files loaded empty");
     }
@@ -777,8 +891,10 @@ const loadData = async () => {
     );
     baseVocabulary = [];
     baseTopics = [];
+    baseIdioms = [];
     vocabularyData = [];
     topicData = [];
+    idiomData = [];
     return false;
   }
 };
@@ -989,18 +1105,19 @@ const filterTopics = () => {
 };
 
 
-const openSpeakingPractice = (topic) => {
-  const questions = topic.questions?.length
-    ? topic.questions
-    : ["Talk about this topic for one minute using your own words."];
+const openSpeakingPractice = (entry) => {
+  const title = entry.title || entry.idiom || "Practice";
+  const questions = entry.questions?.length
+    ? entry.questions
+    : ["Talk about this for one minute using your own words."];
   let index = 0;
   let remaining = 75;
   const totalSec = 75;
-  const history = getSpeakingPracticeFor(topic.title);
+  const history = getSpeakingPracticeFor(title);
 
   openModal("Speaking practice", `
     <div class="speaking-practice">
-      <p class="speaking-topic">${escapeHtml(topic.title)}</p>
+      <p class="speaking-topic">${escapeHtml(title)}</p>
       <p class="speaking-meta">${
         history?.lastPracticed
           ? `Practiced ${history.count || 1}× · last ${escapeHtml(formatDate(history.lastPracticed.slice(0, 10)))}`
@@ -1044,15 +1161,16 @@ const openSpeakingPractice = (topic) => {
 
   const finishSpeaking = () => {
     clearSpeakingTimer();
-    recordSpeakingPractice(topic.title);
+    recordSpeakingPractice(title);
     recordStudyActivity();
     appendStudyEvent({
       type: "speaking",
-      meta: { title: topic.title, questions: questions.length, minutes: Math.max(2, questions.length) },
+      meta: { title, questions: questions.length, minutes: Math.max(2, questions.length) },
     });
     closeModal();
     showToast(`Speaking complete · ${questions.length} question${questions.length === 1 ? "" : "s"}`);
     renderTopics();
+    renderIdioms();
     renderHomeStats();
     refreshProgressViews();
   };
@@ -1380,15 +1498,207 @@ const renderTopics = () => {
   });
 };
 
+const filterIdioms = () => {
+  const term = state.searchTerm.trim().toLowerCase();
+  return idiomData.filter((idiom) => {
+    const matchesFavorite =
+      !state.idiomFavoritesOnly || favoriteIdioms.has(idiom.idiom);
+    if (!matchesFavorite) return false;
+    if (!term) return true;
+    const haystack = [
+      idiom.idiom,
+      idiom.meaning,
+      idiom.example,
+      idiom.usage,
+      idiom.summary,
+      idiom.notes,
+      idiom.date,
+      (idiom.questions || []).join(" "),
+    ]
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(term);
+  });
+};
+
+const renderIdioms = () => {
+  if (!els.idiomGrid || !els.idiomResultsText) return;
+  const filtered = filterIdioms();
+  els.idiomGrid.innerHTML = "";
+  const completedCount = idiomData.filter((idiom) => isIdiomCompleted(idiom)).length;
+  els.idiomResultsText.textContent = `Showing ${filtered.length} idioms · ${completedCount} completed`;
+
+  if (!filtered.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.innerHTML = emptyStateWithFiltersHint(
+      idiomData.length ? "No idioms match your filters" : "Idioms not loaded",
+      idiomData.length
+        ? "Try broadening the search term or add a new idiom."
+        : "Run npm run dev and open the local URL, then hard-refresh.",
+      {
+        hasLibrary: idiomData.length > 0,
+        showClear: Boolean(state.searchTerm.trim()) || state.idiomFavoritesOnly,
+      },
+    );
+    empty.querySelector("[data-clear-filters]")?.addEventListener("click", clearViewFilters);
+    els.idiomGrid.appendChild(empty);
+    return;
+  }
+
+  filtered.forEach((idiom, index) => {
+    const card = document.createElement("article");
+    const isFavorite = favoriteIdioms.has(idiom.idiom);
+    const isCompleted = isIdiomCompleted(idiom);
+    const speaking = getSpeakingPracticeFor(idiom.idiom);
+    card.className = `topic-card${isCompleted ? " is-completed" : ""}`;
+    card.dataset.idiom = idiom.idiom;
+    const detailsId = `idiom-details-${index}`;
+    const title = escapeHtml(idiom.idiom);
+
+    card.innerHTML = `
+      <div class="topic-card__header" role="button" tabindex="0" aria-expanded="false" aria-controls="${detailsId}">
+        <div class="topic-headline">
+          <p class="topic-eyebrow">${escapeHtml(formatDate(idiom.date))}${isCompleted ? " · Completed" : ""}${
+            speaking?.count ? ` · Spoken ${speaking.count}×` : ""
+          }</p>
+          <h3>${title}</h3>
+          <div class="topic-badges">
+            ${isCompleted ? '<span class="status-pill">Completed</span>' : ""}
+            <span class="status-pill">Idiom</span>
+          </div>
+        </div>
+        <div class="topic-card__actions">
+          <button type="button" class="icon-btn share-idiom-btn" aria-label="Share idiom ${title}">${iconShare}</button>
+          <button type="button" class="topic-favorite-btn ${isFavorite ? "is-favorite" : ""}" aria-label="Toggle favorite idiom ${title}" aria-pressed="${isFavorite}">
+            ${iconStar(isFavorite)}
+          </button>
+          <span class="topic-toggle-icon" aria-hidden="true">${iconChevron}</span>
+        </div>
+      </div>
+      <div class="topic-details" id="${detailsId}">
+        <div class="topic-detail-block">
+          <h4>Meaning</h4>
+          <p>${escapeHtml(idiom.meaning)}</p>
+          ${
+            idiom.pronunciation
+              ? `<p class="mini-vocab-pron">/${escapeHtml(idiom.pronunciation)}/</p>`
+              : ""
+          }
+        </div>
+        ${
+          idiom.example
+            ? `<div class="topic-detail-block"><h4>Example</h4><p>${escapeHtml(idiom.example)}</p></div>`
+            : ""
+        }
+        ${
+          idiom.usage
+            ? `<div class="topic-detail-block"><h4>When to use it</h4><p>${escapeHtml(idiom.usage)}</p></div>`
+            : ""
+        }
+        ${
+          idiom.summary
+            ? `<div class="topic-detail-block"><h4>Summary</h4><p>${escapeHtml(idiom.summary)}</p></div>`
+            : ""
+        }
+        ${
+          idiom.notes
+            ? `<div class="topic-detail-block"><h4>Personal Notes</h4><p>${escapeHtml(idiom.notes)}</p></div>`
+            : ""
+        }
+        ${
+          idiom.questions.length
+            ? `<div class="topic-detail-block"><h4>Discussion Questions</h4><ul>${idiom.questions
+                .map((question) => `<li>${escapeHtml(question)}</li>`)
+                .join("")}</ul></div>`
+            : ""
+        }
+        <div class="card-footer-actions">
+          <button type="button" class="primary-btn practice-idiom-btn">Practice idiom</button>
+          <button type="button" class="ghost-btn exam-idiom-btn">Exam session</button>
+          <button type="button" class="ghost-btn speaking-idiom-btn">Speaking practice</button>
+          <button type="button" class="ghost-btn complete-idiom-btn">${isCompleted ? "Mark incomplete" : "Mark completed"}</button>
+          <button type="button" class="ghost-btn edit-idiom-btn">Edit</button>
+          <button type="button" class="danger-btn delete-idiom-btn">Delete</button>
+        </div>
+      </div>
+    `;
+
+    card.querySelector(".topic-favorite-btn").addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (favoriteIdioms.has(idiom.idiom)) favoriteIdioms.delete(idiom.idiom);
+      else favoriteIdioms.add(idiom.idiom);
+      saveFavorites();
+      renderIdioms();
+      renderFavorites();
+      renderHomeStats();
+    });
+
+    card.querySelector(".share-idiom-btn")?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      shareItem("idiom", idiom);
+    });
+
+    const toggleButton = card.querySelector(".topic-card__header");
+    const setExpanded = (open) => {
+      card.classList.toggle("is-open", open);
+      toggleButton.setAttribute("aria-expanded", String(open));
+    };
+
+    toggleButton.addEventListener("click", (event) => {
+      if (event.target.closest(".topic-favorite-btn, .share-idiom-btn")) return;
+      setExpanded(!card.classList.contains("is-open"));
+    });
+    toggleButton.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        setExpanded(!card.classList.contains("is-open"));
+      }
+    });
+
+    card.querySelector(".practice-idiom-btn").addEventListener("click", () => {
+      startIdiomQuiz(idiom.idiom);
+    });
+    card.querySelector(".exam-idiom-btn")?.addEventListener("click", () => {
+      startIdiomExam(idiom.idiom);
+    });
+    card.querySelector(".speaking-idiom-btn")?.addEventListener("click", () => {
+      openSpeakingPractice(idiom);
+    });
+    card.querySelector(".complete-idiom-btn").addEventListener("click", () => {
+      toggleIdiomCompleted(idiom.idiom);
+      renderIdioms();
+      populateQuizScopeSelect();
+      renderHomeStats();
+    });
+    card.querySelector(".edit-idiom-btn").addEventListener("click", () => openIdiomModal(idiom));
+    card.querySelector(".delete-idiom-btn").addEventListener("click", () => {
+      if (!confirm(`Delete “${idiom.idiom}”?`)) return;
+      softDeleteIdiom(idiom.idiom);
+      favoriteIdioms.delete(idiom.idiom);
+      completedIdioms.delete(idiom.idiom);
+      saveFavorites();
+      saveCompletedIdioms();
+      refreshAll();
+    });
+
+    els.idiomGrid.appendChild(card);
+  });
+};
+
 const renderFavorites = () => {
   els.favoriteVocabGrid.innerHTML = "";
   els.favoriteTopicGrid.innerHTML = "";
+  if (els.favoriteIdiomGrid) els.favoriteIdiomGrid.innerHTML = "";
 
   const favoriteWordsList = vocabularyData.filter((item) =>
     favoriteWords.has(item.word),
   );
   const favoriteTopicsList = topicData.filter((item) =>
     favoriteTopics.has(item.title),
+  );
+  const favoriteIdiomsList = idiomData.filter((item) =>
+    favoriteIdioms.has(item.idiom),
   );
 
   if (!favoriteWordsList.length) {
@@ -1436,13 +1746,51 @@ const renderFavorites = () => {
       els.favoriteTopicGrid.appendChild(card);
     });
   }
+
+  if (els.favoriteIdiomGrid) {
+    if (!favoriteIdiomsList.length) {
+      els.favoriteIdiomGrid.innerHTML = `
+        <div class="empty-state">
+          ${EMPTY_FLOURISH}
+          <h3>No favorite idioms yet</h3>
+          <p>Mark idioms as favorites to save them here.</p>
+        </div>
+      `;
+    } else {
+      favoriteIdiomsList.forEach((idiom) => {
+        const card = document.createElement("article");
+        card.className = "topic-card";
+        card.innerHTML = `
+          <div class="topic-card__header">
+            <div class="topic-headline">
+              <p class="topic-eyebrow">${escapeHtml(formatDate(idiom.date))}</p>
+              <h3>${escapeHtml(idiom.idiom)}</h3>
+            </div>
+            <button type="button" class="topic-favorite-btn is-favorite" aria-pressed="true">${iconStar(true)}</button>
+          </div>
+        `;
+        card.querySelector(".topic-favorite-btn").addEventListener("click", () => {
+          favoriteIdioms.delete(idiom.idiom);
+          saveFavorites();
+          renderIdioms();
+          renderFavorites();
+          renderHomeStats();
+        });
+        els.favoriteIdiomGrid.appendChild(card);
+      });
+    }
+  }
 };
 
 const renderHomeStats = () => {
   els.homeTotalWords.textContent = vocabularyData.length;
   els.homeTotalTopics.textContent = topicData.length;
+  if (els.homeTotalIdioms) els.homeTotalIdioms.textContent = idiomData.length;
   els.homeFavoriteWords.textContent = favoriteWords.size;
-  els.homeDueWords.textContent = getDueWords(vocabularyData).length;
+  const idiomQuizItems = idiomData.map(idiomToQuizItem);
+  const dueWords = getDueWords(vocabularyData).length;
+  const dueIdioms = getDueWords(idiomQuizItems).length;
+  els.homeDueWords.textContent = dueWords + dueIdioms;
 
   if (els.homeStudyStreak) {
     const { streak, studiedToday } = getStudyStreakInfo();
@@ -1552,7 +1900,15 @@ const populateQuizCategorySelect = () => {
 const getQuizWordPool = () => {
   let pool = vocabularyData;
 
-  if (state.quizScope === "favorites") {
+  if (state.quizScope === "due") {
+    pool = [...vocabularyData, ...idiomData.map(idiomToQuizItem)];
+  } else if (state.quizScope === "idioms") {
+    pool = idiomData.map(idiomToQuizItem);
+  } else if (String(state.quizScope).startsWith("idiom:")) {
+    const phrase = state.quizScope.slice("idiom:".length);
+    const match = idiomData.find((item) => item.idiom === phrase);
+    pool = match ? [idiomToQuizItem(match)] : [];
+  } else if (state.quizScope === "favorites") {
     pool = pool.filter((item) => favoriteWords.has(item.word));
   } else if (state.quizScope === "weak") {
     pool = getWeakWords(pool);
@@ -1565,7 +1921,13 @@ const getQuizWordPool = () => {
     }
   }
 
-  if (state.quizCategoryFilter && state.quizCategoryFilter !== "All") {
+  const idiomScoped =
+    state.quizScope === "idioms" || String(state.quizScope).startsWith("idiom:");
+  if (
+    !idiomScoped &&
+    state.quizCategoryFilter &&
+    state.quizCategoryFilter !== "All"
+  ) {
     pool = pool.filter((item) => item.category === state.quizCategoryFilter);
   }
 
@@ -1586,10 +1948,14 @@ const populateQuizScopeSelect = () => {
 
   addOption("due", "Due words");
   addOption("all", "All vocabulary");
+  addOption("idioms", "All idioms");
   addOption("favorites", "Favorites only");
   addOption("weak", "Weak words (recent again)");
   topicData.forEach((topic) => {
     addOption(`topic:${topic.title}`, topic.title);
+  });
+  idiomData.forEach((idiom) => {
+    addOption(`idiom:${idiom.idiom}`, `Idiom: ${idiom.idiom}`);
   });
 
   const hasPrevious = [...els.quizScopeSelect.options].some(
@@ -1604,11 +1970,16 @@ const currentQuizItem = () => state.quizQueue[state.quizIndex] || null;
 const describeQuizScope = () => {
   if (state.quizScope === "all") return "All vocabulary";
   if (state.quizScope === "due") return "Due words";
+  if (state.quizScope === "idioms") return "All idioms";
   if (state.quizScope === "favorites") return "Favorite words";
   if (state.quizScope === "weak") return "Weak words";
   if (String(state.quizScope).startsWith("topic:")) {
     const title = state.quizScope.slice("topic:".length);
     return state.quizSessionLimit === 10 ? `Topic exam: ${title}` : `Topic: ${title}`;
+  }
+  if (String(state.quizScope).startsWith("idiom:")) {
+    const phrase = state.quizScope.slice("idiom:".length);
+    return state.quizSessionLimit ? `Idiom exam: ${phrase}` : `Idiom: ${phrase}`;
   }
   return "Exam practice";
 };
@@ -1972,9 +2343,11 @@ const prepareQuiz = ({ forceAll = false, preserveForce = false, limit = null } =
   const useAllInScope =
     state.quizForceAll ||
     state.quizScope === "all" ||
+    state.quizScope === "idioms" ||
     state.quizScope === "favorites" ||
     state.quizScope === "weak" ||
-    String(state.quizScope).startsWith("topic:");
+    String(state.quizScope).startsWith("topic:") ||
+    String(state.quizScope).startsWith("idiom:");
 
   const due = useAllInScope
     ? pool.map((item) => ({ item }))
@@ -1984,7 +2357,11 @@ const prepareQuiz = ({ forceAll = false, preserveForce = false, limit = null } =
   const sessionCap = state.quizSessionLimit || QUIZ_SESSION_SIZE;
   if (!useAllInScope || state.quizSessionLimit) {
     state.quizQueue = state.quizQueue.slice(0, sessionCap);
-  } else if (useAllInScope && !String(state.quizScope).startsWith("topic:")) {
+  } else if (
+    useAllInScope &&
+    !String(state.quizScope).startsWith("topic:") &&
+    !String(state.quizScope).startsWith("idiom:")
+  ) {
     state.quizQueue = state.quizQueue.slice(0, sessionCap);
   }
 
@@ -2025,12 +2402,38 @@ const startTopicExam = (topicTitle) => {
   prepareQuiz({ forceAll: true, limit: 10 });
 };
 
+const startIdiomQuiz = (idiomPhrase) => {
+  state.quizScope = `idiom:${idiomPhrase}`;
+  state.quizSessionLimit = null;
+  if (els.quizScopeSelect) {
+    populateQuizScopeSelect();
+    els.quizScopeSelect.value = state.quizScope;
+  }
+  persistQuizSettings();
+  switchPage("quiz", { replace: false });
+  prepareQuiz({ forceAll: true });
+};
+
+const startIdiomExam = (idiomPhrase) => {
+  state.quizScope = "idioms";
+  state.quizMode = "flashcard";
+  syncQuizControlsFromState();
+  if (els.quizScopeSelect) {
+    populateQuizScopeSelect();
+    els.quizScopeSelect.value = state.quizScope;
+  }
+  persistQuizSettings();
+  switchPage("quiz", { replace: false });
+  prepareQuiz({ forceAll: true, limit: Math.min(10, Math.max(1, idiomData.length)) });
+};
+
 const reviewMissedQuiz = () => {
   const missedWords = state.quizSessionStats.missed;
   if (!missedWords.length) return;
-  const lookup = new Map(
-    vocabularyData.map((item) => [item.word.toLowerCase(), item]),
-  );
+  const lookup = new Map([
+    ...vocabularyData.map((item) => [item.word.toLowerCase(), item]),
+    ...idiomData.map((item) => [item.idiom.toLowerCase(), idiomToQuizItem(item)]),
+  ]);
   state.quizQueue = missedWords
     .map((word) => lookup.get(word.toLowerCase()))
     .filter(Boolean);
@@ -2174,14 +2577,21 @@ const isTypingTarget = (target) => {
 const applySearch = () => {
   renderVocabulary();
   renderTopics();
+  renderIdioms();
   const term = state.searchTerm.trim();
   if (term && (state.activePage === "home" || state.activePage === "about" || state.activePage === "data")) {
     const vocabMatches = filterVocabulary().length;
     const topicMatches = filterTopics().length;
-    if (vocabMatches || topicMatches) {
-      switchPage(vocabMatches >= topicMatches ? "vocabulary" : "topics", {
-        replace: true,
-      });
+    const idiomMatches = filterIdioms().length;
+    const best = Math.max(vocabMatches, topicMatches, idiomMatches);
+    if (best > 0) {
+      const page =
+        best === vocabMatches
+          ? "vocabulary"
+          : best === topicMatches
+            ? "topics"
+            : "idioms";
+      switchPage(page, { replace: true });
     }
   }
 };
@@ -2190,7 +2600,9 @@ const exportBackup = () => {
   const payload = buildExportPayload({
     favoriteWords,
     favoriteTopics,
+    favoriteIdioms,
     completedTopics,
+    completedIdioms,
   });
   const blob = new Blob([JSON.stringify(payload, null, 2)], {
     type: "application/json",
@@ -2218,9 +2630,15 @@ const importBackup = async (file) => {
     readStringList(STORAGE.favoritesWords).forEach((word) => favoriteWords.add(word));
     favoriteTopics.clear();
     readStringList(STORAGE.favoritesTopics).forEach((title) => favoriteTopics.add(title));
+    favoriteIdioms.clear();
+    readStringList(STORAGE.favoritesIdioms).forEach((idiom) => favoriteIdioms.add(idiom));
     completedTopics.clear();
     readStringList(STORAGE.completedTopics).forEach((title) =>
       completedTopics.add(title),
+    );
+    completedIdioms.clear();
+    readStringList(STORAGE.completedIdioms).forEach((idiom) =>
+      completedIdioms.add(idiom),
     );
 
     refreshAll();
@@ -2299,6 +2717,8 @@ const attachListeners = () => {
   els.addWordBtn?.addEventListener("click", () => openWordModal());
   els.addTopicBtn?.addEventListener("click", () => openTopicModal());
   els.topicTemplateBtn?.addEventListener("click", openTopicFromTemplate);
+  els.addIdiomBtn?.addEventListener("click", () => openIdiomModal());
+  els.idiomTemplateBtn?.addEventListener("click", openIdiomFromTemplate);
   els.homeReviewWeakBtn?.addEventListener("click", startWeakWordsQuiz);
 
   els.vocabFavoriteToggle?.addEventListener("click", () => {
@@ -2311,6 +2731,12 @@ const attachListeners = () => {
     state.topicFavoritesOnly = !state.topicFavoritesOnly;
     els.topicFavoriteToggle.classList.toggle("active", state.topicFavoritesOnly);
     renderTopics();
+  });
+
+  els.idiomFavoriteToggle?.addEventListener("click", () => {
+    state.idiomFavoritesOnly = !state.idiomFavoritesOnly;
+    els.idiomFavoriteToggle.classList.toggle("active", state.idiomFavoritesOnly);
+    renderIdioms();
   });
 
   els.vocabSortSelect?.addEventListener("change", (event) => {
@@ -2336,9 +2762,11 @@ const attachListeners = () => {
     prepareQuiz({
       forceAll:
         state.quizScope === "all" ||
+        state.quizScope === "idioms" ||
         state.quizScope === "favorites" ||
         state.quizScope === "weak" ||
-        String(state.quizScope).startsWith("topic:"),
+        String(state.quizScope).startsWith("topic:") ||
+        String(state.quizScope).startsWith("idiom:"),
     });
   });
 
@@ -2502,7 +2930,7 @@ const maybeRemindBackup = () => {
   els.appBanner.hidden = false;
   els.appBanner.dataset.variant = "info";
   els.appBanner.innerHTML = `
-    <span>Backup reminder: download a JSON export so your custom words and topics stay safe.</span>
+    <span>Backup reminder: download a JSON export so your custom words, topics, and idioms stay safe.</span>
     <button type="button" class="ghost-btn app-banner__action" data-backup-now>Export now</button>
     <button type="button" class="icon-btn app-banner__dismiss" data-dismiss-banner aria-label="Dismiss">×</button>
   `;
@@ -2545,6 +2973,7 @@ const init = async () => {
     refreshProgressViews();
     renderVocabulary();
     renderTopics();
+    renderIdioms();
     renderFavorites();
     try {
       prepareQuiz({ preserveForce: true });

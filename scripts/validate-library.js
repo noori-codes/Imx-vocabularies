@@ -6,6 +6,7 @@ const dataDir = path.join(repoRoot, "src", "data");
 
 const vocabularyPath = pathToFileURL(path.join(dataDir, "vocabulary.js")).href;
 const topicsPath = pathToFileURL(path.join(dataDir, "topics.js")).href;
+const idiomsPath = pathToFileURL(path.join(dataDir, "idioms.js")).href;
 const categoriesPath = pathToFileURL(path.join(dataDir, "categories.js")).href;
 
 const fail = (code, message) => {
@@ -18,14 +19,17 @@ const toLower = (v) => String(v || "").trim().toLowerCase();
 const isNonEmptyString = (v) => typeof v === "string" && v.trim().length > 0;
 
 const run = async () => {
-  const [{ vocabularyData }, { topicData }, { normalizeCategory, CATEGORIES }] = await Promise.all([
-    import(vocabularyPath),
-    import(topicsPath),
-    import(categoriesPath),
-  ]);
+  const [{ vocabularyData }, { topicData }, { idiomData }, { normalizeCategory, CATEGORIES }] =
+    await Promise.all([
+      import(vocabularyPath),
+      import(topicsPath),
+      import(idiomsPath),
+      import(categoriesPath),
+    ]);
 
   if (!Array.isArray(vocabularyData)) fail(1, "vocabularyData must be an array");
   if (!Array.isArray(topicData)) fail(1, "topicData must be an array");
+  if (!Array.isArray(idiomData)) fail(1, "idiomData must be an array");
 
   const vocabSet = new Map(); // lower(word) -> original word
   const vocabIssues = [];
@@ -90,13 +94,48 @@ const run = async () => {
     }
   }
 
+  const idiomSet = new Map();
+  const idiomIssues = [];
+  const idiomDuplicates = [];
+
+  for (const [idx, item] of idiomData.entries()) {
+    const idiom = item?.idiom;
+    const key = toLower(idiom);
+    if (!key) {
+      idiomIssues.push({ idx, issue: "Missing idiom", item });
+      continue;
+    }
+
+    if (idiomSet.has(key)) {
+      idiomDuplicates.push({ idiom, first: idiomSet.get(key), secondIndex: idx });
+      continue;
+    }
+
+    if (!isNonEmptyString(item?.date)) {
+      idiomIssues.push({ idx, idiom, issue: "Missing date", item });
+    }
+    if (!isNonEmptyString(item?.meaning)) {
+      idiomIssues.push({ idx, idiom, issue: "Missing meaning", item });
+    }
+
+    const questionsList = Array.isArray(item?.questions) ? item.questions : [];
+    if (!Array.isArray(item?.questions) || questionsList.length === 0) {
+      idiomIssues.push({ idx, idiom, issue: "Idiom has no questions", item });
+    }
+
+    idiomSet.set(key, idiom);
+  }
+
   const summary = {
     vocabCount: vocabularyData.length,
     topicCount: topicData.length,
+    idiomCount: idiomData.length,
     vocabIssues: vocabIssues.length,
     topicIssues: topicIssues.length,
+    idiomIssues: idiomIssues.length,
     missingWordRefs: missingWordRefs.length,
     duplicates: duplicates.length,
+    idiomDuplicates: idiomDuplicates.length,
   };
 
   console.log("IMX Library Validation");
@@ -107,6 +146,13 @@ const run = async () => {
     console.log("\nDuplicates (case-insensitive word):");
     for (const d of duplicates.slice(0, 20)) {
       console.log(`- ${d.word} (first: ${d.first}, secondIndex: ${d.secondIndex})`);
+    }
+  }
+
+  if (idiomDuplicates.length) {
+    console.log("\nDuplicate idioms (case-insensitive):");
+    for (const d of idiomDuplicates.slice(0, 20)) {
+      console.log(`- ${d.idiom} (first: ${d.first}, secondIndex: ${d.secondIndex})`);
     }
   }
 
@@ -124,6 +170,13 @@ const run = async () => {
     }
   }
 
+  if (idiomIssues.length) {
+    console.log("\nIdiom issues (first 20):");
+    for (const i of idiomIssues.slice(0, 20)) {
+      console.log(`- idx ${i.idx}${i.idiom ? ` idiom=${i.idiom}` : ""}: ${i.issue}`);
+    }
+  }
+
   if (missingWordRefs.length) {
     console.log("\nMissing vocab links (first 20):");
     for (const m of missingWordRefs.slice(0, 20)) {
@@ -134,7 +187,9 @@ const run = async () => {
   // Hard-fail on structural issues that will break the UI.
   // Missing vocab links are handled by your UI (and can be intentional),
   // so we don't fail the whole script for that.
-  if (vocabIssues.length || topicIssues.length) fail(1);
+  if (vocabIssues.length || topicIssues.length || idiomIssues.length || idiomDuplicates.length) {
+    fail(1);
+  }
   console.log("\nValidation passed.");
 };
 
@@ -142,4 +197,3 @@ run().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-

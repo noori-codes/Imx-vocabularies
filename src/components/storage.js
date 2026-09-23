@@ -3,12 +3,16 @@ import { normalizeCategory, CATEGORIES } from "../data/categories.js";
 const STORAGE = {
   favoritesWords: "imx-hub-word-favorites",
   favoritesTopics: "imx-hub-topic-favorites",
+  favoritesIdioms: "imx-hub-idiom-favorites",
   completedTopics: "imx-hub-completed-topics",
+  completedIdioms: "imx-hub-completed-idioms",
   theme: "imx-hub-theme",
   customVocab: "imx-hub-custom-vocab",
   customTopics: "imx-hub-custom-topics",
+  customIdioms: "imx-hub-custom-idioms",
   deletedWords: "imx-hub-deleted-words",
   deletedTopics: "imx-hub-deleted-topics",
+  deletedIdioms: "imx-hub-deleted-idioms",
   quizProgress: "imx-hub-quiz-progress",
   quizSettings: "imx-hub-quiz-settings",
   studyStreak: "imx-hub-study-streak",
@@ -95,6 +99,45 @@ const normalizeTopic = (item = {}) => ({
   custom: Boolean(item.custom),
 });
 
+const normalizeIdiom = (item = {}) => ({
+  idiom: String(item.idiom || "").trim(),
+  date: String(item.date || new Date().toISOString().slice(0, 10)),
+  meaning: String(item.meaning || "").trim(),
+  pronunciation: String(item.pronunciation || "").trim(),
+  example: String(item.example || "").trim(),
+  usage: String(item.usage || "").trim(),
+  summary: String(item.summary || "").trim(),
+  notes: String(item.notes || "").trim(),
+  questions: Array.isArray(item.questions)
+    ? item.questions.map((q) => String(q).trim()).filter(Boolean)
+    : String(item.questions || "")
+        .split("\n")
+        .map((q) => q.trim())
+        .filter(Boolean),
+  favorite: Boolean(item.favorite),
+  completed: Boolean(item.completed),
+  custom: Boolean(item.custom),
+});
+
+/** Map an idiom record into a quiz-compatible vocabulary-shaped item. */
+export const idiomToQuizItem = (idiom = {}) => {
+  const normalized = normalizeIdiom(idiom);
+  return {
+    word: normalized.idiom,
+    pronunciation: normalized.pronunciation,
+    meaning: normalized.meaning,
+    synonym: "",
+    antonym: "",
+    wordFamily: "",
+    sentence: normalized.example,
+    notes: normalized.notes,
+    tags: ["idiom"],
+    category: "Speaking",
+    custom: Boolean(normalized.custom),
+    isIdiom: true,
+  };
+};
+
 export const mergeVocabulary = (baseList = []) => {
   const deleted = new Set(readStringList(STORAGE.deletedWords).map((w) => w.toLowerCase()));
   const custom = readJson(STORAGE.customVocab, []);
@@ -152,6 +195,41 @@ export const mergeTopics = (baseList = []) => {
       customMap.delete(key);
     } else {
       merged.push(normalizeTopic({ ...item, custom: false }));
+    }
+    seen.add(key);
+  });
+
+  customMap.forEach((item, key) => {
+    if (deleted.has(key) || seen.has(key)) return;
+    merged.push(item);
+    seen.add(key);
+  });
+
+  return merged.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+};
+
+export const mergeIdioms = (baseList = []) => {
+  const deleted = new Set(readStringList(STORAGE.deletedIdioms).map((t) => t.toLowerCase()));
+  const custom = readJson(STORAGE.customIdioms, []);
+  const customMap = new Map();
+
+  (Array.isArray(custom) ? custom : []).forEach((item) => {
+    const normalized = normalizeIdiom({ ...item, custom: true });
+    if (!normalized.idiom) return;
+    customMap.set(normalized.idiom.toLowerCase(), normalized);
+  });
+
+  const merged = [];
+  const seen = new Set();
+
+  baseList.forEach((item) => {
+    const key = String(item.idiom || "").toLowerCase();
+    if (!key || deleted.has(key) || seen.has(key)) return;
+    if (customMap.has(key)) {
+      merged.push(customMap.get(key));
+      customMap.delete(key);
+    } else {
+      merged.push(normalizeIdiom({ ...item, custom: false }));
     }
     seen.add(key);
   });
@@ -257,6 +335,52 @@ export const softDeleteTopic = (title, { skipCustomCleanup = false } = {}) => {
   writeJson(STORAGE.deletedTopics, [...deleted]);
 };
 
+export const upsertCustomIdiom = (idiomData, { previousIdiom } = {}) => {
+  const custom = Array.isArray(readJson(STORAGE.customIdioms, []))
+    ? readJson(STORAGE.customIdioms, [])
+    : [];
+  const normalized = normalizeIdiom({ ...idiomData, custom: true });
+  if (!normalized.idiom) throw new Error("Idiom is required");
+  if (!normalized.meaning) throw new Error("Meaning is required");
+  if (!Array.isArray(normalized.questions) || normalized.questions.length === 0) {
+    throw new Error("At least one question is required");
+  }
+
+  const previousKey = (previousIdiom || normalized.idiom).toLowerCase();
+  const next = custom.filter(
+    (item) => String(item.idiom || "").toLowerCase() !== previousKey,
+  );
+  next.push(normalized);
+  writeJson(STORAGE.customIdioms, next);
+
+  const deleted = readStringList(STORAGE.deletedIdioms).filter(
+    (idiom) => idiom.toLowerCase() !== normalized.idiom.toLowerCase(),
+  );
+  writeJson(STORAGE.deletedIdioms, deleted);
+
+  if (previousIdiom && previousIdiom.toLowerCase() !== normalized.idiom.toLowerCase()) {
+    softDeleteIdiom(previousIdiom, { skipCustomCleanup: true });
+  }
+
+  return normalized;
+};
+
+export const softDeleteIdiom = (idiom, { skipCustomCleanup = false } = {}) => {
+  const key = String(idiom || "").trim();
+  if (!key) return;
+
+  if (!skipCustomCleanup) {
+    const custom = (readJson(STORAGE.customIdioms, []) || []).filter(
+      (item) => String(item.idiom || "").toLowerCase() !== key.toLowerCase(),
+    );
+    writeJson(STORAGE.customIdioms, custom);
+  }
+
+  const deleted = new Set(readStringList(STORAGE.deletedIdioms));
+  deleted.add(key);
+  writeJson(STORAGE.deletedIdioms, [...deleted]);
+};
+
 export const getQuizProgress = () => {
   const progress = readJson(STORAGE.quizProgress, {});
   return progress && typeof progress === "object" ? progress : {};
@@ -322,9 +446,11 @@ export const markBackupExported = () => {
 export const shouldRemindBackup = ({ days = 7 } = {}) => {
   const customVocab = readJson(STORAGE.customVocab, []);
   const customTopics = readJson(STORAGE.customTopics, []);
+  const customIdioms = readJson(STORAGE.customIdioms, []);
   const hasCustom =
     (Array.isArray(customVocab) && customVocab.length > 0) ||
-    (Array.isArray(customTopics) && customTopics.length > 0);
+    (Array.isArray(customTopics) && customTopics.length > 0) ||
+    (Array.isArray(customIdioms) && customIdioms.length > 0);
   if (!hasCustom) return false;
 
   const last = getLastBackupAt();
@@ -722,18 +848,28 @@ export const getProgressStats = () => {
   };
 };
 
-export const buildExportPayload = ({ favoriteWords, favoriteTopics, completedTopics }) => ({
+export const buildExportPayload = ({
+  favoriteWords,
+  favoriteTopics,
+  favoriteIdioms = [],
+  completedTopics,
+  completedIdioms = [],
+}) => ({
   version: 2,
   exportedAt: new Date().toISOString(),
   favorites: {
     words: [...favoriteWords],
     topics: [...favoriteTopics],
+    idioms: [...favoriteIdioms],
   },
   completedTopics: [...completedTopics],
+  completedIdioms: [...completedIdioms],
   customVocabulary: readJson(STORAGE.customVocab, []),
   customTopics: readJson(STORAGE.customTopics, []),
+  customIdioms: readJson(STORAGE.customIdioms, []),
   deletedWords: readStringList(STORAGE.deletedWords),
   deletedTopics: readStringList(STORAGE.deletedTopics),
+  deletedIdioms: readStringList(STORAGE.deletedIdioms),
   quizProgress: getQuizProgress(),
   studyHistory: getStudyHistory(),
   studyGoals: getStudyGoals(),
@@ -750,12 +886,16 @@ export const applyImportPayload = (payload, { mode = "merge" } = {}) => {
   if (mode === "replace") {
     writeJson(STORAGE.customVocab, []);
     writeJson(STORAGE.customTopics, []);
+    writeJson(STORAGE.customIdioms, []);
     writeJson(STORAGE.deletedWords, []);
     writeJson(STORAGE.deletedTopics, []);
+    writeJson(STORAGE.deletedIdioms, []);
     writeJson(STORAGE.quizProgress, {});
     writeJson(STORAGE.favoritesWords, []);
     writeJson(STORAGE.favoritesTopics, []);
+    writeJson(STORAGE.favoritesIdioms, []);
     writeJson(STORAGE.completedTopics, []);
+    writeJson(STORAGE.completedIdioms, []);
     writeJson(STORAGE.studyHistory, []);
     writeJson(STORAGE.studyGoals, defaultStudyGoals());
     writeJson(STORAGE.writingResponses, {});
@@ -786,6 +926,18 @@ export const applyImportPayload = (payload, { mode = "merge" } = {}) => {
     writeJson(STORAGE.customTopics, [...map.values()]);
   }
 
+  if (Array.isArray(payload.customIdioms)) {
+    const existing = mode === "replace" ? [] : readJson(STORAGE.customIdioms, []);
+    const map = new Map(
+      existing.map((item) => [String(item.idiom || "").toLowerCase(), item]),
+    );
+    payload.customIdioms.forEach((item) => {
+      const normalized = normalizeIdiom({ ...item, custom: true });
+      if (normalized.idiom) map.set(normalized.idiom.toLowerCase(), normalized);
+    });
+    writeJson(STORAGE.customIdioms, [...map.values()]);
+  }
+
   if (Array.isArray(payload.deletedWords)) {
     const deleted = new Set([
       ...(mode === "replace" ? [] : readStringList(STORAGE.deletedWords)),
@@ -800,6 +952,14 @@ export const applyImportPayload = (payload, { mode = "merge" } = {}) => {
       ...payload.deletedTopics.map(String),
     ]);
     writeJson(STORAGE.deletedTopics, [...deleted]);
+  }
+
+  if (Array.isArray(payload.deletedIdioms)) {
+    const deleted = new Set([
+      ...(mode === "replace" ? [] : readStringList(STORAGE.deletedIdioms)),
+      ...payload.deletedIdioms.map(String),
+    ]);
+    writeJson(STORAGE.deletedIdioms, [...deleted]);
   }
 
   if (payload.quizProgress && typeof payload.quizProgress === "object") {
@@ -818,6 +978,11 @@ export const applyImportPayload = (payload, { mode = "merge" } = {}) => {
     favorites.topics.forEach((title) => current.add(String(title)));
     writeJson(STORAGE.favoritesTopics, [...current]);
   }
+  if (Array.isArray(favorites.idioms)) {
+    const current = new Set(mode === "replace" ? [] : readStringList(STORAGE.favoritesIdioms));
+    favorites.idioms.forEach((idiom) => current.add(String(idiom)));
+    writeJson(STORAGE.favoritesIdioms, [...current]);
+  }
 
   if (Array.isArray(payload.completedTopics)) {
     const current = new Set(
@@ -825,6 +990,14 @@ export const applyImportPayload = (payload, { mode = "merge" } = {}) => {
     );
     payload.completedTopics.forEach((title) => current.add(String(title)));
     writeJson(STORAGE.completedTopics, [...current]);
+  }
+
+  if (Array.isArray(payload.completedIdioms)) {
+    const current = new Set(
+      mode === "replace" ? [] : readStringList(STORAGE.completedIdioms),
+    );
+    payload.completedIdioms.forEach((idiom) => current.add(String(idiom)));
+    writeJson(STORAGE.completedIdioms, [...current]);
   }
 
   if (Array.isArray(payload.studyHistory)) {

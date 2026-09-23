@@ -23,6 +23,21 @@ export const LESSON_TEMPLATE = {
   ],
 };
 
+export const IDIOM_TEMPLATE = {
+  idiom: "",
+  meaning: "Write the meaning of the idiom in clear English.",
+  pronunciation: "",
+  example: "Write one natural example sentence that uses the idiom.",
+  usage: "When and how people usually use this idiom.",
+  summary: "A short framing idea for discussing the idiom with a partner.",
+  notes: "Personal reminders or cultural notes.",
+  questions: [
+    "What does this idiom mean in your own words?",
+    "When would you use this idiom in real life?",
+    "Can you share a personal example connected to this idiom?",
+  ],
+};
+
 export const state = {
   activePage: "home",
   searchTerm: "",
@@ -30,6 +45,7 @@ export const state = {
   vocabSort: "az",
   vocabFavoritesOnly: false,
   topicFavoritesOnly: false,
+  idiomFavoritesOnly: false,
   quizQueue: [],
   quizIndex: 0,
   quizRevealed: false,
@@ -48,11 +64,14 @@ export const state = {
   quizListeningHeard: false,
   editingWord: null,
   editingTopic: null,
+  editingIdiom: null,
 };
 
 export const library = {
   baseVocabulary: [],
   baseTopics: [],
+  baseIdioms: [],
   vocabularyData: [],
   topicData: [],
+  idiomData: [],
 };

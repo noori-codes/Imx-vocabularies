@@ -6,7 +6,7 @@
     <title>IMX English Hub</title>
     <meta
       name="description"
-      content="A personal ink-journal English hub for vocabulary, presentation topics, and daily practice."
+              content="A personal ink-journal English hub for vocabulary, presentation topics, idioms, and daily practice."
     />
     <link rel="icon" type="image/png" href="IMX-logo.png" />
     <link rel="apple-touch-icon" href="IMX-logo.png" />
@@ -55,7 +55,7 @@
             <input
               id="globalSearchInput"
               type="search"
-              placeholder="Search words or topics"
+              placeholder="Search words, topics, or idioms"
               autocomplete="off"
             />
           </label>
@@ -95,6 +95,7 @@
           <button class="nav-link active" data-page="home">Home</button>
           <button class="nav-link" data-page="vocabulary">Words</button>
           <button class="nav-link" data-page="topics">Topics</button>
+          <button class="nav-link" data-page="idioms">Idioms</button>
           <button class="nav-link" data-page="quiz">Exam</button>
           <button class="nav-link" data-page="progress">Progress</button>
           <button class="nav-link nav-link--aside" data-page="favorites">Favorites</button>
@@ -127,8 +128,8 @@
               <p class="eyebrow animate-fade-up">Personal study journal</p>
               <h2 class="brand-hero animate-fade-up animate-delay-1">IMX</h2>
               <p class="hero-subtitle animate-fade-up animate-delay-2">
-                Vocabulary, presentations, and daily practice — kept in one
-                quiet place to review and grow.
+                Vocabulary, presentations, idioms, and daily practice — kept in
+                one quiet place to review and grow.
               </p>
               <div class="hero-actions animate-fade-up animate-delay-3">
                 <button type="button" class="primary-btn" data-jump="quiz">
@@ -165,6 +166,10 @@
             <button type="button" class="study-stat" data-jump="topics">
               <span class="progress-label">Topics</span>
               <strong id="homeTotalTopics">0</strong>
+            </button>
+            <button type="button" class="study-stat" data-jump="idioms">
+              <span class="progress-label">Idioms</span>
+              <strong id="homeTotalIdioms">0</strong>
             </button>
             <button type="button" class="study-stat" data-jump="favorites">
               <span class="progress-label">Favorites</span>
@@ -258,6 +263,31 @@
             <p id="topicResultsText">Showing presentation topics</p>
           </div>
           <div id="topicGrid" class="accordion-grid"></div>
+        </section>
+
+        <section id="idioms" class="page">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">Daily expressions</p>
+              <h2>Idioms</h2>
+            </div>
+            <div class="page-controls">
+              <button id="addIdiomBtn" class="primary-btn" type="button">
+                Add idiom
+              </button>
+              <button id="idiomTemplateBtn" class="ghost-btn" type="button">
+                From template
+              </button>
+              <button id="idiomFavoriteToggle" class="pill-toggle" type="button">
+                Favorite idioms
+              </button>
+            </div>
+          </div>
+
+          <div class="results__meta">
+            <p id="idiomResultsText">Showing idioms for discussion</p>
+          </div>
+          <div id="idiomGrid" class="accordion-grid"></div>
         </section>
 
         <section id="quiz" class="page">
@@ -485,6 +515,11 @@
               <p class="favorites-heading">Favorite topics</p>
               <div id="favoriteTopicGrid" class="card-grid"></div>
             </div>
+
+            <div class="favorites-block">
+              <p class="favorites-heading">Favorite idioms</p>
+              <div id="favoriteIdiomGrid" class="card-grid"></div>
+            </div>
           </div>
         </section>
 
@@ -500,7 +535,7 @@
             <article class="data-card">
               <h3>Export library</h3>
               <p>
-                Download your custom words, topics, favorites, deletions, and
+                Download your custom words, topics, idioms, favorites, deletions, and
                 quiz progress as a JSON backup.
               </p>
               <button id="exportBtn" class="primary-btn" type="button">
@@ -562,15 +597,16 @@
             <p class="eyebrow">About</p>
             <h2>A quiet place for English practice</h2>
             <p>
-              IMX English Hub keeps vocabulary, presentation topics, quizzes,
+              IMX English Hub keeps vocabulary, presentation topics, idioms, quizzes,
               favorites, and backups together. Add or edit content in the
               browser — custom work stays on this device until you export it.
             </p>
             <ul class="about-list">
               <li>Eight focused vocabulary categories</li>
-              <li>In-app add/edit for words and topics</li>
-              <li>Spaced-repetition quiz, cloze, listening, and topic practice</li>
+              <li>In-app add/edit for words, topics, and idioms</li>
+              <li>Spaced-repetition quiz, cloze, listening, topic and idiom practice</li>
               <li>Speaking drills and writing prompts for discussion questions</li>
+              <li>Daily idioms with partner discussion questions</li>
               <li>Progress calendar, streaks, and study goals</li>
               <li>CSV vocab import plus JSON export/import backups</li>
               <li>Installable offline app (PWA)</li>

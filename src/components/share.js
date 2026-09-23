@@ -48,6 +48,26 @@ export const formatTopicShare = (topic) => {
     .join("\n");
 };
 
+export const formatIdiomShare = (idiom) => {
+  const questions = (idiom.questions || [])
+    .map((question, index) => `${index + 1}. ${question}`)
+    .join("\n");
+  return [
+    idiom.idiom,
+    idiom.date ? `Date: ${idiom.date}` : "",
+    idiom.pronunciation ? `/${idiom.pronunciation}/` : "",
+    idiom.meaning ? `Meaning: ${idiom.meaning}` : "",
+    idiom.example ? `Example: ${idiom.example}` : "",
+    idiom.usage ? `Usage: ${idiom.usage}` : "",
+    idiom.summary ? `\n${idiom.summary}` : "",
+    questions ? `\nDiscussion questions:\n${questions}` : "",
+    "",
+    "— IMX English Hub",
+  ]
+    .filter(Boolean)
+    .join("\n");
+};
+
 export const shareContent = async ({ title, text }) => {
   if (navigator.share) {
     try {
