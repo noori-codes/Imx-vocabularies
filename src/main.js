@@ -3049,7 +3049,34 @@ const maybeRemindBackup = () => {
 
 const registerServiceWorker = () => {
   try {
-    registerSW({ immediate: true });
+    registerSW({
+      immediate: true,
+      onRegisteredSW(swUrl, registration) {
+        if (!registration) return;
+
+        const checkForUpdates = async () => {
+          if (registration.installing || !navigator.onLine) return;
+          try {
+            // Bust HTTP caches (common on GitHub Pages) so a new deploy
+            // is detected without requiring several hard refreshes.
+            const response = await fetch(swUrl, {
+              cache: "no-store",
+              headers: { "cache-control": "no-cache" },
+            });
+            if (response?.status === 200) await registration.update();
+          } catch {
+            // Ignore transient network errors while offline/deploying.
+          }
+        };
+
+        setTimeout(checkForUpdates, 1500);
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") checkForUpdates();
+        });
+        window.addEventListener("focus", checkForUpdates);
+        setInterval(checkForUpdates, 5 * 60 * 1000);
+      },
+    });
   } catch (error) {
     console.warn("Service worker registration failed", error);
   }
@@ -3057,9 +3084,11 @@ const registerServiceWorker = () => {
 
 const init = async () => {
   loadTheme();
+  // Register early so a freshly deployed build can be detected (and the
+  // page auto-reloaded) before the user stares at stale topics/words.
+  registerServiceWorker();
   const dataOk = await loadData();
   attachListeners();
-  registerServiceWorker();
 
   applyQuizSettingsToState();
   renderCategoryButtons();
