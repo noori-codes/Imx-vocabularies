@@ -39,6 +39,68 @@ export const createIdiom = ({
 const q = (...items) => items;
 
 export const idiomData = [
+  // Comparing yourself — 2026-10-05
+  createIdiom({
+    idiom: "The grass is always greener",
+    date: "2026-10-05",
+    pronunciation: "ðə ɡrɑːs ɪz ˈɔːlweɪz ˈɡriːnə",
+    meaning: "Other people's situations always seem better than your own.",
+    example: "She keeps changing jobs because she believes the grass is always greener somewhere else.",
+    usage: "Use when someone idealizes another life or choice.",
+    questions: q(
+      "When have you felt the grass was greener somewhere else?",
+      "Does this idiom warn us against comparison?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Keep up with the Joneses",
+    date: "2026-10-05",
+    pronunciation: "kiːp ʌp wɪð ðə ˈdʒəʊnzɪz",
+    meaning: "To try to match the lifestyle, possessions, or status of people around you.",
+    example: "They bought a bigger car just to keep up with the Joneses.",
+    usage: "Often about social pressure and spending.",
+    questions: q(
+      "Is keeping up with the Joneses more common online now?",
+      "What does this habit do to happiness?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Green with envy",
+    date: "2026-10-05",
+    pronunciation: "ɡriːn wɪð ˈenvi",
+    meaning: "Extremely envious of someone else's success or advantages.",
+    example: "He was green with envy when his colleague got the promotion.",
+    usage: "Informal; strong envy.",
+    questions: q(
+      "Can being green with envy ever push someone to grow?",
+      "How do you handle envy without becoming bitter?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Apples and oranges",
+    date: "2026-10-05",
+    pronunciation: "ˈæplz ənd ˈɒrɪndʒɪz",
+    meaning: "Two things that are too different to be fairly compared.",
+    example: "Comparing your quiet progress with their public success is apples and oranges.",
+    usage: "Use when a comparison is unfair or meaningless.",
+    questions: q(
+      "When is comparing two lives just apples and oranges?",
+      "Why do people still make unfair comparisons?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Raise the bar",
+    date: "2026-10-05",
+    pronunciation: "reɪz ðə bɑː",
+    meaning: "To set a higher standard than before.",
+    example: "Her discipline raised the bar for everyone on the team.",
+    usage: "Can be motivating when the standard is personal, not competitive.",
+    questions: q(
+      "Is raising the bar healthier than competing with others?",
+      "Who should raise the bar for your life: you or other people?",
+    ),
+  }),
+
   // Liked or Respected — 2026-09-24
   createIdiom({
     idiom: "Put someone on a pedestal",

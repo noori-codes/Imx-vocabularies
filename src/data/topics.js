@@ -31,6 +31,47 @@ export const createTopic = ({
 
 export const topicData = [
   createTopic({
+    title: "Does Comparing Yourself Steal Your Happiness?",
+    date: "2026-10-05",
+    completed: false,
+    vocabulary: [
+      "Comparison",
+      "Envy",
+      "Inferiority",
+      "Benchmark",
+      "Rivalry",
+      "Inadequacy",
+      "Contentment",
+      "Insecurity",
+      "Self-Worth",
+      "Resentment",
+    ],
+    idioms: [
+      "The grass is always greener",
+      "Keep up with the Joneses",
+      "Green with envy",
+      "Apples and oranges",
+      "Raise the bar",
+    ],
+    summary:
+      "Comparison can motivate growth, but it can also quietly destroy peace of mind. Social media, success stories, and even close friendships can make us measure our lives against other people. The real question is whether comparison helps us improve—or steals the happiness we already have.",
+    notes:
+      "Talk about healthy ambition versus unhealthy rivalry. Consider social media, careers, relationships, appearance, and whether self-worth should depend on being better than someone else. Think about when comparison is useful feedback and when it becomes emotional poison.",
+    questions: [
+      "Does comparing yourself usually make you better or unhappier?",
+      "Is social media the main reason people compare themselves today?",
+      "Can comparison ever be a healthy form of motivation?",
+      "Why do we compare ourselves even when our lives are already good?",
+      "Is envy always negative, or can it show us what we want?",
+      "How do you know when comparison is stealing your peace?",
+      "Should self-worth come from personal progress instead of ranking?",
+      "Do close friends make comparison harder than strangers do?",
+      "What would change if you stopped comparing yourself for one month?",
+      "Is contentment possible in a competitive world?",
+    ],
+  }),
+
+  createTopic({
     title: "Would You Rather Be Liked or Respected?",
     date: "2026-09-24",
     completed: false,
