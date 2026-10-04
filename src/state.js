@@ -15,11 +15,12 @@ export const LESSON_TEMPLATE = {
   title: "",
   summary: "Write a short overview of the discussion theme.",
   notes: "Personal reminders, examples, or links for this lesson.",
-  vocabulary: ["word1", "word2", "word3"],
+  vocabulary: ["word1", "word2", "word3", "word4", "word5", "word6", "word7", "word8", "word9", "word10"],
+  idioms: ["idiom one", "idiom two", "idiom three", "idiom four", "idiom five"],
   questions: [
     "What does this topic mean in everyday life?",
     "Share a personal example related to this theme.",
-    "What vocabulary from this lesson will you reuse this week?",
+    "What vocabulary or idioms from this lesson will you reuse this week?",
   ],
 };
 

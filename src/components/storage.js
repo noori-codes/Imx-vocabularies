@@ -88,6 +88,12 @@ const normalizeTopic = (item = {}) => ({
         .split(",")
         .map((word) => word.trim())
         .filter(Boolean),
+  idioms: Array.isArray(item.idioms)
+    ? item.idioms.map((phrase) => String(phrase).trim()).filter(Boolean)
+    : String(item.idioms || "")
+        .split("\n")
+        .map((phrase) => phrase.trim())
+        .filter(Boolean),
   questions: Array.isArray(item.questions)
     ? item.questions.map((q) => String(q).trim()).filter(Boolean)
     : String(item.questions || "")
@@ -430,6 +436,22 @@ export const getMissingTopicWords = (topic, vocabulary = []) => {
   return (topic?.vocabulary || []).filter(
     (word) => word && !known.has(String(word).toLowerCase()),
   );
+};
+
+export const getMissingTopicIdioms = (topic, idioms = []) => {
+  const known = new Set(idioms.map((item) => String(item.idiom || "").toLowerCase()));
+  return (topic?.idioms || []).filter(
+    (phrase) => phrase && !known.has(String(phrase).toLowerCase()),
+  );
+};
+
+export const resolveTopicIdioms = (topic, idioms = []) => {
+  const map = new Map(
+    idioms.map((item) => [String(item.idiom || "").toLowerCase(), item]),
+  );
+  return (topic?.idioms || [])
+    .map((phrase) => map.get(String(phrase).toLowerCase()) || null)
+    .filter(Boolean);
 };
 
 export const getLastBackupAt = () => {

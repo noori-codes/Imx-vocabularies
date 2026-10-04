@@ -27,6 +27,8 @@ import {
   recordStudyActivity,
   getTopicsForWord,
   getMissingTopicWords,
+  getMissingTopicIdioms,
+  resolveTopicIdioms,
   shouldRemindBackup,
   markBackupExported,
   recordSpeakingPractice,
@@ -663,6 +665,7 @@ const openTopicModal = (item = null, { fromTemplate = false } = {}) => {
     summary: "",
     notes: "",
     vocabulary: [],
+    idioms: [],
     questions: [],
   };
 
@@ -672,10 +675,14 @@ const openTopicModal = (item = null, { fromTemplate = false } = {}) => {
       <label>Date<input name="date" type="date" required value="${escapeHtml(values.date)}" /></label>
       <label class="full">Summary<textarea name="summary" rows="3" required>${escapeHtml(values.summary)}</textarea></label>
       <label class="full">Notes<textarea name="notes" rows="2">${escapeHtml(values.notes)}</textarea></label>
-      <label class="full">Vocabulary words (comma-separated)<textarea name="vocabulary" rows="2">${escapeHtml(
+      <label class="full">Vocabulary words (comma-separated, ~10)<textarea name="vocabulary" rows="2">${escapeHtml(
         (values.vocabulary || []).join(", "),
       )}</textarea></label>
       <p id="topicVocabHint" class="form-hint full" hidden></p>
+      <label class="full">Idioms / phrases (one per line, ~5)<textarea name="idioms" rows="3">${escapeHtml(
+        (values.idioms || []).join("\n"),
+      )}</textarea></label>
+      <p id="topicIdiomHint" class="form-hint full" hidden></p>
       <label class="full">Discussion questions (one per line)<textarea name="questions" rows="3">${escapeHtml(
         (values.questions || []).join("\n"),
       )}</textarea></label>
@@ -688,7 +695,9 @@ const openTopicModal = (item = null, { fromTemplate = false } = {}) => {
 
   const formEl = els.modalBody.querySelector("#topicForm");
   const vocabField = formEl.querySelector('[name="vocabulary"]');
+  const idiomField = formEl.querySelector('[name="idioms"]');
   const hint = formEl.querySelector("#topicVocabHint");
+  const idiomHint = formEl.querySelector("#topicIdiomHint");
 
   const updateMissingHint = () => {
     const listed = String(vocabField.value || "")
@@ -700,13 +709,28 @@ const openTopicModal = (item = null, { fromTemplate = false } = {}) => {
     if (!missing.length) {
       hint.hidden = true;
       hint.textContent = "";
-      return;
+    } else {
+      hint.hidden = false;
+      hint.textContent = `Missing from vocabulary library: ${missing.join(", ")}. You can still save, then add them later.`;
     }
-    hint.hidden = false;
-    hint.textContent = `Missing from vocabulary library: ${missing.join(", ")}. You can still save, then add them later.`;
+
+    const idiomListed = String(idiomField.value || "")
+      .split("\n")
+      .map((phrase) => phrase.trim())
+      .filter(Boolean);
+    const knownIdioms = new Set(idiomData.map((entry) => entry.idiom.toLowerCase()));
+    const missingIdioms = idiomListed.filter((phrase) => !knownIdioms.has(phrase.toLowerCase()));
+    if (!missingIdioms.length) {
+      idiomHint.hidden = true;
+      idiomHint.textContent = "";
+    } else {
+      idiomHint.hidden = false;
+      idiomHint.textContent = `Missing from idiom library: ${missingIdioms.join(", ")}. Add full definitions in src/data/idioms.js (or ask me).`;
+    }
   };
 
   vocabField.addEventListener("input", updateMissingHint);
+  idiomField.addEventListener("input", updateMissingHint);
   updateMissingHint();
 
   formEl.addEventListener("submit", (event) => {
@@ -1096,6 +1120,7 @@ const filterTopics = () => {
       topic.notes,
       topic.date,
       (topic.vocabulary || []).join(" "),
+      (topic.idioms || []).join(" "),
       (topic.questions || []).join(" "),
     ]
       .join(" ")
@@ -1282,7 +1307,7 @@ const renderTopics = () => {
   const filtered = filterTopics();
   els.topicGrid.innerHTML = "";
   const completedCount = topicData.filter((topic) => isTopicCompleted(topic)).length;
-  els.topicResultsText.textContent = `Showing ${filtered.length} presentation topics · ${completedCount} completed`;
+  els.topicResultsText.textContent = `Showing ${filtered.length} daily lessons · ${completedCount} completed`;
 
   if (!filtered.length) {
     const empty = document.createElement("div");
@@ -1307,6 +1332,8 @@ const renderTopics = () => {
     const isFavorite = favoriteTopics.has(topic.title);
     const isCompleted = isTopicCompleted(topic);
     const missing = getMissingTopicWords(topic, vocabularyData);
+    const missingIdioms = getMissingTopicIdioms(topic, idiomData);
+    const topicIdiomCount = (topic.idioms || []).length;
     const speaking = getSpeakingPracticeFor(topic.title);
     card.className = `topic-card${isCompleted ? " is-completed" : ""}`;
     card.dataset.title = topic.title;
@@ -1344,6 +1371,49 @@ const renderTopics = () => {
       })
       .join("");
 
+    const idiomCards = (topic.idioms || [])
+      .map((phrase) => {
+        const idiom = idiomData.find(
+          (item) => item.idiom.toLowerCase() === phrase.toLowerCase(),
+        );
+        if (!idiom) {
+          return `
+            <div class="mini-vocab-card is-missing">
+              <div class="mini-vocab-head">
+                <h5>${escapeHtml(phrase)}</h5>
+                <span class="status-pill status-pill--warn">Missing</span>
+              </div>
+              <p class="mini-vocab-meta"><strong>Meaning:</strong> Not added to idiom library yet</p>
+            </div>
+          `;
+        }
+        return `
+          <div class="mini-vocab-card">
+            <div class="mini-vocab-head">
+              <h5>${escapeHtml(idiom.idiom)}</h5>
+              <button type="button" class="icon-btn mini-speak" data-speak="${escapeHtml(idiom.idiom)}" aria-label="Pronounce ${escapeHtml(idiom.idiom)}">${iconSpeak}</button>
+            </div>
+            ${
+              idiom.pronunciation
+                ? `<p class="mini-vocab-pron">/${escapeHtml(idiom.pronunciation)}/</p>`
+                : ""
+            }
+            <p class="mini-vocab-meta"><strong>Meaning:</strong> ${escapeHtml(idiom.meaning)}</p>
+            ${
+              idiom.example
+                ? `<p class="mini-vocab-meta"><strong>Example:</strong> ${escapeHtml(idiom.example)}</p>`
+                : ""
+            }
+            ${
+              idiom.usage
+                ? `<p class="mini-vocab-meta"><strong>Usage:</strong> ${escapeHtml(idiom.usage)}</p>`
+                : ""
+            }
+          </div>
+        `;
+      })
+      .join("");
+
     card.innerHTML = `
       <div class="topic-card__header" role="button" tabindex="0" aria-expanded="false" aria-controls="${detailsId}">
         <div class="topic-headline">
@@ -1353,9 +1423,20 @@ const renderTopics = () => {
           <h3>${title}</h3>
           <div class="topic-badges">
             ${isCompleted ? '<span class="status-pill">Completed</span>' : ""}
+            <span class="status-pill">${topic.vocabulary.length} words</span>
+            ${
+              topicIdiomCount
+                ? `<span class="status-pill">${topicIdiomCount} idiom${topicIdiomCount === 1 ? "" : "s"}</span>`
+                : ""
+            }
             ${
               missing.length
                 ? `<span class="status-pill status-pill--warn">${missing.length} missing word${missing.length === 1 ? "" : "s"}</span>`
+                : ""
+            }
+            ${
+              missingIdioms.length
+                ? `<span class="status-pill status-pill--warn">${missingIdioms.length} missing idiom${missingIdioms.length === 1 ? "" : "s"}</span>`
                 : ""
             }
           </div>
@@ -1377,6 +1458,14 @@ const renderTopics = () => {
           <h4>Vocabulary</h4>
           <div class="mini-vocab-grid">${vocabularyCards}</div>
         </div>
+        ${
+          topicIdiomCount
+            ? `<div class="topic-detail-block">
+          <h4>Idioms</h4>
+          <div class="mini-vocab-grid">${idiomCards}</div>
+        </div>`
+            : ""
+        }
         ${topic.notes ? `<div class="topic-detail-block"><h4>Personal Notes</h4><p>${escapeHtml(topic.notes)}</p></div>` : ""}
         ${
           topic.questions.length
@@ -1386,7 +1475,7 @@ const renderTopics = () => {
             : ""
         }
         <div class="card-footer-actions">
-          <button type="button" class="primary-btn practice-topic-btn">Practice words</button>
+          <button type="button" class="primary-btn practice-topic-btn">Practice lesson</button>
           <button type="button" class="ghost-btn exam-topic-btn">Exam session (10)</button>
           <button type="button" class="ghost-btn speaking-topic-btn">Speaking practice</button>
           <button type="button" class="ghost-btn writing-topic-btn">Writing prompts</button>
@@ -1916,8 +2005,14 @@ const getQuizWordPool = () => {
     const topicTitle = state.quizScope.slice("topic:".length);
     const topic = topicData.find((item) => item.title === topicTitle);
     if (topic) {
-      const wanted = new Set(topic.vocabulary.map((word) => word.toLowerCase()));
-      pool = pool.filter((item) => wanted.has(item.word.toLowerCase()));
+      const wanted = new Set(
+        (topic.vocabulary || []).map((word) => word.toLowerCase()),
+      );
+      const wordItems = vocabularyData.filter((item) =>
+        wanted.has(item.word.toLowerCase()),
+      );
+      const idiomItems = resolveTopicIdioms(topic, idiomData).map(idiomToQuizItem);
+      pool = [...wordItems, ...idiomItems];
     }
   }
 

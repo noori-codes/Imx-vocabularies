@@ -70,29 +70,8 @@ const run = async () => {
   }
 
   const missingWordRefs = [];
+  const missingIdiomRefs = [];
   const topicIssues = [];
-
-  for (const [idx, topic] of topicData.entries()) {
-    const title = topic?.title;
-    if (!isNonEmptyString(title)) topicIssues.push({ idx, issue: "Missing topic title", topic });
-    if (!isNonEmptyString(topic?.date)) topicIssues.push({ idx, issue: "Missing topic date", topic });
-
-    const vocabList = Array.isArray(topic?.vocabulary) ? topic.vocabulary : [];
-    if (!Array.isArray(topic?.vocabulary) || vocabList.length === 0) {
-      topicIssues.push({ idx, title, issue: "Topic has no vocabulary words", topic });
-    }
-
-    const questionsList = Array.isArray(topic?.questions) ? topic.questions : [];
-    if (!Array.isArray(topic?.questions) || questionsList.length === 0) {
-      topicIssues.push({ idx, title, issue: "Topic has no questions", topic });
-    }
-
-    for (const w of vocabList) {
-      const wk = toLower(w);
-      if (!wk) continue;
-      if (!vocabSet.has(wk)) missingWordRefs.push({ topicTitle: title, missingWord: w });
-    }
-  }
 
   const idiomSet = new Map();
   const idiomIssues = [];
@@ -126,6 +105,35 @@ const run = async () => {
     idiomSet.set(key, idiom);
   }
 
+  for (const [idx, topic] of topicData.entries()) {
+    const title = topic?.title;
+    if (!isNonEmptyString(title)) topicIssues.push({ idx, issue: "Missing topic title", topic });
+    if (!isNonEmptyString(topic?.date)) topicIssues.push({ idx, issue: "Missing topic date", topic });
+
+    const vocabList = Array.isArray(topic?.vocabulary) ? topic.vocabulary : [];
+    if (!Array.isArray(topic?.vocabulary) || vocabList.length === 0) {
+      topicIssues.push({ idx, title, issue: "Topic has no vocabulary words", topic });
+    }
+
+    const questionsList = Array.isArray(topic?.questions) ? topic.questions : [];
+    if (!Array.isArray(topic?.questions) || questionsList.length === 0) {
+      topicIssues.push({ idx, title, issue: "Topic has no questions", topic });
+    }
+
+    for (const w of vocabList) {
+      const wk = toLower(w);
+      if (!wk) continue;
+      if (!vocabSet.has(wk)) missingWordRefs.push({ topicTitle: title, missingWord: w });
+    }
+
+    const idiomList = Array.isArray(topic?.idioms) ? topic.idioms : [];
+    for (const phrase of idiomList) {
+      const ik = toLower(phrase);
+      if (!ik) continue;
+      if (!idiomSet.has(ik)) missingIdiomRefs.push({ topicTitle: title, missingIdiom: phrase });
+    }
+  }
+
   const summary = {
     vocabCount: vocabularyData.length,
     topicCount: topicData.length,
@@ -134,6 +142,7 @@ const run = async () => {
     topicIssues: topicIssues.length,
     idiomIssues: idiomIssues.length,
     missingWordRefs: missingWordRefs.length,
+    missingIdiomRefs: missingIdiomRefs.length,
     duplicates: duplicates.length,
     idiomDuplicates: idiomDuplicates.length,
   };
@@ -181,6 +190,13 @@ const run = async () => {
     console.log("\nMissing vocab links (first 20):");
     for (const m of missingWordRefs.slice(0, 20)) {
       console.log(`- topic="${m.topicTitle}": missing "${m.missingWord}"`);
+    }
+  }
+
+  if (missingIdiomRefs.length) {
+    console.log("\nMissing idiom links (first 20):");
+    for (const m of missingIdiomRefs.slice(0, 20)) {
+      console.log(`- topic="${m.topicTitle}": missing idiom "${m.missingIdiom}"`);
     }
   }
 

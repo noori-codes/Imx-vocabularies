@@ -10,6 +10,7 @@ export const createTopic = ({
   summary = "",
   notes = "",
   vocabulary = [],
+  idioms = [],
   questions = [],
   favorite = false,
   completed = false,
@@ -19,13 +20,14 @@ export const createTopic = ({
   favorite,
   completed,
   vocabulary: normalizeList(vocabulary),
+  idioms: normalizeList(idioms),
   summary,
   notes,
   questions: normalizeList(questions),
 });
 
-// Add a new topic by copying this pattern and changing the values:
-// createTopic({ title: "Your Topic", date: "2026-07-19", summary: "...", vocabulary: ["Word 1", "Word 2"], questions: ["Question 1"] })
+// Daily lesson pack: 1 topic · ~10 vocabulary · ~5 idioms · discussion questions
+// createTopic({ title: "...", date: "2026-09-24", vocabulary: [...], idioms: ["Phrase one", ...], questions: [...] })
 
 export const topicData = [
   createTopic({
@@ -43,6 +45,13 @@ export const topicData = [
       "Validation",
       "Reputation",
       "Regard",
+    ],
+    idioms: [
+      "Put someone on a pedestal",
+      "Win someone over",
+      "Look up to",
+      "Be in someone's good books",
+      "Go along to get along",
     ],
     summary:
       "Being liked can feel warm and comforting, while being respected can feel meaningful and lasting. Sometimes the two go together, but often they pull in different directions. The choices we make—how honest we are, how we lead, and what we stand for—can decide whether people enjoy us, look up to us, or both.",
@@ -78,6 +87,13 @@ export const topicData = [
       "Mentality",
       "Regulate",
     ],
+    idioms: [
+      "Hit the nail on the head",
+      "Food for thought",
+      "Cross your mind",
+      "Lost in thought",
+      "On your mind",
+    ],
     summary:
       "We cannot always choose the thoughts that appear in our minds, but we may have some control over how we respond to them. Thoughts can be influenced by memories, emotions, habits, and our surroundings. Learning to notice, question, and redirect our thinking may give us greater control over our mental life.",
     notes:
@@ -111,6 +127,13 @@ export const topicData = [
       "Poise",
       "Wit",
       "Integrity",
+    ],
+    idioms: [
+      "Catch someone's eye",
+      "Turn heads",
+      "Have a way with people",
+      "Wear your heart on your sleeve",
+      "Fall for someone",
     ],
     summary:
       "Attraction is not only about physical appearance. A person's confidence, kindness, humor, intelligence, communication style, and treatment of others can make them genuinely attractive. Physical beauty may create a first impression, but personality and character often determine whether attraction lasts.",
@@ -146,6 +169,13 @@ export const topicData = [
       "Liberation",
       "Acceptance",
     ],
+    idioms: [
+      "Bite the bullet",
+      "Call it quits",
+      "Go your separate ways",
+      "Have a soft spot for",
+      "A blessing in disguise",
+    ],
     summary:
       "Love does not always mean that two people should remain together. Sometimes people genuinely care about each other but have different needs, values, goals, or circumstances. Leaving someone can be painful even when the decision comes from love rather than a lack of it.",
     notes:
@@ -179,6 +209,13 @@ export const topicData = [
       "Resonance",
       "Significance",
       "Reminisce",
+    ],
+    idioms: [
+      "Stick in your mind",
+      "Ring a bell",
+      "Slip your mind",
+      "Trip down memory lane",
+      "Come back to haunt you",
     ],
     summary:
       "Some people remain in our minds long after they leave our lives. Their personality, actions, words, or the emotions they created can leave a powerful psychological impression. Sometimes we remember someone because of positive experiences, while other times difficult or unfinished experiences make them difficult to forget.",
@@ -247,6 +284,13 @@ export const topicData = [
       "Gratification",
       "Privilege",
       "Sustainable",
+    ],
+    idioms: [
+      "Cost an arm and a leg",
+      "Money does not grow on trees",
+      "Tighten your belt",
+      "Live beyond your means",
+      "Pay the price",
     ],
     summary:
       "Money can provide comfort, security, freedom, and access to experiences, but it does not automatically create lasting happiness. Having enough money can reduce financial stress, while excessive focus on wealth can create new problems. The relationship between money and happiness depends on how people earn, spend, and value it.",

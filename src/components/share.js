@@ -32,6 +32,7 @@ export const formatWordShare = (item) => {
 
 export const formatTopicShare = (topic) => {
   const vocab = (topic.vocabulary || []).join(", ");
+  const idioms = (topic.idioms || []).join(", ");
   const questions = (topic.questions || [])
     .map((question, index) => `${index + 1}. ${question}`)
     .join("\n");
@@ -40,6 +41,7 @@ export const formatTopicShare = (topic) => {
     topic.date ? `Date: ${topic.date}` : "",
     topic.summary ? `\n${topic.summary}` : "",
     vocab ? `\nVocabulary: ${vocab}` : "",
+    idioms ? `\nIdioms: ${idioms}` : "",
     questions ? `\nDiscussion questions:\n${questions}` : "",
     "",
     "— IMX English Hub",
