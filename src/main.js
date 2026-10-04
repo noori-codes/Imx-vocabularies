@@ -1372,44 +1372,51 @@ const renderTopics = () => {
       .join("");
 
     const idiomCards = (topic.idioms || [])
-      .map((phrase) => {
+      .map((phrase, idiomIndex) => {
         const idiom = idiomData.find(
           (item) => item.idiom.toLowerCase() === phrase.toLowerCase(),
         );
+        const indexLabel = String(idiomIndex + 1).padStart(2, "0");
         if (!idiom) {
           return `
-            <div class="mini-vocab-card is-missing">
-              <div class="mini-vocab-head">
-                <h5>${escapeHtml(phrase)}</h5>
-                <span class="status-pill status-pill--warn">Missing</span>
+            <li class="topic-idiom is-missing">
+              <span class="topic-idiom__index" aria-hidden="true">${indexLabel}</span>
+              <div class="topic-idiom__body">
+                <div class="topic-idiom__head">
+                  <h5>${escapeHtml(phrase)}</h5>
+                  <span class="status-pill status-pill--warn">Missing</span>
+                </div>
+                <p class="topic-idiom__meaning">Not added to the idiom library yet.</p>
               </div>
-              <p class="mini-vocab-meta"><strong>Meaning:</strong> Not added to idiom library yet</p>
-            </div>
+            </li>
           `;
         }
         return `
-          <div class="mini-vocab-card">
-            <div class="mini-vocab-head">
-              <h5>${escapeHtml(idiom.idiom)}</h5>
-              <button type="button" class="icon-btn mini-speak" data-speak="${escapeHtml(idiom.idiom)}" aria-label="Pronounce ${escapeHtml(idiom.idiom)}">${iconSpeak}</button>
+          <li class="topic-idiom">
+            <span class="topic-idiom__index" aria-hidden="true">${indexLabel}</span>
+            <div class="topic-idiom__body">
+              <div class="topic-idiom__head">
+                <h5>${escapeHtml(idiom.idiom)}</h5>
+                <button type="button" class="icon-btn mini-speak" data-speak="${escapeHtml(idiom.idiom)}" aria-label="Pronounce ${escapeHtml(idiom.idiom)}">${iconSpeak}</button>
+              </div>
+              ${
+                idiom.pronunciation
+                  ? `<p class="topic-idiom__pron">/${escapeHtml(idiom.pronunciation)}/</p>`
+                  : ""
+              }
+              <p class="topic-idiom__meaning">${escapeHtml(idiom.meaning)}</p>
+              ${
+                idiom.example
+                  ? `<blockquote class="topic-idiom__example">${escapeHtml(idiom.example)}</blockquote>`
+                  : ""
+              }
+              ${
+                idiom.usage
+                  ? `<p class="topic-idiom__usage"><span>When to use</span>${escapeHtml(idiom.usage)}</p>`
+                  : ""
+              }
             </div>
-            ${
-              idiom.pronunciation
-                ? `<p class="mini-vocab-pron">/${escapeHtml(idiom.pronunciation)}/</p>`
-                : ""
-            }
-            <p class="mini-vocab-meta"><strong>Meaning:</strong> ${escapeHtml(idiom.meaning)}</p>
-            ${
-              idiom.example
-                ? `<p class="mini-vocab-meta"><strong>Example:</strong> ${escapeHtml(idiom.example)}</p>`
-                : ""
-            }
-            ${
-              idiom.usage
-                ? `<p class="mini-vocab-meta"><strong>Usage:</strong> ${escapeHtml(idiom.usage)}</p>`
-                : ""
-            }
-          </div>
+          </li>
         `;
       })
       .join("");
@@ -1426,7 +1433,7 @@ const renderTopics = () => {
             <span class="status-pill">${topic.vocabulary.length} words</span>
             ${
               topicIdiomCount
-                ? `<span class="status-pill">${topicIdiomCount} idiom${topicIdiomCount === 1 ? "" : "s"}</span>`
+                ? `<span class="status-pill status-pill--idiom">${topicIdiomCount} idiom${topicIdiomCount === 1 ? "" : "s"}</span>`
                 : ""
             }
             ${
@@ -1460,9 +1467,13 @@ const renderTopics = () => {
         </div>
         ${
           topicIdiomCount
-            ? `<div class="topic-detail-block">
-          <h4>Idioms</h4>
-          <div class="mini-vocab-grid">${idiomCards}</div>
+            ? `<div class="topic-detail-block topic-idioms-block">
+          <div class="topic-section-head">
+            <p class="topic-section-eyebrow">Phrases</p>
+            <h4>Idioms for this lesson</h4>
+            <p class="topic-section-note">Practice these while you discuss — meaning first, then try the example aloud.</p>
+          </div>
+          <ol class="topic-idiom-list">${idiomCards}</ol>
         </div>`
             : ""
         }

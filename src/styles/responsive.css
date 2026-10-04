@@ -7,6 +7,15 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .topic-idiom {
+    grid-template-columns: 2rem minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .topic-idiom__body {
+    padding-left: 12px;
+  }
+
   .hero-card {
     grid-template-columns: 1fr;
     align-items: start;
@@ -120,6 +129,18 @@
   .form-grid,
   .data-grid {
     grid-template-columns: 1fr;
+  }
+
+  .topic-idioms-block {
+    padding-top: var(--space-2);
+  }
+
+  .topic-idiom__head h5 {
+    font-size: 1.12rem;
+  }
+
+  .topic-idiom__example {
+    font-size: 0.98rem;
   }
 
   .card-top,

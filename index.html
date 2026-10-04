@@ -94,6 +94,7 @@
         <div class="page-nav__track">
           <button class="nav-link active" data-page="home">Home</button>
           <button class="nav-link" data-page="vocabulary">Words</button>
+          <button class="nav-link" data-page="idioms">Idioms</button>
           <button class="nav-link" data-page="topics">Topics</button>
           <button class="nav-link" data-page="quiz">Exam</button>
           <button class="nav-link" data-page="progress">Progress</button>
@@ -166,7 +167,7 @@
               <span class="progress-label">Topics</span>
               <strong id="homeTotalTopics">0</strong>
             </button>
-            <button type="button" class="study-stat" data-jump="topics">
+            <button type="button" class="study-stat" data-jump="idioms">
               <span class="progress-label">Idioms</span>
               <strong id="homeTotalIdioms">0</strong>
             </button>
@@ -237,6 +238,31 @@
             <p id="vocabResultsText">Showing vocabulary words</p>
           </div>
           <div id="vocabGrid" class="card-grid"></div>
+        </section>
+
+        <section id="idioms" class="page">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">Phrases</p>
+              <h2>Idioms</h2>
+            </div>
+            <div class="page-controls">
+              <button id="addIdiomBtn" class="primary-btn" type="button">
+                Add idiom
+              </button>
+              <button id="idiomTemplateBtn" class="ghost-btn" type="button">
+                From template
+              </button>
+              <button id="idiomFavoriteToggle" class="pill-toggle" type="button">
+                Favorite idioms
+              </button>
+            </div>
+          </div>
+
+          <div class="results__meta">
+            <p id="idiomResultsText">Showing idioms from your lessons</p>
+          </div>
+          <div id="idiomGrid" class="accordion-grid"></div>
         </section>
 
         <section id="topics" class="page">

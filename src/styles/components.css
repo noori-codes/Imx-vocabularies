@@ -461,6 +461,191 @@ body.light .form-grid select option {
   line-height: 1.7;
 }
 
+/* In-topic idioms — editorial phrase list */
+.topic-idioms-block {
+  margin: var(--space-3) 0;
+  padding: var(--space-3) 0 var(--space-2);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.topic-section-head {
+  margin-bottom: var(--space-2);
+  max-width: 36rem;
+}
+
+.topic-section-eyebrow {
+  margin: 0 0 6px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.topic-idioms-block .topic-section-head h4 {
+  margin: 0 0 8px;
+  font-family: var(--font-serif);
+  font-size: clamp(1.35rem, 2.4vw, 1.7rem);
+  font-weight: 500;
+  letter-spacing: var(--tracking-tight);
+  text-transform: none;
+  color: var(--text);
+  line-height: var(--lh-tight);
+}
+
+.topic-section-note {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.topic-idiom-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+
+.topic-idiom {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.topic-idiom:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.topic-card.is-open .topic-idiom {
+  animation: topicIdiomIn 0.45s var(--ease) both;
+}
+
+.topic-card.is-open .topic-idiom:nth-child(1) { animation-delay: 0.05s; }
+.topic-card.is-open .topic-idiom:nth-child(2) { animation-delay: 0.1s; }
+.topic-card.is-open .topic-idiom:nth-child(3) { animation-delay: 0.15s; }
+.topic-card.is-open .topic-idiom:nth-child(4) { animation-delay: 0.2s; }
+.topic-card.is-open .topic-idiom:nth-child(5) { animation-delay: 0.25s; }
+.topic-card.is-open .topic-idiom:nth-child(6) { animation-delay: 0.3s; }
+
+@keyframes topicIdiomIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topic-card.is-open .topic-idiom {
+    animation: none;
+  }
+}
+
+.topic-idiom__index {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--accent) 75%, var(--muted));
+  line-height: 1.35;
+  padding-top: 2px;
+}
+
+.topic-idiom__body {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding-left: var(--space-2);
+  border-left: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.topic-idiom__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+}
+
+.topic-idiom__head h5 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(1.15rem, 2.2vw, 1.4rem);
+  font-weight: 500;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.25;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.topic-idiom__pron {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.topic-idiom__meaning {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  max-width: 40rem;
+}
+
+.topic-idiom__example {
+  margin: 2px 0 0;
+  padding: 10px 0 10px 14px;
+  border: 0;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-serif);
+  font-size: 1.02rem;
+  font-style: italic;
+  line-height: 1.55;
+  max-width: 40rem;
+}
+
+.topic-idiom__usage {
+  margin: 0;
+  display: grid;
+  gap: 2px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  line-height: 1.5;
+  max-width: 40rem;
+}
+
+.topic-idiom__usage span {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent) 80%, var(--muted));
+}
+
+.topic-idiom.is-missing .topic-idiom__body {
+  border-left-style: dashed;
+  opacity: 0.9;
+}
+
+.status-pill--idiom {
+  color: var(--accent-strong);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: var(--accent-soft);
+}
+
 .mini-vocab-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
