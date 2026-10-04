@@ -563,6 +563,19 @@
             </article>
 
             <article class="data-card">
+              <h3>Phone stuck on old version?</h3>
+              <p>
+                If the app on your phone does not show new topics or design
+                changes, clear the offline cache and reload. Your favorites and
+                custom words stay saved.
+              </p>
+              <button id="forceRefreshBtn" class="primary-btn" type="button">
+                Clear cache &amp; reload
+              </button>
+              <p id="forceRefreshStatus" class="data-status" role="status"></p>
+            </article>
+
+            <article class="data-card">
               <h3>Import backup</h3>
               <p>
                 Restore from a previously exported JSON file. Merge keeps your
@@ -611,6 +624,7 @@
               <li>CSV vocab import plus JSON export/import backups</li>
               <li>Installable offline app (PWA)</li>
               <li>Base content still lives in <code>src/data/*.js</code></li>
+              <li>App version: <code id="appVersionLabel">1.1.0</code></li>
             </ul>
           </div>
         </section>

@@ -1,22 +1,29 @@
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+const APP_VERSION = "1.1.0";
+
 export default defineConfig({
   base: "./",
   publicDir: "public",
+  define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
+  },
   build: {
     outDir: "dist",
     sourcemap: true,
   },
   plugins: [
     VitePWA({
-      registerType: "autoUpdate",
+      // Prompt + in-app banner is more reliable on installed phone PWAs
+      // than silent autoUpdate (iOS often keeps the old shell until kill).
+      registerType: "prompt",
       includeAssets: ["IMX-logo.png"],
       manifest: {
         name: "IMX English Hub",
         short_name: "IMX Hub",
         description:
-          "Personal English study journal for vocabulary, topics, and exam practice.",
+          "Personal English study journal for vocabulary, topics, idioms, and exam practice.",
         start_url: "./",
         scope: "./",
         display: "standalone",
@@ -39,9 +46,14 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,png,svg,ico,woff2}"],
+        globPatterns: ["**/*.{js,css,html,png,svg,ico,woff2,webmanifest}"],
         navigateFallback: "index.html",
         cleanupOutdatedCaches: true,
+        // New SW takes over immediately once the user accepts the update.
+        skipWaiting: true,
+        clientsClaim: true,
+        // Unique cache namespace so old phone caches are dropped on deploy.
+        cacheId: `imx-hub-${APP_VERSION}`,
       },
     }),
   ],

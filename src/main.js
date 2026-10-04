@@ -1,3 +1,4 @@
+/* global __APP_VERSION__ */
 import "./styles.css";
 import { registerSW } from "virtual:pwa-register";
 import { formatDate, fadeText } from "./components/helpers.js";
@@ -152,6 +153,8 @@ const els = {
   appBanner: document.getElementById("appBanner"),
   offlineBanner: document.getElementById("offlineBanner"),
   restoreBuiltInBtn: document.getElementById("restoreBuiltInBtn"),
+  forceRefreshBtn: document.getElementById("forceRefreshBtn"),
+  forceRefreshStatus: document.getElementById("forceRefreshStatus"),
   homeWeekStrip: document.getElementById("homeWeekStrip"),
   progressRoot: document.getElementById("progress"),
   csvImportInput: document.getElementById("csvImportInput"),
@@ -2957,6 +2960,14 @@ const attachListeners = () => {
     restoreBuiltInLibrary();
   });
 
+  els.forceRefreshBtn?.addEventListener("click", async () => {
+    if (els.forceRefreshStatus) {
+      els.forceRefreshStatus.textContent = "Clearing offline cache…";
+    }
+    els.forceRefreshBtn.disabled = true;
+    await forceClearAppCacheAndReload();
+  });
+
   els.exportBtn?.addEventListener("click", exportBackup);
   els.importFileInput?.addEventListener("change", (event) => {
     const file = event.target.files?.[0];
@@ -3047,34 +3058,86 @@ const maybeRemindBackup = () => {
   els.appBanner.querySelector("[data-dismiss-banner]")?.addEventListener("click", hideAppBanner);
 };
 
+const showUpdateBanner = (onReload) => {
+  if (!els.appBanner) {
+    onReload?.();
+    return;
+  }
+  els.appBanner.hidden = false;
+  els.appBanner.dataset.variant = "warn";
+  els.appBanner.innerHTML = `
+    <span>New version ready — reload to see today’s lessons and UI updates.</span>
+    <button type="button" class="primary-btn app-banner__action" data-app-reload>Reload now</button>
+  `;
+  els.appBanner.querySelector("[data-app-reload]")?.addEventListener("click", () => {
+    onReload?.();
+  });
+};
+
+/** Wipe service-worker caches and reload — for stuck phone installs. */
+const forceClearAppCacheAndReload = async () => {
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((reg) => reg.unregister()));
+    }
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+    }
+  } catch (error) {
+    console.warn("Cache clear failed", error);
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.set("v", String(Date.now()));
+  window.location.replace(url.toString());
+};
+
 const registerServiceWorker = () => {
   try {
-    registerSW({
+    // When a new SW takes control, force a real page reload (critical on phones).
+    let refreshing = false;
+    navigator.serviceWorker?.addEventListener("controllerchange", () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+
+    const updateSW = registerSW({
       immediate: true,
+      onNeedRefresh() {
+        showUpdateBanner(() => updateSW(true));
+      },
+      onOfflineReady() {
+        // Quiet — offline caching is ready.
+      },
       onRegisteredSW(swUrl, registration) {
         if (!registration) return;
 
         const checkForUpdates = async () => {
           if (registration.installing || !navigator.onLine) return;
           try {
-            // Bust HTTP caches (common on GitHub Pages) so a new deploy
-            // is detected without requiring several hard refreshes.
-            const response = await fetch(swUrl, {
+            // Bust CDN/HTTP caches so phones notice new deploys.
+            const bustUrl = `${swUrl}${swUrl.includes("?") ? "&" : "?"}t=${Date.now()}`;
+            const response = await fetch(bustUrl, {
               cache: "no-store",
-              headers: { "cache-control": "no-cache" },
+              headers: { "cache-control": "no-cache", pragma: "no-cache" },
             });
             if (response?.status === 200) await registration.update();
+            if (registration.waiting) {
+              showUpdateBanner(() => updateSW(true));
+            }
           } catch {
             // Ignore transient network errors while offline/deploying.
           }
         };
 
-        setTimeout(checkForUpdates, 1500);
+        setTimeout(checkForUpdates, 800);
         document.addEventListener("visibilitychange", () => {
           if (document.visibilityState === "visible") checkForUpdates();
         });
         window.addEventListener("focus", checkForUpdates);
-        setInterval(checkForUpdates, 5 * 60 * 1000);
+        setInterval(checkForUpdates, 2 * 60 * 1000);
       },
     });
   } catch (error) {
@@ -3084,6 +3147,16 @@ const registerServiceWorker = () => {
 
 const init = async () => {
   loadTheme();
+  const versionLabel = document.getElementById("appVersionLabel");
+  if (versionLabel && typeof __APP_VERSION__ !== "undefined") {
+    versionLabel.textContent = __APP_VERSION__;
+  }
+  // Drop one-time cache-bust query after a forced reload.
+  if (new URL(window.location.href).searchParams.has("v")) {
+    const clean = new URL(window.location.href);
+    clean.searchParams.delete("v");
+    window.history.replaceState({}, "", `${clean.pathname}${clean.search}${clean.hash}`);
+  }
   // Register early so a freshly deployed build can be detected (and the
   // page auto-reloaded) before the user stares at stale topics/words.
   registerServiceWorker();

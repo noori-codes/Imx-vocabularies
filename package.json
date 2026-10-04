@@ -1,6 +1,6 @@
 {
   "name": "website-for-lessons",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Personal English study journal for vocabulary, presentation topics, quizzes, favorites, and daily motivation quotes.",
   "main": "src/main.js",
   "type": "module",
