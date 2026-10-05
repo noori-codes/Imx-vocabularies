@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 const APP_VERSION = "1.1.0";
@@ -14,6 +15,7 @@ export default defineConfig({
     sourcemap: true,
   },
   plugins: [
+    react(),
     VitePWA({
       // Prompt + in-app banner is more reliable on installed phone PWAs
       // than silent autoUpdate (iOS often keeps the old shell until kill).

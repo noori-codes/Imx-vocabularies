@@ -1,4 +1,4 @@
-export const escapeHtml = (value) =>
+export const escapeHtml = (value: unknown): string =>
   String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -6,7 +6,7 @@ export const escapeHtml = (value) =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 
-export const categoryClass = (category) =>
+export const categoryClass = (category: unknown): string =>
   `cat-${String(category || "learning")
     .trim()
     .toLowerCase()
@@ -21,7 +21,7 @@ export const iconSpeak = `
   </span>
 `;
 
-export const iconStar = (filled) => `
+export const iconStar = (filled: boolean): string => `
   <span class="ui-icon" aria-hidden="true">
     <svg viewBox="0 0 24 24" fill="${filled ? "currentColor" : "none"}">
       <path d="m12 4.2 2.1 4.3 4.7.7-3.4 3.3.8 4.7L12 15.2 7.8 17.2l.8-4.7-3.4-3.3 4.7-.7L12 4.2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>

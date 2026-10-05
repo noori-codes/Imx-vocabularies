@@ -1,4 +1,6 @@
-export const vocabularyData = [
+import type { Word } from "../types/models";
+
+export const vocabularyData: Word[] = [
   {
     word: "Regret",
     pronunciation: "rɪˈɡrɛt",

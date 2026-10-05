@@ -1,4 +1,6 @@
-const normalizeList = (value) => {
+import type { Topic } from "../types/models";
+
+const normalizeList = (value: string[] | string | undefined): string[] => {
   if (Array.isArray(value)) return value;
   if (typeof value === "string" && value.trim()) return [value];
   return [];
@@ -14,7 +16,17 @@ export const createTopic = ({
   questions = [],
   favorite = false,
   completed = false,
-}) => ({
+}: {
+  title: string;
+  date: string;
+  summary?: string;
+  notes?: string;
+  vocabulary?: string[] | string;
+  idioms?: string[] | string;
+  questions?: string[] | string;
+  favorite?: boolean;
+  completed?: boolean;
+}): Topic => ({
   title,
   date,
   favorite,
@@ -29,7 +41,7 @@ export const createTopic = ({
 // Daily lesson pack: 1 topic · ~10 vocabulary · ~5 idioms · discussion questions
 // createTopic({ title: "...", date: "2026-09-24", vocabulary: [...], idioms: ["Phrase one", ...], questions: [...] })
 
-export const topicData = [
+export const topicData: Topic[] = [
   createTopic({
     title: "Does Comparing Yourself Steal Your Happiness?",
     date: "2026-10-05",

@@ -1,4 +1,12 @@
-import { normalizeCategory, CATEGORIES } from "../data/categories.js";
+// @ts-nocheck — large ported module; public APIs below are explicitly typed where callers need them.
+import { normalizeCategory, CATEGORIES } from "../data/categories";
+import type {
+  Idiom,
+  QuizProgressEntry,
+  QuizSettings,
+  Topic,
+  Word,
+} from "../types/models";
 
 const STORAGE = {
   favoritesWords: "imx-hub-word-favorites",
@@ -126,7 +134,7 @@ const normalizeIdiom = (item = {}) => ({
 });
 
 /** Map an idiom record into a quiz-compatible vocabulary-shaped item. */
-export const idiomToQuizItem = (idiom = {}) => {
+export const idiomToQuizItem = (idiom: Partial<Idiom> | Idiom = {}): Word => {
   const normalized = normalizeIdiom(idiom);
   return {
     word: normalized.idiom,
@@ -144,7 +152,7 @@ export const idiomToQuizItem = (idiom = {}) => {
   };
 };
 
-export const mergeVocabulary = (baseList = []) => {
+export const mergeVocabulary = (baseList: Word[] = []): Word[] => {
   const deleted = new Set(readStringList(STORAGE.deletedWords).map((w) => w.toLowerCase()));
   const custom = readJson(STORAGE.customVocab, []);
   const customMap = new Map();
@@ -179,7 +187,7 @@ export const mergeVocabulary = (baseList = []) => {
   return merged.sort((a, b) => a.word.localeCompare(b.word));
 };
 
-export const mergeTopics = (baseList = []) => {
+export const mergeTopics = (baseList: Topic[] = []): Topic[] => {
   const deleted = new Set(readStringList(STORAGE.deletedTopics).map((t) => t.toLowerCase()));
   const custom = readJson(STORAGE.customTopics, []);
   const customMap = new Map();
@@ -214,7 +222,7 @@ export const mergeTopics = (baseList = []) => {
   return merged.sort((a, b) => String(b.date).localeCompare(String(a.date)));
 };
 
-export const mergeIdioms = (baseList = []) => {
+export const mergeIdioms = (baseList: Idiom[] = []): Idiom[] => {
   const deleted = new Set(readStringList(STORAGE.deletedIdioms).map((t) => t.toLowerCase()));
   const custom = readJson(STORAGE.customIdioms, []);
   const customMap = new Map();
@@ -411,7 +419,7 @@ export const readQuizSettings = () => {
 export const saveQuizSettings = (settings) =>
   writeJson(STORAGE.quizSettings, { ...defaultQuizSettings(), ...settings });
 
-export const getWeakWords = (vocabulary = [], { limit = 0 } = {}) => {
+export const getWeakWords = (vocabulary: Word[] = [], { limit = 0 }: { limit?: number } = {}): Word[] => {
   const progress = getQuizProgress();
   const weak = vocabulary
     .filter((item) => progress[item.word]?.lastResult === "again")
@@ -423,7 +431,7 @@ export const getWeakWords = (vocabulary = [], { limit = 0 } = {}) => {
   return limit > 0 ? weak.slice(0, limit) : weak;
 };
 
-export const getTopicsForWord = (word, topics = []) => {
+export const getTopicsForWord = (word: string, topics: Topic[] = []): Topic[] => {
   const key = String(word || "").toLowerCase();
   if (!key) return [];
   return topics.filter((topic) =>
@@ -431,27 +439,27 @@ export const getTopicsForWord = (word, topics = []) => {
   );
 };
 
-export const getMissingTopicWords = (topic, vocabulary = []) => {
+export const getMissingTopicWords = (topic: Topic | null | undefined, vocabulary: Word[] = []): string[] => {
   const known = new Set(vocabulary.map((item) => item.word.toLowerCase()));
   return (topic?.vocabulary || []).filter(
     (word) => word && !known.has(String(word).toLowerCase()),
   );
 };
 
-export const getMissingTopicIdioms = (topic, idioms = []) => {
+export const getMissingTopicIdioms = (topic: Topic | null | undefined, idioms: Idiom[] = []): string[] => {
   const known = new Set(idioms.map((item) => String(item.idiom || "").toLowerCase()));
   return (topic?.idioms || []).filter(
     (phrase) => phrase && !known.has(String(phrase).toLowerCase()),
   );
 };
 
-export const resolveTopicIdioms = (topic, idioms = []) => {
+export const resolveTopicIdioms = (topic: Topic | null | undefined, idioms: Idiom[] = []): Idiom[] => {
   const map = new Map(
     idioms.map((item) => [String(item.idiom || "").toLowerCase(), item]),
   );
   return (topic?.idioms || [])
     .map((phrase) => map.get(String(phrase).toLowerCase()) || null)
-    .filter(Boolean);
+    .filter((item): item is Idiom => Boolean(item));
 };
 
 export const getLastBackupAt = () => {
@@ -536,7 +544,13 @@ export const recordStudyActivity = () => {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export const getDueWords = (vocabulary, now = Date.now()) => {
+export type DueWordEntry = {
+  item: Word;
+  entry: QuizProgressEntry | { interval: number; ease: number; repetitions: number; nextReview: number };
+  dueAt: number;
+};
+
+export const getDueWords = (vocabulary: Word[], now = Date.now()): DueWordEntry[] => {
   const progress = getQuizProgress();
   return vocabulary
     .map((item) => {
@@ -553,13 +567,18 @@ export const getDueWords = (vocabulary, now = Date.now()) => {
 };
 
 /** Lightweight SM-2 style update */
-export const gradeWord = (word, knewIt) => {
-  const progress = getQuizProgress();
-  const current = progress[word] || {
+export const gradeWord = (word: string, knewIt: boolean) => {
+  const progress = getQuizProgress() as Record<string, Record<string, unknown>>;
+  const current = (progress[word] || {
     interval: 0,
     ease: 2.5,
     repetitions: 0,
     nextReview: 0,
+  }) as {
+    interval: number;
+    ease: number;
+    repetitions: number;
+    nextReview: number;
   };
 
   let { interval, ease, repetitions } = current;
@@ -776,7 +795,7 @@ export const parseVocabularyCsv = (text) => {
   return { words, errors };
 };
 
-export const importVocabularyWords = (words = []) => {
+export const importVocabularyWords = (words: Partial<Word>[] = []): number => {
   let imported = 0;
   words.forEach((item) => {
     try {
@@ -876,6 +895,12 @@ export const buildExportPayload = ({
   favoriteIdioms = [],
   completedTopics,
   completedIdioms = [],
+}: {
+  favoriteWords: Iterable<string>;
+  favoriteTopics: Iterable<string>;
+  favoriteIdioms?: Iterable<string>;
+  completedTopics: Iterable<string>;
+  completedIdioms?: Iterable<string>;
 }) => ({
   version: 2,
   exportedAt: new Date().toISOString(),

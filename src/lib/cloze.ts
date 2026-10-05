@@ -1,8 +1,12 @@
+import type { Word } from "../types/models";
+
 /**
  * Build a cloze (fill-in-the-blank) prompt from an example sentence.
  * Falls back to a simple blank prompt when the word is not in the sentence.
  */
-export const buildClozePrompt = (item = {}) => {
+export const buildClozePrompt = (
+  item: Partial<Word> = {},
+): { prompt: string; blanked: boolean; answer: string } => {
   const word = String(item.word || "").trim();
   const sentence = String(item.sentence || "").trim();
   if (!word) {

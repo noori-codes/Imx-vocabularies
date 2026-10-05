@@ -1,4 +1,6 @@
-const copyText = async (text) => {
+import type { Idiom, Topic, Word } from "../types/models";
+
+const copyText = async (text: string): Promise<boolean> => {
   if (navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(text);
     return true;
@@ -16,7 +18,7 @@ const copyText = async (text) => {
   return ok;
 };
 
-export const formatWordShare = (item) => {
+export const formatWordShare = (item: Word): string => {
   const lines = [
     item.word,
     item.pronunciation ? `/${item.pronunciation}/` : "",
@@ -30,7 +32,7 @@ export const formatWordShare = (item) => {
   return lines.join("\n");
 };
 
-export const formatTopicShare = (topic) => {
+export const formatTopicShare = (topic: Topic): string => {
   const vocab = (topic.vocabulary || []).join(", ");
   const idioms = (topic.idioms || []).join(", ");
   const questions = (topic.questions || [])
@@ -50,7 +52,7 @@ export const formatTopicShare = (topic) => {
     .join("\n");
 };
 
-export const formatIdiomShare = (idiom) => {
+export const formatIdiomShare = (idiom: Idiom): string => {
   const questions = (idiom.questions || [])
     .map((question, index) => `${index + 1}. ${question}`)
     .join("\n");
@@ -70,13 +72,22 @@ export const formatIdiomShare = (idiom) => {
     .join("\n");
 };
 
-export const shareContent = async ({ title, text }) => {
+export const shareContent = async ({
+  title,
+  text,
+}: {
+  title: string;
+  text: string;
+}): Promise<"shared" | "cancelled" | "copied" | "failed"> => {
   if (navigator.share) {
     try {
       await navigator.share({ title, text });
       return "shared";
     } catch (error) {
-      if (error?.name === "AbortError") return "cancelled";
+      if (error instanceof DOMException && error.name === "AbortError") return "cancelled";
+      if (error && typeof error === "object" && "name" in error && error.name === "AbortError") {
+        return "cancelled";
+      }
     }
   }
 

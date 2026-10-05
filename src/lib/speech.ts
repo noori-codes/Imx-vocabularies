@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Cross-device pronunciation for vocabulary words.
  *

@@ -1,4 +1,6 @@
-const normalizeList = (value) => {
+import type { Idiom } from "../types/models";
+
+const normalizeList = (value: string[] | string | undefined): string[] => {
   if (Array.isArray(value)) return value;
   if (typeof value === "string" && value.trim()) {
     return value
@@ -22,7 +24,19 @@ export const createIdiom = ({
   questions = [],
   favorite = false,
   completed = false,
-}) => ({
+}: {
+  idiom: string;
+  date?: string;
+  meaning?: string;
+  pronunciation?: string;
+  example?: string;
+  usage?: string;
+  summary?: string;
+  notes?: string;
+  questions?: string[] | string;
+  favorite?: boolean;
+  completed?: boolean;
+}): Idiom => ({
   idiom,
   date,
   meaning,
@@ -36,9 +50,9 @@ export const createIdiom = ({
   completed,
 });
 
-const q = (...items) => items;
+const q = (...items: string[]) => items;
 
-export const idiomData = [
+export const idiomData: Idiom[] = [
   // Comparing yourself — 2026-10-05
   createIdiom({
     idiom: "The grass is always greener",

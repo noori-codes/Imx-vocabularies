@@ -1,4 +1,6 @@
-export const CATEGORIES = [
+import type { Category } from "../types/models";
+
+export const CATEGORIES: Category[] = [
   "Emotions",
   "Mindset",
   "Character",
@@ -9,7 +11,7 @@ export const CATEGORIES = [
   "Growth",
 ];
 
-const CATEGORY_ALIASES = {
+const CATEGORY_ALIASES: Record<string, Category> = {
   Emotion: "Emotions",
   Emotions: "Emotions",
   Mindset: "Mindset",
@@ -73,8 +75,6 @@ const CATEGORY_ALIASES = {
   "Mental Skills": "Learning",
   "Emotional Control": "Emotions",
   Fear: "Mindset",
-  Life: "Lifestyle",
-  "Personal Growth": "Growth",
   Privacy: "Society",
   Happiness: "Emotions",
   Purpose: "Growth",
@@ -96,7 +96,7 @@ const CATEGORY_ALIASES = {
   Idiom: "Speaking",
 };
 
-export const normalizeCategory = (category) => {
+export const normalizeCategory = (category?: string | null): Category => {
   if (!category) return "Learning";
   const trimmed = String(category).trim();
   return CATEGORY_ALIASES[trimmed] || CATEGORIES.find((item) => item === trimmed) || "Learning";
