@@ -43,6 +43,57 @@ export const createTopic = ({
 
 export const topicData: Topic[] = [
   createTopic({
+    title: "Should You Slow Down to Grow Faster?",
+    date: "2026-10-06",
+    completed: false,
+    vocabulary: [
+      "Reflection",
+      "Acceptance",
+      "Confidence",
+      "Consistency",
+      "Clarity",
+      "Momentum",
+      "Insight",
+      "Inquiry",
+      "Fluency",
+      "Ambition",
+      "Patience",
+      "Deliberation",
+      "Unhurried",
+      "Recalibration",
+      "Steadiness",
+    ],
+    idioms: [
+      "Hit the nail on the head",
+      "Food for thought",
+      "Cross your mind",
+      "Lost in thought",
+      "On your mind",
+      "Slow and steady wins the race",
+      "Take your time",
+      "Pace yourself",
+      "At a snail's pace",
+      "No rush",
+    ],
+    summary:
+      "Real progress is not always about moving faster. Sometimes growth comes from pausing, thinking clearly, and giving ourselves space to learn. In a world that rewards speed, slowing down can help us become more focused, more confident, and more intentional.",
+    notes:
+      "Discuss the difference between productivity and genuine progress. Consider busy schedules, stress, mental overload, self-pressure, and whether slowing down can improve learning, relationships, and confidence. Think about how reflection and consistency can help us build better habits than rushing ever could.",
+    questions: [
+      "Is slowing down always a sign of weakness or laziness?",
+      "Can rushing make people less effective in the long run?",
+      "What does real progress look like in your life?",
+      "Why do people feel guilty when they rest or pause?",
+      "How can reflection improve your learning or decision-making?",
+      "Does being busy always mean you are moving forward?",
+      "When is it healthier to slow down than to push harder?",
+      "How do confidence and clarity change when you stop rushing?",
+      "Can slowing down help you become more consistent and ambitious?",
+      "What is one habit you should slow down to improve?",
+    ],
+  }),
+
+  createTopic({
     title: "Does Comparing Yourself Steal Your Happiness?",
     date: "2026-10-05",
     completed: false,
