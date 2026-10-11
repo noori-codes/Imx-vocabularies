@@ -43,6 +43,47 @@ export const createTopic = ({
 
 export const topicData: Topic[] = [
   createTopic({
+    title: "Does Saying No Make You Selfish?",
+    date: "2026-10-11",
+    completed: false,
+    vocabulary: [
+      "Boundary",
+      "Assertiveness",
+      "Obligation",
+      "Selfishness",
+      "Guilt",
+      "Refusal",
+      "Prioritize",
+      "People-pleasing",
+      "Autonomy",
+      "Firmness",
+    ],
+    idioms: [
+      "Draw the line",
+      "Stand your ground",
+      "Bite your tongue",
+      "Bend over backwards",
+      "Walk all over someone",
+    ],
+    summary:
+      "Many people say yes to keep the peace, even when they are tired, unsure, or already full. Saying no can feel rude, cold, or selfish. But a life with no limits often creates resentment, exhaustion, and a quieter loss of self. The real question is whether a clear no is unkind — or the beginning of honesty.",
+    notes:
+      "Talk about family pressure, friendships, work requests, and the fear of disappointing people. Consider when a no protects your time, health, and values, and when it is only an excuse to avoid effort. Think about guilt, people-pleasing, and whether respect grows when you speak clearly.",
+    questions: [
+      "Does saying no usually make you selfish, or does it make you honest?",
+      "Why do so many people feel guilty after they refuse a request?",
+      "Is it kinder to say no early, or to say yes and regret it later?",
+      "When is a no actually unfair to other people?",
+      "Can people-pleasing damage a relationship more than a clear refusal?",
+      "How do you know the difference between a healthy boundary and coldness?",
+      "Should family members have more right to your time than friends or coworkers?",
+      "What would change in your week if you said no to one extra request?",
+      "Do people respect you more when you stand your ground?",
+      "Is autonomy possible if you never disappoint anyone?",
+    ],
+  }),
+
+  createTopic({
     title: "Should You Slow Down to Grow Faster?",
     date: "2026-10-06",
     completed: false,

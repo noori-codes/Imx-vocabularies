@@ -53,6 +53,68 @@ export const createIdiom = ({
 const q = (...items: string[]) => items;
 
 export const idiomData: Idiom[] = [
+  // Saying no — 2026-10-11
+  createIdiom({
+    idiom: "Draw the line",
+    date: "2026-10-11",
+    pronunciation: "drɔː ðə laɪn",
+    meaning: "To set a limit on what you will accept or do.",
+    example: "She was happy to help after work, but she drew the line at answering messages at midnight.",
+    usage: "Use when someone decides a request or behavior has gone too far.",
+    questions: q(
+      "Where do you draw the line with friends or family?",
+      "Is it harder to draw the line with people you love?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Stand your ground",
+    date: "2026-10-11",
+    pronunciation: "stænd jə ɡraʊnd",
+    meaning: "To refuse to change your decision or opinion, even under pressure.",
+    example: "He stood his ground and said he could not take on another project this week.",
+    usage: "Use when someone stays firm instead of giving in.",
+    questions: q(
+      "When was the last time you stood your ground?",
+      "Is standing your ground the same as being stubborn?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Bite your tongue",
+    date: "2026-10-11",
+    pronunciation: "baɪt jə tʌŋ",
+    meaning: "To stay quiet even though you want to speak, disagree, or refuse.",
+    example: "She bit her tongue instead of saying no, and then spent the weekend doing extra work.",
+    usage: "Use when someone holds back a true reaction to keep peace.",
+    questions: q(
+      "When do you bite your tongue, and do you regret it later?",
+      "Is biting your tongue kindness, fear, or both?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Bend over backwards",
+    date: "2026-10-11",
+    pronunciation: "bend ˈəʊvə ˈbækwədz",
+    meaning: "To try extremely hard to please someone or meet their needs.",
+    example: "He bent over backwards for the group, but nobody noticed how tired he was.",
+    usage: "Often used when effort to help becomes excessive.",
+    questions: q(
+      "Who do you bend over backwards for, and is it healthy?",
+      "Does this habit create gratitude or expectation?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Walk all over someone",
+    date: "2026-10-11",
+    pronunciation: "wɔːk ɔːl ˈəʊvə ˈsʌmwʌn",
+    meaning: "To treat someone badly because they never refuse or defend themselves.",
+    example: "If you never say no, some people will walk all over you without even noticing.",
+    usage: "Use when a person is used or ignored because they are too agreeable.",
+    questions: q(
+      "Have you ever let someone walk all over you?",
+      "What is the first sign that this is happening?",
+    ),
+  }),
+
   // Comparing yourself — 2026-10-05
   createIdiom({
     idiom: "The grass is always greener",
