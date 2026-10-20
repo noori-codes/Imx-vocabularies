@@ -43,6 +43,47 @@ export const createTopic = ({
 
 export const topicData: Topic[] = [
   createTopic({
+    title: "Does Time Really Heal Everything?",
+    date: "2026-10-21",
+    completed: false,
+    vocabulary: [
+      "Healing",
+      "Grief",
+      "Bitterness",
+      "Aftermath",
+      "Solace",
+      "Unresolved",
+      "Scar",
+      "Recovery",
+      "Maturity",
+      "Detachment",
+    ],
+    idioms: [
+      "Time heals all wounds",
+      "Water under the bridge",
+      "Let bygones be bygones",
+      "Turn over a new leaf",
+      "Wipe the slate clean",
+    ],
+    summary:
+      "People often say that time heals everything. Distance can soften pain, and some memories lose their sharp edge. But some losses stay, some anger hardens, and some questions never get answers. The real issue is not whether time passes — it always does — but whether healing happens on its own, or only when we face what hurt us.",
+    notes:
+      "Talk about heartbreak, family conflict, failure, and old mistakes. Consider what time can do by itself, and what still needs honesty, apology, or a decision. Think about scars that remain after the pain fades, and whether moving on is the same as forgetting.",
+    questions: [
+      "Does time heal everything, or only some kinds of pain?",
+      "What hurts more: waiting for time, or facing the problem now?",
+      "Can a person look calm and still be unresolved inside?",
+      "Is forgetting a form of healing, or a form of avoidance?",
+      "Why do some people become bitter instead of wiser after time passes?",
+      "Do scars mean you failed to heal, or that you survived?",
+      "Should we always let things become water under the bridge?",
+      "What role do apology and closure play that time cannot replace?",
+      "Have you ever needed distance more than you needed more time?",
+      "What is one old wound that time has not fully healed for you?",
+    ],
+  }),
+
+  createTopic({
     title: "Does Saying No Make You Selfish?",
     date: "2026-10-11",
     completed: false,

@@ -53,6 +53,68 @@ export const createIdiom = ({
 const q = (...items: string[]) => items;
 
 export const idiomData: Idiom[] = [
+  // Time and healing — 2026-10-21
+  createIdiom({
+    idiom: "Time heals all wounds",
+    date: "2026-10-21",
+    pronunciation: "taɪm hiːlz ɔːl wuːndz",
+    meaning: "The idea that pain becomes easier as time passes.",
+    example: "After the breakup she kept telling herself that time heals all wounds, but some days still felt heavy.",
+    usage: "Often used as comfort, though it is not always true.",
+    questions: q(
+      "Do you believe time heals all wounds?",
+      "When is this phrase helpful, and when is it too simple?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Water under the bridge",
+    date: "2026-10-21",
+    pronunciation: "ˈwɔːtər ˈʌndə ðə brɪdʒ",
+    meaning: "A past problem that you no longer want to argue about.",
+    example: "We argued last year, but that is water under the bridge now.",
+    usage: "Use when a conflict is treated as finished.",
+    questions: q(
+      "What in your life is truly water under the bridge?",
+      "Can something be water under the bridge for one person and not the other?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Let bygones be bygones",
+    date: "2026-10-21",
+    pronunciation: "let ˈbaɪɡɒnz bi ˈbaɪɡɒnz",
+    meaning: "To forgive or stop talking about past mistakes and start again.",
+    example: "They decided to let bygones be bygones and rebuild the friendship.",
+    usage: "Use when people choose peace over old arguments.",
+    questions: q(
+      "When is it wise to let bygones be bygones?",
+      "Is this the same as pretending nothing happened?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Turn over a new leaf",
+    date: "2026-10-21",
+    pronunciation: "tɜːn ˈəʊvər ə njuː liːf",
+    meaning: "To change your behavior and begin a better way of living.",
+    example: "After years of avoiding the problem, he turned over a new leaf and started being honest.",
+    usage: "Use for a fresh start in habits, character, or relationships.",
+    questions: q(
+      "Have you ever tried to turn over a new leaf?",
+      "What makes a new start last instead of fading after a week?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Wipe the slate clean",
+    date: "2026-10-21",
+    pronunciation: "waɪp ðə sleɪt kliːn",
+    meaning: "To forget past mistakes and treat the situation as if it is new.",
+    example: "She wanted to wipe the slate clean, but trust still needed time to return.",
+    usage: "Use when people offer a complete fresh start.",
+    questions: q(
+      "Can you really wipe the slate clean after a serious hurt?",
+      "What is the difference between a clean slate and real healing?",
+    ),
+  }),
+
   // Saying no — 2026-10-11
   createIdiom({
     idiom: "Draw the line",
