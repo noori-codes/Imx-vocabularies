@@ -53,6 +53,68 @@ export const createIdiom = ({
 const q = (...items: string[]) => items;
 
 export const idiomData: Idiom[] = [
+  // Fake it until you make it — 2026-10-22
+  createIdiom({
+    idiom: "Fake it till you make it",
+    date: "2026-10-22",
+    pronunciation: "feɪk ɪt tɪl ju meɪk ɪt",
+    meaning: "To act confident or skilled until the feeling or ability becomes real.",
+    example: "She was nervous before the talk, so she faked it till she made it and spoke as if she belonged there.",
+    usage: "Use for courage in new roles, interviews, or public speaking.",
+    questions: q(
+      "When has faking it till you make it helped you?",
+      "Is this advice honest, or does it teach people to hide?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Put on a brave face",
+    date: "2026-10-22",
+    pronunciation: "pʊt ɒn ə breɪv feɪs",
+    meaning: "To look calm or strong even when you feel afraid or upset.",
+    example: "He put on a brave face at work, even though he felt completely unprepared.",
+    usage: "Use when someone hides worry to keep going.",
+    questions: q(
+      "When do you put on a brave face?",
+      "Does this protect you, or isolate you?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Keep up appearances",
+    date: "2026-10-22",
+    pronunciation: "kiːp ʌp əˈpɪərənsɪz",
+    meaning: "To hide problems so that life still looks successful or under control.",
+    example: "They kept up appearances on social media, but they were struggling at home.",
+    usage: "Often about image, pride, or social pressure.",
+    questions: q(
+      "Why do people work so hard to keep up appearances?",
+      "What is the cost of looking fine when you are not?",
+    ),
+  }),
+  createIdiom({
+    idiom: "In over your head",
+    date: "2026-10-22",
+    pronunciation: "ɪn ˈəʊvə jə hed",
+    meaning: "To be in a situation that is too difficult for your current skill or experience.",
+    example: "On the first day of the new job, she felt in over her head.",
+    usage: "Use when a challenge is bigger than your preparation.",
+    questions: q(
+      "Have you ever felt in over your head?",
+      "Should you admit it, or fake confidence until you catch up?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Talk the talk",
+    date: "2026-10-22",
+    pronunciation: "tɔːk ðə tɔːk",
+    meaning: "To speak as if you have the skill, confidence, or values — whether or not you fully live them yet.",
+    example: "He could talk the talk in meetings, but he still needed practice to walk the walk.",
+    usage: "Often paired with walk the walk; can be praise or criticism.",
+    questions: q(
+      "Is talking the talk a useful first step?",
+      "How do you know when someone only talks the talk?",
+    ),
+  }),
+
   // Time and healing — 2026-10-21
   createIdiom({
     idiom: "Time heals all wounds",

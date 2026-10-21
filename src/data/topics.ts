@@ -43,6 +43,47 @@ export const createTopic = ({
 
 export const topicData: Topic[] = [
   createTopic({
+    title: "Should You Fake It Until You Make It?",
+    date: "2026-10-22",
+    completed: false,
+    vocabulary: [
+      "Facade",
+      "Impostor",
+      "Pretence",
+      "Image",
+      "Composure",
+      "Self-doubt",
+      "Shame",
+      "Persona",
+      "Presence",
+      "Poise",
+    ],
+    idioms: [
+      "Fake it till you make it",
+      "Put on a brave face",
+      "Keep up appearances",
+      "In over your head",
+      "Talk the talk",
+    ],
+    summary:
+      "Acting confident before you feel ready can open doors. A job interview, a first presentation, or a new skill often asks you to look capable before you fully are. But a facade can also hide fear, create impostor feelings, and make success feel fake. The question is whether pretending is a useful first step — or a habit that keeps you from becoming real.",
+    notes:
+      "Talk about work, speaking English, social confidence, and starting something new. Consider when a brave face helps you learn, and when it becomes exhausting. Think about shame, self-doubt, and whether people respect honesty more than a perfect image.",
+    questions: [
+      "Is faking confidence a smart strategy or a dangerous habit?",
+      "When has putting on a brave face actually helped you grow?",
+      "Can you fake it for too long and lose track of who you are?",
+      "Is impostor feeling a sign of humility or a sign of fear?",
+      "Should we show self-doubt, or hide it until we feel ready?",
+      "Does a strong image help people trust you, or make them trust you less later?",
+      "Is talking the talk useful if you have not yet walked the walk?",
+      "When is pretence kindness to yourself, and when is it dishonesty?",
+      "Would you rather look ready or admit you are still learning?",
+      "What is one area of your life where you are currently faking it?",
+    ],
+  }),
+
+  createTopic({
     title: "Does Time Really Heal Everything?",
     date: "2026-10-21",
     completed: false,
