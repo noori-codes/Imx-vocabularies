@@ -43,6 +43,47 @@ export const createTopic = ({
 
 export const topicData: Topic[] = [
   createTopic({
+    title: "Can You Outgrow Your Friends Without Becoming Cold?",
+    date: "2026-10-23",
+    completed: false,
+    vocabulary: [
+      "Loyalty",
+      "Drift",
+      "Camaraderie",
+      "Compatibility",
+      "Estrangement",
+      "Outgrow",
+      "Reunion",
+      "Familiarity",
+      "Affection",
+      "Belonging",
+    ],
+    idioms: [
+      "Grow apart",
+      "Lose touch",
+      "Through thick and thin",
+      "Fair-weather friend",
+      "Birds of a feather",
+    ],
+    summary:
+      "Some friendships last because they grow with you. Others stay in an old version of your life. Changing jobs, values, or habits can create distance, even when there is still affection. The hard question is whether leaving a friendship behind is maturity — or coldness dressed up as growth.",
+    notes:
+      "Talk about childhood friends, work friends, and people you only see online. Consider loyalty, drift, and whether you owe people an explanation. Think about reunions that feel warm, and reunions that feel empty.",
+    questions: [
+      "Can you outgrow a friend without becoming cold?",
+      "Is drift a natural part of adult life, or a failure of loyalty?",
+      "Should you keep a friendship only because of history?",
+      "How do you know the difference between growing and abandoning people?",
+      "Do we owe old friends an explanation when we grow apart?",
+      "Is it kinder to stay in a friendship that no longer fits, or to let it fade?",
+      "Can affection remain even after compatibility is gone?",
+      "Have you ever felt like the friend who was left behind?",
+      "What makes a reunion feel alive instead of polite?",
+      "Who in your life still belongs there, and who belongs to an earlier chapter?",
+    ],
+  }),
+
+  createTopic({
     title: "Should You Fake It Until You Make It?",
     date: "2026-10-22",
     completed: false,

@@ -53,6 +53,68 @@ export const createIdiom = ({
 const q = (...items: string[]) => items;
 
 export const idiomData: Idiom[] = [
+  // Outgrowing friends — 2026-10-23
+  createIdiom({
+    idiom: "Grow apart",
+    date: "2026-10-23",
+    pronunciation: "ɡrəʊ əˈpɑːt",
+    meaning: "To slowly become less close because lives, values, or interests change.",
+    example: "They did not fight; they just grew apart after university.",
+    usage: "Use for friendships or relationships that fade without a dramatic ending.",
+    questions: q(
+      "Have you ever grown apart from someone you still like?",
+      "Is growing apart always sad, or sometimes healthy?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Lose touch",
+    date: "2026-10-23",
+    pronunciation: "luːz tʌtʃ",
+    meaning: "To stop communicating regularly with someone you used to know well.",
+    example: "We were close in school, but we lost touch after I moved away.",
+    usage: "Common for old friends, classmates, and former colleagues.",
+    questions: q(
+      "Who have you lost touch with, and do you miss them?",
+      "Is losing touch always an accident?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Through thick and thin",
+    date: "2026-10-23",
+    pronunciation: "θruː θɪk ən θɪn",
+    meaning: "To stay loyal in both easy times and difficult times.",
+    example: "A real friend stays with you through thick and thin, not only when life is convenient.",
+    usage: "Use to describe lasting loyalty.",
+    questions: q(
+      "Who has stayed with you through thick and thin?",
+      "Does loyalty mean you can never grow apart?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Fair-weather friend",
+    date: "2026-10-23",
+    pronunciation: "feə ˈweðə frend",
+    meaning: "Someone who is friendly only when things are easy or useful.",
+    example: "When he lost his job, he learned who was a friend and who was only a fair-weather friend.",
+    usage: "Use as criticism of shallow loyalty.",
+    questions: q(
+      "How can you recognize a fair-weather friend?",
+      "Have you ever been a fair-weather friend without meaning to?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Birds of a feather",
+    date: "2026-10-23",
+    pronunciation: "bɜːdz əv ə ˈfeðə",
+    meaning: "People who are similar often become friends and stay close.",
+    example: "They became close quickly — birds of a feather, with the same humor and the same values.",
+    usage: "Short for birds of a feather flock together.",
+    questions: q(
+      "Do you need to be birds of a feather to stay friends?",
+      "Can people stay close after they stop being similar?",
+    ),
+  }),
+
   // Fake it until you make it — 2026-10-22
   createIdiom({
     idiom: "Fake it till you make it",
