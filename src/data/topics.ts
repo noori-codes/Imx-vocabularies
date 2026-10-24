@@ -43,6 +43,47 @@ export const createTopic = ({
 
 export const topicData: Topic[] = [
   createTopic({
+    title: "Should We Share Everything Online, or Keep Some Things Private?",
+    date: "2026-10-25",
+    completed: false,
+    vocabulary: [
+      "Audience",
+      "Comment",
+      "Feed",
+      "Follower",
+      "Platform",
+      "Post",
+      "Profile",
+      "Scroll",
+      "Trend",
+      "Viral",
+    ],
+    idioms: [
+      "Put yourself out there",
+      "Keep it to yourself",
+      "Leave a digital footprint",
+      "In the public eye",
+      "For all to see",
+    ],
+    summary:
+      "A photo, opinion, or personal story can reach a huge audience in seconds—and stay online long after we share it. Posting can help us connect and express ourselves, but it can also expose private moments to strangers, employers, or people we know. How much of our lives should be public, and who gets to decide where the boundary is?",
+    notes:
+      "Discuss photos, personal stories, opinions, location sharing, and the pressure to post. Consider whether deleting something really removes it, how people choose what to show online, and whether privacy is becoming harder to protect. Invite different views about sharing openly, keeping a low profile, and respecting other people's boundaries.",
+    questions: [
+      "What kinds of moments do you enjoy sharing online, and what do you keep private?",
+      "Do people present a more honest version of themselves online or in person?",
+      "Should parents post photos of their children without asking them?",
+      "Can something shared with friends ever be truly private online?",
+      "Would you change a post if you knew a future employer might see it?",
+      "Why do people sometimes share personal details with strangers online?",
+      "Is it rude to take a photo or video of someone and post it without permission?",
+      "Should social media platforms make it easier to remove old posts?",
+      "Does sharing life online help people feel connected, or create pressure to perform?",
+      "Where would you draw the line between being open and protecting your privacy?",
+    ],
+  }),
+
+  createTopic({
     title: "Can You Outgrow Your Friends Without Becoming Cold?",
     date: "2026-10-23",
     completed: false,
