@@ -53,6 +53,63 @@ export const createIdiom = ({
 const q = (...items: string[]) => items;
 
 export const idiomData: Idiom[] = [
+  // Patience and instant gratification — 2026-11-05
+  createIdiom({
+    idiom: "Good things take time",
+    date: "2026-11-05",
+    meaning: "Valuable results usually require time, effort, and patience.",
+    example: "Learning a new language can be slow, but good things take time.",
+    usage: "Use to remind someone that worthwhile progress is rarely instant.",
+    questions: q(
+      "What good thing in your life took time to achieve?",
+      "Can this phrase ever be used to excuse unnecessary delays?",
+    ),
+  }),
+  createIdiom({
+    idiom: "In the blink of an eye",
+    date: "2026-11-05",
+    meaning: "Extremely quickly, in a very short time.",
+    example: "Technology has changed our lives in the blink of an eye.",
+    usage: "Use when something happens or changes remarkably fast.",
+    questions: q(
+      "What has changed in your life in the blink of an eye?",
+      "Do fast changes usually make life better?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Learn to sit with discomfort",
+    date: "2026-11-05",
+    meaning: "To accept an uncomfortable feeling without immediately trying to escape it.",
+    example: "We can learn to sit with discomfort instead of reaching for our phones whenever we feel bored.",
+    usage: "Use when encouraging someone to tolerate difficult feelings without reacting impulsively.",
+    questions: q(
+      "What kinds of discomfort do people try to avoid?",
+      "How could someone practice sitting with discomfort?",
+    ),
+  }),
+  createIdiom({
+    idiom: "The path of least resistance",
+    date: "2026-11-05",
+    meaning: "The easiest option available, requiring the least effort or difficulty.",
+    example: "We often choose the path of least resistance instead of challenging ourselves.",
+    usage: "Use when someone chooses the easiest way to do something.",
+    questions: q(
+      "When is the path of least resistance a sensible choice?",
+      "Have you ever avoided a challenge by taking the easiest option?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Play the long game",
+    date: "2026-11-05",
+    meaning: "To focus on long-term success rather than immediate rewards.",
+    example: "If you want to become successful, you need to play the long game.",
+    usage: "Use when patience and planning are needed to reach a future goal.",
+    questions: q(
+      "What goal are you playing the long game to achieve?",
+      "Why can it be hard to choose a long-term benefit over an immediate reward?",
+    ),
+  }),
+
   // Outgrowing friends — 2026-10-23
   createIdiom({
     idiom: "Grow apart",

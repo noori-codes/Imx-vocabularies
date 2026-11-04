@@ -43,6 +43,47 @@ export const createTopic = ({
 
 export const topicData: Topic[] = [
   createTopic({
+    title: "Are We Becoming Less Patient in a World That Gives Us Everything Instantly?",
+    date: "2026-11-05",
+    completed: false,
+    vocabulary: [
+      "Instantaneous",
+      "Impatience",
+      "Gratification",
+      "Delayed",
+      "Tolerance",
+      "Restlessness",
+      "Restraint",
+      "Sustainable",
+      "Overstimulation",
+      "Perseverance",
+    ],
+    idioms: [
+      "Good things take time",
+      "In the blink of an eye",
+      "Learn to sit with discomfort",
+      "The path of least resistance",
+      "Play the long game",
+    ],
+    summary:
+      "We can order food in seconds, get answers instantly, and watch anything whenever we want. This convenience raises an important question: is instant access making it harder to wait, work toward long-term goals, and appreciate things that take time?",
+    notes:
+      "Discuss how instant services, notifications, and entertainment affect patience and attention. Consider the value of delayed rewards, self-control, and perseverance, as well as whether convenience genuinely makes life better. Explore ways to slow down without rejecting useful technology.",
+    questions: [
+      "If everything became slower tomorrow—the internet, communication, entertainment, and daily services—would we become happier, or would we simply become frustrated?",
+      "Has technology made you less patient in everyday situations?",
+      "Which instant services do you rely on the most?",
+      "Do notifications make it harder for you to focus or relax?",
+      "Why can waiting for a long-term reward be difficult?",
+      "Can convenience sometimes make people less satisfied?",
+      "What is something worthwhile that you had to work toward slowly?",
+      "How can people learn to sit with discomfort instead of seeking an immediate distraction?",
+      "When is choosing the path of least resistance sensible, and when does it hold us back?",
+      "What is one area of life where you would like to play the long game?",
+    ],
+  }),
+
+  createTopic({
     title: "Should We Share Everything Online, or Keep Some Things Private?",
     date: "2026-10-25",
     completed: false,
