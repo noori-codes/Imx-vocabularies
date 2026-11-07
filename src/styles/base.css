@@ -102,13 +102,13 @@ button {
   cursor: pointer;
 }
 
-/* Inline SVG icons (HTML helpers + Lucide className="ui-icon") */
+/* Inline SVG icons (HTML helpers + Lucide) — sized + thick enough on dark UI */
 .ui-icon {
   display: inline-grid;
   place-content: center;
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   line-height: 0;
   color: inherit;
 }
@@ -119,11 +119,13 @@ button {
 .topic-favorite-btn svg,
 .topic-toggle-icon svg,
 .theme-toggle svg,
-.rail-item__icon svg {
+.rail-item__icon svg,
+.vocab-row__actions svg {
   display: block;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
+  stroke-width: 2.35;
 }
 
 h1,

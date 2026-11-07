@@ -611,7 +611,7 @@ function QuizCardContent({
             hidden={isListening || isReverse || isType || isMcq || isCloze}
             onClick={() => speakWord(current.word)}
           >
-            <Volume2 size={18} aria-hidden="true" />
+            <Volume2 size={20} strokeWidth={2.35} aria-hidden="true" />
           </button>
         </div>
         <p

@@ -20,7 +20,7 @@ export function Topbar() {
       </button>
       <div className="topbar-actions">
         <label className="search-box" htmlFor="globalSearchInput">
-          <Search className="ui-icon" size={18} aria-hidden="true" />
+          <Search className="ui-icon" size={20} strokeWidth={2.35} aria-hidden="true" />
           <input
             id="globalSearchInput"
             type="search"
@@ -37,7 +37,11 @@ export function Topbar() {
           aria-label={isLight ? "Switch to dark theme" : "Switch to light theme"}
           onClick={toggleTheme}
         >
-          {isLight ? <Moon size={18} aria-hidden="true" /> : <Sun size={18} aria-hidden="true" />}
+          {isLight ? (
+            <Moon size={20} strokeWidth={2.35} aria-hidden="true" />
+          ) : (
+            <Sun size={20} strokeWidth={2.35} aria-hidden="true" />
+          )}
         </button>
       </div>
     </header>

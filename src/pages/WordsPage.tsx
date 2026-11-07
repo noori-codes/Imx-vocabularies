@@ -84,7 +84,7 @@ export function WordsPage() {
               aria-pressed={view === "grid"}
               onClick={() => setView("grid")}
             >
-              <LayoutGrid size={15} aria-hidden="true" />
+              <LayoutGrid size={18} strokeWidth={2.35} aria-hidden="true" />
               Grid
             </button>
             <button
@@ -93,7 +93,7 @@ export function WordsPage() {
               aria-pressed={view === "list"}
               onClick={() => setView("list")}
             >
-              <List size={15} aria-hidden="true" />
+              <List size={18} strokeWidth={2.35} aria-hidden="true" />
               List
             </button>
           </div>
@@ -103,7 +103,7 @@ export function WordsPage() {
             type="button"
             onClick={() => openModal("Add word", <WordFormModal />)}
           >
-            <Plus size={16} aria-hidden="true" />
+            <Plus size={18} strokeWidth={2.35} aria-hidden="true" />
             Add word
           </button>
         </div>

@@ -95,7 +95,7 @@ export function NavRail() {
               aria-current={active ? "page" : undefined}
             >
               <span className="rail-item__icon" aria-hidden="true">
-                <Icon size={18} />
+                <Icon size={20} strokeWidth={2.35} />
               </span>
               <span className="rail-item__label">{item.label}</span>
             </button>
@@ -116,7 +116,7 @@ export function NavRail() {
               aria-current={active ? "page" : undefined}
             >
               <span className="rail-item__icon" aria-hidden="true">
-                <Icon size={18} />
+                <Icon size={20} strokeWidth={2.35} />
               </span>
               <span className="rail-item__label">{item.label}</span>
             </button>

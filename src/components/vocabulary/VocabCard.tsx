@@ -46,7 +46,7 @@ export function VocabCard({
             aria-label={`Pronounce ${item.word}`}
             onClick={() => speakWord(item.word)}
           >
-            <Volume2 size={15} aria-hidden="true" />
+            <Volume2 size={18} strokeWidth={2.35} aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -55,7 +55,12 @@ export function VocabCard({
             aria-pressed={isFavorite}
             onClick={() => toggleWordFavorite(item.word)}
           >
-            <Star size={14} fill={isFavorite ? "currentColor" : "none"} aria-hidden="true" />
+            <Star
+              size={18}
+              strokeWidth={2.35}
+              fill={isFavorite ? "currentColor" : "none"}
+              aria-hidden="true"
+            />
           </button>
           {!compact ? (
             <div className="vocab-more">
@@ -66,7 +71,7 @@ export function VocabCard({
                 aria-expanded={menuOpen}
                 onClick={() => setMenuOpen((o) => !o)}
               >
-                <MoreHorizontal size={15} aria-hidden="true" />
+                <MoreHorizontal size={18} strokeWidth={2.35} aria-hidden="true" />
               </button>
               {menuOpen ? (
                 <div className="vocab-more__menu">
@@ -112,20 +117,8 @@ export function VocabCard({
 
   return (
     <article className={`vocab-card ${catClass}`}>
-      <div className="card-top">
-        <div className="card-title">
-          <span className={`category-pill category-pill--filled ${catClass}`}>{item.category}</span>
-          <h3>
-            <button
-              type="button"
-              className="word-title-btn"
-              onClick={() => openModal(item.word, <WordDetailModal item={item} />)}
-            >
-              {item.word}
-            </button>
-          </h3>
-          {item.pronunciation ? <p className="pronunciation">/{item.pronunciation}/</p> : null}
-        </div>
+      <div className="vocab-card__head">
+        <span className={`category-pill category-pill--filled ${catClass}`}>{item.category}</span>
         <div className="card-actions">
           <button
             type="button"
@@ -133,7 +126,7 @@ export function VocabCard({
             aria-label={`Pronounce ${item.word}`}
             onClick={() => speakWord(item.word)}
           >
-            <Volume2 size={16} aria-hidden="true" />
+            <Volume2 size={18} strokeWidth={2.35} aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -143,7 +136,7 @@ export function VocabCard({
               void shareContent({ title: `IMX · ${item.word}`, text: formatWordShare(item) })
             }
           >
-            <Share2 size={15} aria-hidden="true" />
+            <Share2 size={18} strokeWidth={2.35} aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -152,9 +145,27 @@ export function VocabCard({
             aria-pressed={isFavorite}
             onClick={() => toggleWordFavorite(item.word)}
           >
-            <Star size={15} fill={isFavorite ? "currentColor" : "none"} aria-hidden="true" />
+            <Star
+              size={18}
+              strokeWidth={2.35}
+              fill={isFavorite ? "currentColor" : "none"}
+              aria-hidden="true"
+            />
           </button>
         </div>
+      </div>
+
+      <div className="vocab-card__title">
+        <h3>
+          <button
+            type="button"
+            className="word-title-btn"
+            onClick={() => openModal(item.word, <WordDetailModal item={item} />)}
+          >
+            {item.word}
+          </button>
+        </h3>
+        {item.pronunciation ? <p className="pronunciation">/{item.pronunciation}/</p> : null}
       </div>
 
       <div className="card-body">
@@ -170,25 +181,28 @@ export function VocabCard({
         ) : null}
 
         {related.length ? (
-          <p className="appears-in">
-            <span className="meta-line">Appears in</span>{" "}
-            {related.slice(0, 3).map((topic, i) => (
-              <span key={topic.title}>
-                {i > 0 ? ", " : ""}
-                <button
-                  type="button"
-                  className="link-btn topic-link-btn"
-                  onClick={() => {
-                    setFocusTopicTitle(topic.title);
-                    navigate("topics", { replace: false });
-                  }}
-                >
-                  {topic.title}
-                </button>
-              </span>
-            ))}
-            {related.length > 3 ? ` +${related.length - 3}` : ""}
-          </p>
+          <div className="appears-in">
+            <p className="meta-line">Appears in</p>
+            <ul className="appears-in__list">
+              {related.slice(0, 3).map((topic) => (
+                <li key={topic.title}>
+                  <button
+                    type="button"
+                    className="link-btn topic-link-btn"
+                    onClick={() => {
+                      setFocusTopicTitle(topic.title);
+                      navigate("topics", { replace: false });
+                    }}
+                  >
+                    {topic.title}
+                  </button>
+                </li>
+              ))}
+              {related.length > 3 ? (
+                <li className="appears-in__more">+{related.length - 3} more</li>
+              ) : null}
+            </ul>
+          </div>
         ) : null}
       </div>
 
