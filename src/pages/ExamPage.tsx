@@ -1,13 +1,36 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  Check,
+  Ear,
+  Eye,
+  Keyboard,
+  LayoutGrid,
+  PencilLine,
+  RotateCcw,
+  Settings2,
+  SkipForward,
+  Volume2,
+  X,
+} from "lucide-react";
 import { categoryClass } from "../lib/dom";
+import { sessionAccuracy } from "../lib/quizLogic";
 import { speakWord, unlockAudio } from "../lib/speech";
 import { CATEGORIES, useLibrary } from "../state/libraryStore";
 import { useQuiz } from "../state/quizStore";
 import { useAppShell } from "../state/appShell";
-import type { Word } from "../types/models";
+import type { QuizMode, Word } from "../types/models";
+
+const MODE_OPTIONS: { id: QuizMode; label: string; icon: typeof Eye }[] = [
+  { id: "flashcard", label: "Flashcard", icon: Eye },
+  { id: "reverse", label: "Reverse", icon: RotateCcw },
+  { id: "type", label: "Type", icon: Keyboard },
+  { id: "mcq", label: "MCQ", icon: LayoutGrid },
+  { id: "cloze", label: "Cloze", icon: PencilLine },
+  { id: "listening", label: "Listen", icon: Ear },
+];
 
 export function ExamPage() {
-  const { topicData, idiomData, version } = useLibrary();
+  const { topicData, idiomData } = useLibrary();
   const shell = useAppShell();
   const quiz = useQuiz();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -21,7 +44,8 @@ export function ExamPage() {
   const pool = quiz.getQuizWordPool();
 
   useEffect(() => {
-    quiz.prepareQuiz({ preserveForce: true });
+    if (shell.activePage !== "quiz") return;
+    quiz.prepareQuiz({ preserveForce: true, restart: false });
   }, [shell.activePage]);
 
   useEffect(() => {
@@ -41,12 +65,19 @@ export function ExamPage() {
 
   useEffect(() => {
     if (!current || quiz.showSummary) return;
+    if (mode === "mcq" || mode === "type" || mode === "cloze") {
+      quiz.clearCardTimer();
+      return;
+    }
     quiz.startCardTimer(() => {
-      if (mode === "mcq" || quiz.quizTypeChecked) return;
-      if (!quiz.quizRevealed) quiz.setQuizRevealed(true);
+      if (!quiz.quizRevealed) {
+        quiz.setQuizRevealed(true);
+        return;
+      }
+      quiz.advanceQuiz(false);
     });
     return () => quiz.clearCardTimer();
-  }, [current?.word, mode, quiz.quizRevealed, quiz.quizTypeChecked, quiz.showSummary]);
+  }, [current?.word, mode, quiz.quizRevealed, quiz.showSummary]);
 
   useEffect(() => {
     const quizPage = document.getElementById("quiz");
@@ -78,13 +109,23 @@ export function ExamPage() {
         return;
       }
 
+      if (event.key === "s" || event.key === "S") {
+        event.preventDefault();
+        if (current && !quiz.showSummary && !quiz.quizTypeChecked) quiz.advanceQuiz(false);
+        return;
+      }
+
       if (event.key === "1") {
         event.preventDefault();
-        if (quiz.quizRevealed && current) quiz.advanceQuiz(true);
+        if (quiz.quizRevealed && current && mode !== "mcq" && mode !== "type" && mode !== "cloze") {
+          quiz.advanceQuiz(true);
+        }
       }
       if (event.key === "2") {
         event.preventDefault();
-        if (quiz.quizRevealed && current) quiz.advanceQuiz(false);
+        if (quiz.quizRevealed && current && mode !== "mcq" && mode !== "type" && mode !== "cloze") {
+          quiz.advanceQuiz(false);
+        }
       }
     };
     document.addEventListener("keydown", onKey);
@@ -104,7 +145,6 @@ export function ExamPage() {
   ];
 
   const emptyMessage = () => {
-    if (quiz.quizForceAll) return "Session complete";
     if (String(quiz.quizScope).startsWith("topic:")) return "No words found for this topic";
     if (quiz.quizScope === "favorites") return "No favorite words in this filter";
     if (quiz.quizScope === "weak") return "No weak words right now — great job";
@@ -112,22 +152,26 @@ export function ExamPage() {
   };
 
   const showEmpty =
-    !current && !quiz.showSummary && quiz.quizSessionStats.known + quiz.quizSessionStats.again === 0;
+    !current && !quiz.showSummary && quiz.quizSessionStats.answered === 0;
 
   const showCard = Boolean(current) && !quiz.showSummary;
 
-  const progressPct =
-    quiz.quizQueue.length && current
-      ? Math.round(((quiz.quizIndex + 1) / quiz.quizQueue.length) * 100)
-      : 0;
+  const progressPct = quiz.quizSessionStats.total
+    ? Math.min(
+        100,
+        Math.round((quiz.quizSessionStats.answered / quiz.quizSessionStats.total) * 100),
+      )
+    : 0;
+
+  const accuracy = sessionAccuracy(quiz.quizSessionStats);
 
   const checkType = () => {
-    if (!current) return;
+    if (!current || quiz.quizTypeChecked) return;
     const correct = quiz.checkTypedQuizAnswer(typeInput);
     setTypeFeedback({
       text: correct
-        ? "Correct!"
-        : `Not quite — the word was “${current.word}”.`,
+        ? "Correct — next card…"
+        : `Not quite — “${current.word}”. Moving on…`,
       ok: correct,
     });
   };
@@ -169,113 +213,122 @@ export function ExamPage() {
       <div className="page-header">
         <div>
           <p className="eyebrow">Practice</p>
-          <h2>Exam practice</h2>
+          <h2>Exam studio</h2>
         </div>
-        <div className="page-controls quiz-page-controls">
-          <div className="quiz-focus-bar">
+        <div className="quiz-focus-bar">
+          <button
+            id="quizSettingsToggle"
+            className="ghost-btn quiz-settings-toggle"
+            type="button"
+            aria-expanded={settingsOpen}
+            aria-controls="quizToolbarPanel"
+            onClick={() => setSettingsOpen((o) => !o)}
+          >
+            <Settings2 size={15} aria-hidden="true" />
+            Settings
+          </button>
+          <button
+            id="quizRestartBtn"
+            className="ghost-btn"
+            type="button"
+            onClick={() => quiz.prepareQuiz({ forceAll: true, restart: true })}
+          >
+            <RotateCcw size={15} aria-hidden="true" />
+            Restart
+          </button>
+        </div>
+      </div>
+
+      <div className="quiz-mode-strip" role="tablist" aria-label="Exam mode">
+        {MODE_OPTIONS.map((option) => {
+          const Icon = option.icon;
+          return (
             <button
-              id="quizSettingsToggle"
-              className="ghost-btn quiz-settings-toggle"
+              key={option.id}
               type="button"
-              aria-expanded={settingsOpen}
-              aria-controls="quizToolbarPanel"
-              onClick={() => setSettingsOpen((o) => !o)}
+              role="tab"
+              aria-selected={mode === option.id}
+              className={`quiz-mode-chip${mode === option.id ? " is-active" : ""}`}
+              onClick={() => quiz.setQuizMode(option.id)}
             >
-              Settings
+              <Icon aria-hidden="true" />
+              {option.label}
             </button>
-            <button
-              id="quizRestartBtn"
-              className="ghost-btn"
-              type="button"
-              onClick={() => quiz.prepareQuiz({ forceAll: true })}
+          );
+        })}
+      </div>
+
+      <div id="quizToolbarPanel" className="quiz-toolbar-panel" hidden={!settingsOpen}>
+        <div className="quiz-toolbar">
+          <label className="select-wrap">
+            <span>Scope</span>
+            <select
+              id="quizScopeSelect"
+              value={quiz.quizScope}
+              onChange={(e) => {
+                const scope = e.target.value;
+                quiz.setQuizScope(scope);
+                const force =
+                  scope === "all" ||
+                  scope === "idioms" ||
+                  scope === "favorites" ||
+                  scope === "weak" ||
+                  scope.startsWith("topic:") ||
+                  scope.startsWith("idiom:");
+                quiz.prepareQuiz({ forceAll: force, restart: true, scopeOverride: scope });
+              }}
             >
-              Restart
+              {scopeOptions.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="select-wrap">
+            <span>Category</span>
+            <select
+              id="quizCategorySelect"
+              value={quiz.quizCategoryFilter}
+              onChange={(e) => {
+                quiz.setQuizCategoryFilter(e.target.value);
+                quiz.prepareQuiz({
+                  preserveForce: true,
+                  forceAll: quiz.quizForceAll,
+                  restart: true,
+                });
+              }}
+            >
+              <option value="All">All categories</option>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="quiz-toolbar__extras">
+            <label className="checkbox-wrap">
+              <input
+                id="quizTimerToggle"
+                type="checkbox"
+                checked={quiz.quizTimerEnabled}
+                onChange={(e) => quiz.setQuizTimerEnabled(e.target.checked)}
+              />
+              <span>20s timer</span>
+            </label>
+            <label className="checkbox-wrap">
+              <input
+                id="quizRequeueToggle"
+                type="checkbox"
+                checked={quiz.quizRequeueMissed}
+                onChange={(e) => quiz.setQuizRequeueMissed(e.target.checked)}
+              />
+              <span>Re-queue missed</span>
+            </label>
+            <button id="quizPrintBtn" className="ghost-btn" type="button" onClick={buildPrintSheet}>
+              Print sheet
             </button>
-          </div>
-          <div id="quizToolbarPanel" className="quiz-toolbar-panel" hidden={!settingsOpen}>
-            <div className="quiz-toolbar">
-              <label className="select-wrap">
-                <span>Mode</span>
-                <select
-                  id="quizModeSelect"
-                  value={mode}
-                  onChange={(e) => quiz.setQuizMode(e.target.value as typeof mode)}
-                >
-                  <option value="flashcard">Word → meaning</option>
-                  <option value="reverse">Meaning → word</option>
-                  <option value="type">Type the word</option>
-                  <option value="mcq">Pick the word</option>
-                  <option value="cloze">Fill the blank</option>
-                  <option value="listening">Listen → meaning</option>
-                </select>
-              </label>
-              <label className="select-wrap">
-                <span>Scope</span>
-                <select
-                  id="quizScopeSelect"
-                  value={quiz.quizScope}
-                  onChange={(e) => {
-                    const scope = e.target.value;
-                    quiz.setQuizScope(scope);
-                    const force =
-                      scope === "all" ||
-                      scope === "idioms" ||
-                      scope === "favorites" ||
-                      scope === "weak" ||
-                      scope.startsWith("topic:") ||
-                      scope.startsWith("idiom:");
-                    quiz.prepareQuiz({ forceAll: force });
-                  }}
-                >
-                  {scopeOptions.map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="select-wrap">
-                <span>Category</span>
-                <select
-                  id="quizCategorySelect"
-                  value={quiz.quizCategoryFilter}
-                  onChange={(e) => {
-                    quiz.setQuizCategoryFilter(e.target.value);
-                    quiz.prepareQuiz({ preserveForce: true, forceAll: quiz.quizForceAll });
-                  }}
-                >
-                  <option value="All">All categories</option>
-                  {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="quiz-toolbar__extras">
-                <label className="checkbox-wrap">
-                  <input
-                    id="quizTimerToggle"
-                    type="checkbox"
-                    checked={quiz.quizTimerEnabled}
-                    onChange={(e) => quiz.setQuizTimerEnabled(e.target.checked)}
-                  />
-                  <span>20s timer</span>
-                </label>
-                <label className="checkbox-wrap">
-                  <input
-                    id="quizRequeueToggle"
-                    type="checkbox"
-                    checked={quiz.quizRequeueMissed}
-                    onChange={(e) => quiz.setQuizRequeueMissed(e.target.checked)}
-                  />
-                  <span>Re-queue missed</span>
-                </label>
-                <button id="quizPrintBtn" className="ghost-btn" type="button" onClick={buildPrintSheet}>
-                  Print sheet
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -289,7 +342,11 @@ export function ExamPage() {
           progressPct={progressPct}
         />
 
-        <div id="quizCard" className="quiz-card" hidden={!showCard}>
+        <div
+          id="quizCard"
+          className={`quiz-card quiz-card--${mode}${quiz.quizRevealed ? " is-revealed" : ""}`}
+          hidden={!showCard}
+        >
           {current ? (
             <QuizCardContent
               current={current}
@@ -307,21 +364,40 @@ export function ExamPage() {
         </div>
 
         <div id="quizSummary" className="quiz-summary" hidden={!quiz.showSummary}>
-          <h3>Session complete</h3>
-          <p id="quizSummaryStats" className="quiz-summary__stats">
-            {quiz.quizSessionStats.known} known · {quiz.quizSessionStats.again} again ·{" "}
-            {quiz.quizSessionStats.total} cards · {quiz.describeQuizMode()}
-          </p>
+          <div className="quiz-summary__hero">
+            <p className="eyebrow">Session complete</p>
+            <h3>{accuracy != null && accuracy >= 80 ? "Strong session" : "Session wrapped"}</h3>
+          </div>
+          <div className="quiz-summary__stats-grid">
+            <div className="quiz-summary__stat">
+              <span>Known</span>
+              <strong>{quiz.quizSessionStats.known}</strong>
+            </div>
+            <div className="quiz-summary__stat">
+              <span>Again</span>
+              <strong>{quiz.quizSessionStats.again}</strong>
+            </div>
+            <div className="quiz-summary__stat">
+              <span>Reviews</span>
+              <strong>{quiz.quizSessionStats.answered}</strong>
+            </div>
+            <div className="quiz-summary__stat">
+              <span>Accuracy</span>
+              <strong>{accuracy == null ? "—" : `${accuracy}%`}</strong>
+            </div>
+          </div>
           {quiz.quizSessionStats.missed.length ? (
             <div id="quizSummaryMissedWrap" className="quiz-summary__missed">
-              <p className="quiz-summary__label">Review these words:</p>
+              <p className="quiz-summary__label">Review these words</p>
               <ul id="quizSummaryMissed">
                 {quiz.quizSessionStats.missed.map((w) => (
                   <li key={w}>{w}</li>
                 ))}
               </ul>
             </div>
-          ) : null}
+          ) : (
+            <p className="quiz-summary__label">Clean run — nothing missed</p>
+          )}
           <div className="quiz-summary__actions">
             {quiz.quizSessionStats.missed.length ? (
               <button
@@ -337,7 +413,7 @@ export function ExamPage() {
               id="quizNewSessionBtn"
               className="ghost-btn"
               type="button"
-              onClick={() => quiz.prepareQuiz({ forceAll: quiz.quizForceAll })}
+              onClick={() => quiz.prepareQuiz({ forceAll: quiz.quizForceAll, restart: true })}
             >
               New session
             </button>
@@ -345,18 +421,30 @@ export function ExamPage() {
         </div>
 
         <div id="quizEmpty" className="quiz-empty" hidden={!showEmpty}>
-          <h3>You&apos;re caught up</h3>
+          <p className="eyebrow">Ready when you are</p>
+          <h3>{emptyMessage()}</h3>
           <p>
-            No words are due right now. Come back later or hit Restart to practice everything.
+            {quiz.quizScope === "due"
+              ? "No words are due right now. Practice the full pool, or switch mode and start a fresh session."
+              : "Nothing matched this filter. Open Settings to change scope, or practice everything."}
           </p>
-          <button
-            id="quizEmptyRestartBtn"
-            className="primary-btn"
-            type="button"
-            onClick={() => quiz.prepareQuiz({ forceAll: true })}
-          >
-            Practice all words
-          </button>
+          <div className="quiz-empty__actions">
+            <button
+              id="quizEmptyRestartBtn"
+              className="primary-btn"
+              type="button"
+              onClick={() => quiz.prepareQuiz({ forceAll: true, restart: true })}
+            >
+              Practice all words
+            </button>
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={() => setSettingsOpen(true)}
+            >
+              Open settings
+            </button>
+          </div>
         </div>
 
         <div id="quizPrintSheet" className="quiz-print-sheet" hidden ref={printRef} aria-hidden="true" />
@@ -378,22 +466,22 @@ function QuizStatus({
   showEmpty: boolean;
   progressPct: number;
 }) {
-  const timerVisible = quiz.quizTimerEnabled && current && !showSummary;
+  const timerVisible = Boolean(quiz.quizTimerEnabled && current && !showSummary);
+  const remaining = Math.max(0, quiz.quizQueue.length - quiz.quizIndex);
+
   return (
-    <div className="quiz-status-block">
-      <div className="quiz-meta">
+    <div className="quiz-session-bar" hidden={showEmpty && !showSummary}>
+      <div className="quiz-session-bar__meta">
         <p id="quizStatusText">
           {showSummary
             ? "Session complete"
-            : showEmpty
-              ? emptyStatus(quiz)
-              : current
-                ? `${quiz.describeQuizScope()} · ${quiz.describeQuizMode()} · ${quiz.quizQueue.length - quiz.quizIndex} left`
-                : "Loading exam…"}
+            : current
+              ? `${quiz.describeQuizScope()} · ${quiz.describeQuizMode()}`
+              : "Loading exam…"}
         </p>
         <p id="quizProgressText">
           {current && !showSummary
-            ? `Card ${quiz.quizIndex + 1} of ${quiz.quizQueue.length}`
+            ? `${quiz.quizSessionStats.answered}/${quiz.quizSessionStats.total} done · ${remaining} left`
             : quiz.describeQuizScope()}
         </p>
       </div>
@@ -406,42 +494,40 @@ function QuizStatus({
         aria-valuenow={progressPct}
         hidden={!current || showSummary}
       >
-        <div id="quizProgressFill" className="quiz-progress-bar__fill" style={{ width: `${progressPct}%` }} />
+        <div
+          id="quizProgressFill"
+          className="quiz-progress-bar__fill"
+          style={{ width: `${progressPct}%` }}
+        />
       </div>
-      <p
-        id="quizTimerText"
-        className={`quiz-timer${quiz.quizCardTimerRemaining <= 5 ? " is-urgent" : ""}`}
-        hidden={!timerVisible}
-      >
-        {quiz.quizCardTimerRemaining}s
-      </p>
-      <ShortcutsHint quiz={quiz} hidden={showSummary || showEmpty} />
+      <div className="quiz-timer-row">
+        <p
+          id="quizTimerText"
+          className={`quiz-timer${quiz.quizCardTimerRemaining <= 5 ? " is-urgent" : ""}`}
+          hidden={!timerVisible}
+        >
+          {quiz.quizCardTimerRemaining}s left
+        </p>
+        <ShortcutsHint quiz={quiz} hidden={showSummary || showEmpty || !current} />
+      </div>
     </div>
   );
-}
-
-function emptyStatus(quiz: ReturnType<typeof useQuiz>) {
-  if (quiz.quizForceAll) return "Session complete";
-  if (String(quiz.quizScope).startsWith("topic:")) return "No words found for this topic";
-  if (quiz.quizScope === "favorites") return "No favorite words in this filter";
-  if (quiz.quizScope === "weak") return "No weak words right now — great job";
-  return "You're caught up";
 }
 
 function ShortcutsHint({ quiz, hidden }: { quiz: ReturnType<typeof useQuiz>; hidden: boolean }) {
   const mode = quiz.quizMode;
   let hint = "";
-  if (mode === "mcq") hint = "";
+  if (mode === "mcq") hint = "<kbd>S</kbd> skip";
   else if (mode === "listening") {
     hint = quiz.quizRevealed
-      ? "Shortcuts: <kbd>1</kbd> know · <kbd>2</kbd> again"
-      : "Shortcuts: <kbd>L</kbd> listen · <kbd>Space</kbd> reveal";
+      ? "<kbd>1</kbd> know · <kbd>2</kbd> again · <kbd>S</kbd> skip"
+      : "<kbd>L</kbd> listen · <kbd>Space</kbd> reveal · <kbd>S</kbd> skip";
   } else if (mode === "type" || mode === "cloze") {
     hint = quiz.quizTypeChecked
-      ? "Shortcuts: <kbd>1</kbd> know · <kbd>2</kbd> again"
-      : "Shortcuts: <kbd>Enter</kbd> check answer";
+      ? "Advancing…"
+      : "<kbd>Enter</kbd> check · <kbd>S</kbd> skip";
   } else {
-    hint = "Shortcuts: <kbd>Space</kbd> reveal · <kbd>1</kbd> know · <kbd>2</kbd> again";
+    hint = "<kbd>Space</kbd> reveal · <kbd>1</kbd> know · <kbd>2</kbd> again · <kbd>S</kbd> skip";
   }
   if (!hint || hidden) return <p className="quiz-shortcuts" id="quizShortcutsHint" hidden />;
   return (
@@ -467,7 +553,7 @@ function QuizCardContent({
 }: {
   current: Word;
   quiz: ReturnType<typeof useQuiz>;
-  mode: ReturnType<typeof useQuiz>["quizMode"];
+  mode: QuizMode;
   cloze: ReturnType<typeof useQuiz>["buildClozeFor"] extends (i: Word) => infer R
     ? R | null
     : null;
@@ -492,14 +578,24 @@ function QuizCardContent({
     ((isReverse || isType) && !quiz.quizRevealed && !quiz.quizTypeChecked);
 
   const showFullAnswer = quiz.quizRevealed && !isMcq;
+  const gradingLocked = quiz.quizTypeChecked || Object.keys(mcqPicked).length > 0;
+
+  const promptLabel = isListening
+    ? "Listening"
+    : isReverse || isType || isMcq || isCloze
+      ? "Prompt"
+      : "Word";
 
   return (
     <>
       <div className="quiz-card__head">
         <p className="quiz-label" id="quizPromptLabel">
-          {isListening ? "Listening" : isReverse || isType || isMcq || isCloze ? "Prompt" : "Word"}
+          {promptLabel}
         </p>
-        <p id="quizCategory" className={`category-pill ${categoryClass(current.category)} quiz-card__pill`}>
+        <p
+          id="quizCategory"
+          className={`category-pill ${categoryClass(current.category)} quiz-card__pill`}
+        >
           {current.category}
         </p>
       </div>
@@ -515,15 +611,14 @@ function QuizCardContent({
             hidden={isListening || isReverse || isType || isMcq || isCloze}
             onClick={() => speakWord(current.word)}
           >
-            <span className="ui-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M4 10v4h3l4 3V7L7 10H4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                <path d="M15 9.5a3.5 3.5 0 0 1 0 5M17.5 7.5a6 6 0 0 1 0 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            </span>
+            <Volume2 size={18} aria-hidden="true" />
           </button>
         </div>
-        <p id="quizPromptText" className="quiz-prompt-text" hidden={!(isReverse || isType || isMcq || isCloze || isListening)}>
+        <p
+          id="quizPromptText"
+          className="quiz-prompt-text"
+          hidden={!(isReverse || isType || isMcq || isCloze || isListening)}
+        >
           {isListening
             ? quiz.quizRevealed
               ? current.meaning
@@ -565,7 +660,13 @@ function QuizCardContent({
               }
             }}
           />
-          <button id="quizCheckTypeBtn" className="primary-btn" type="button" onClick={checkType}>
+          <button
+            id="quizCheckTypeBtn"
+            className="primary-btn"
+            type="button"
+            disabled={quiz.quizTypeChecked || !typeInput.trim()}
+            onClick={checkType}
+          >
             Check
           </button>
         </div>
@@ -584,7 +685,11 @@ function QuizCardContent({
           <button
             key={item.word}
             type="button"
-            className={`ghost-btn quiz-mcq-btn${mcqPicked[item.word] ? ` is-${mcqPicked[item.word] === "correct" ? "correct" : "wrong"}` : ""}`}
+            className={`quiz-choice-btn${
+              mcqPicked[item.word]
+                ? ` is-${mcqPicked[item.word] === "correct" ? "correct" : "wrong"}`
+                : ""
+            }`}
             disabled={Object.keys(mcqPicked).length > 0}
             onClick={() => {
               const correct = item.word.toLowerCase() === current.word.toLowerCase();
@@ -603,21 +708,25 @@ function QuizCardContent({
         ))}
       </div>
 
-      <div id="quizAnswer" className="quiz-answer" hidden={!showFullAnswer}>
+      <div
+        id="quizAnswer"
+        className={`quiz-answer${isFlashcard || isReverse ? " quiz-answer--face" : ""}`}
+        hidden={!showFullAnswer}
+      >
         <p id="quizAnswerWordRow" hidden={isFlashcard && !isListening}>
-          <strong>Word:</strong> <span id="quizAnswerWord">{current.word}</span>
+          <strong>Word</strong> <span id="quizAnswerWord">{current.word}</span>
         </p>
         <p>
-          <strong>Meaning:</strong> <span id="quizMeaning">{current.meaning}</span>
+          <strong>Meaning</strong> <span id="quizMeaning">{current.meaning}</span>
         </p>
         <p>
-          <strong>Synonym:</strong> <span id="quizSynonym">{current.synonym || "—"}</span>
+          <strong>Synonym</strong> <span id="quizSynonym">{current.synonym || "—"}</span>
         </p>
         <p>
-          <strong>Antonym:</strong> <span id="quizAntonym">{current.antonym || "—"}</span>
+          <strong>Antonym</strong> <span id="quizAntonym">{current.antonym || "—"}</span>
         </p>
         <p>
-          <strong>Example:</strong> <span id="quizSentence">{current.sentence || "—"}</span>
+          <strong>Example</strong> <span id="quizSentence">{current.sentence || "—"}</span>
         </p>
       </div>
 
@@ -632,6 +741,7 @@ function QuizCardContent({
             await speakWord(current.word);
           }}
         >
+          <Volume2 size={15} aria-hidden="true" />
           {quiz.quizListeningHeard ? "Play again" : "Play audio"}
         </button>
         <button
@@ -641,7 +751,8 @@ function QuizCardContent({
           hidden={isMcq || isType || isCloze || quiz.quizRevealed}
           onClick={() => quiz.setQuizRevealed(true)}
         >
-          {isListening ? "Show answer" : isReverse || isType || isCloze ? "Show word" : "Show answer"}
+          <Eye size={15} aria-hidden="true" />
+          {isListening ? "Show answer" : isReverse ? "Show word" : "Show answer"}
         </button>
         <button
           id="quizKnowBtn"
@@ -650,6 +761,7 @@ function QuizCardContent({
           hidden={isMcq || isType || isCloze || !quiz.quizRevealed}
           onClick={() => quiz.advanceQuiz(true)}
         >
+          <Check size={15} aria-hidden="true" />
           I know it
         </button>
         <button
@@ -659,7 +771,18 @@ function QuizCardContent({
           hidden={isMcq || isType || isCloze || !quiz.quizRevealed}
           onClick={() => quiz.advanceQuiz(false)}
         >
+          <X size={15} aria-hidden="true" />
           Not yet
+        </button>
+        <button
+          id="quizSkipBtn"
+          className="ghost-btn"
+          type="button"
+          hidden={gradingLocked}
+          onClick={() => quiz.advanceQuiz(false)}
+        >
+          <SkipForward size={15} aria-hidden="true" />
+          Skip
         </button>
       </div>
     </>

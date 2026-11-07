@@ -10,8 +10,19 @@ import {
 } from "react";
 import { buildClozePrompt } from "../lib/cloze";
 import {
+  buildQuizQueue,
+  bumpRequeueCount,
+  canRequeueWord,
+  emptySessionStats,
+  QUIZ_CARD_TIMER_SEC,
+  QUIZ_SESSION_SIZE,
+  sessionAccuracy,
+  shuffleStable,
+  wordsMatchTyped,
+  type QuizSessionStats,
+} from "../lib/quizLogic";
+import {
   idiomToQuizItem,
-  getDueWords,
   getWeakWords,
   resolveTopicIdioms,
   gradeWord,
@@ -23,15 +34,8 @@ import {
 import type { QuizMode, QuizScope, Word } from "../types/models";
 import { useLibrary } from "./libraryStore";
 
-export const QUIZ_SESSION_SIZE = 15;
-export const QUIZ_CARD_TIMER_SEC = 20;
-
-export type QuizSessionStats = {
-  known: number;
-  again: number;
-  missed: string[];
-  total: number;
-};
+export { QUIZ_SESSION_SIZE, QUIZ_CARD_TIMER_SEC, sessionAccuracy };
+export type { QuizSessionStats };
 
 type QuizContextValue = {
   quizScope: QuizScope | string;
@@ -50,6 +54,7 @@ type QuizContextValue = {
   quizSessionStats: QuizSessionStats;
   quizMcqChoices: Word[];
   showSummary: boolean;
+  isSessionActive: boolean;
   setQuizScope: (scope: string) => void;
   setQuizMode: (mode: QuizMode) => void;
   setQuizCategoryFilter: (cat: string) => void;
@@ -64,6 +69,10 @@ type QuizContextValue = {
     forceAll?: boolean;
     preserveForce?: boolean;
     limit?: number | null;
+    /** Rebuild even if a session is mid-flight. Default true for explicit restarts. */
+    restart?: boolean;
+    /** Build against this scope immediately (avoids stale-state races). */
+    scopeOverride?: string;
   }) => void;
   setQuizRevealed: (v: boolean) => void;
   setQuizListeningHeard: (v: boolean) => void;
@@ -89,24 +98,6 @@ type QuizContextValue = {
 
 const QuizContext = createContext<QuizContextValue | null>(null);
 
-const shuffle = <T,>(items: T[]) => {
-  const list = [...items];
-  for (let i = list.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [list[i], list[j]] = [list[j], list[i]];
-  }
-  return list;
-};
-
-const normalizeTypedWord = (value: string) =>
-  String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9\u00C0-\u024F\s'-]/gi, "");
-
-const wordsMatchTyped = (typed: string, word: string) =>
-  normalizeTypedWord(typed) === normalizeTypedWord(word);
-
 const describeQuizMode = (mode: QuizMode) => {
   const modes: Record<QuizMode, string> = {
     flashcard: "Word → meaning",
@@ -126,13 +117,7 @@ export function QuizProvider({
   children: ReactNode;
   onProgressRefresh?: () => void;
 }) {
-  const {
-    vocabularyData,
-    topicData,
-    idiomData,
-    favoriteWords,
-    version,
-  } = useLibrary();
+  const { vocabularyData, topicData, idiomData, favoriteWords, version } = useLibrary();
 
   const saved = readQuizSettings();
   const [quizScope, setQuizScopeState] = useState<string>(saved.scope || "due");
@@ -153,15 +138,28 @@ export function QuizProvider({
   const [quizMcqChoices, setQuizMcqChoices] = useState<Word[]>([]);
   const [quizCardTimerRemaining, setQuizCardTimerRemaining] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
-  const [quizSessionStats, setQuizSessionStats] = useState<QuizSessionStats>({
-    known: 0,
-    again: 0,
-    missed: [],
-    total: 0,
-  });
+  const [quizSessionStats, setQuizSessionStats] = useState<QuizSessionStats>(emptySessionStats());
+  const [requeueCounts, setRequeueCounts] = useState<Record<string, number>>({});
 
   const cardTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const advancingRef = useRef(false);
+  const queueRef = useRef(quizQueue);
+  const indexRef = useRef(quizIndex);
+  const statsRef = useRef(quizSessionStats);
+  const requeueCountsRef = useRef(requeueCounts);
+  const requeueEnabledRef = useRef(quizRequeueMissed);
+  const modeRef = useRef(quizMode);
+
+  queueRef.current = quizQueue;
+  indexRef.current = quizIndex;
+  statsRef.current = quizSessionStats;
+  requeueCountsRef.current = requeueCounts;
+  requeueEnabledRef.current = quizRequeueMissed;
+  modeRef.current = quizMode;
+
+  const isSessionActive =
+    showSummary || (quizQueue.length > 0 && quizIndex < quizQueue.length);
 
   const clearCardTimer = useCallback(() => {
     if (cardTimerRef.current) {
@@ -169,6 +167,13 @@ export function QuizProvider({
       cardTimerRef.current = null;
     }
     setQuizCardTimerRemaining(0);
+  }, []);
+
+  const clearAdvanceTimer = useCallback(() => {
+    if (advanceTimerRef.current) {
+      clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
   }, []);
 
   const persistQuizSettings = useCallback(() => {
@@ -181,51 +186,47 @@ export function QuizProvider({
     });
   }, [quizCategoryFilter, quizMode, quizRequeueMissed, quizScope, quizTimerEnabled]);
 
-  const getQuizWordPool = useCallback(() => {
-    let pool: Word[] = vocabularyData;
+  const getQuizWordPool = useCallback(
+    (scopeOverride?: string) => {
+      const scope = scopeOverride ?? quizScope;
+      let pool: Word[] = vocabularyData;
 
-    if (quizScope === "due") {
-      pool = [...vocabularyData, ...idiomData.map(idiomToQuizItem)];
-    } else if (quizScope === "idioms") {
-      pool = idiomData.map(idiomToQuizItem);
-    } else if (String(quizScope).startsWith("idiom:")) {
-      const phrase = quizScope.slice("idiom:".length);
-      const match = idiomData.find((item) => item.idiom === phrase);
-      pool = match ? [idiomToQuizItem(match)] : [];
-    } else if (quizScope === "favorites") {
-      pool = pool.filter((item) => favoriteWords.has(item.word));
-    } else if (quizScope === "weak") {
-      pool = getWeakWords(pool);
-    } else if (String(quizScope).startsWith("topic:")) {
-      const topicTitle = quizScope.slice("topic:".length);
-      const topic = topicData.find((item) => item.title === topicTitle);
-      if (topic) {
-        const wanted = new Set(
-          (topic.vocabulary || []).map((word) => word.toLowerCase()),
-        );
-        const wordItems = vocabularyData.filter((item) =>
-          wanted.has(item.word.toLowerCase()),
-        );
-        const idiomItems = resolveTopicIdioms(topic, idiomData).map(idiomToQuizItem);
-        pool = [...wordItems, ...idiomItems];
+      if (scope === "due") {
+        pool = [...vocabularyData, ...idiomData.map(idiomToQuizItem)];
+      } else if (scope === "idioms") {
+        pool = idiomData.map(idiomToQuizItem);
+      } else if (String(scope).startsWith("idiom:")) {
+        const phrase = scope.slice("idiom:".length);
+        const match = idiomData.find((item) => item.idiom === phrase);
+        pool = match ? [idiomToQuizItem(match)] : [];
+      } else if (scope === "favorites") {
+        pool = pool.filter((item) => favoriteWords.has(item.word));
+      } else if (scope === "weak") {
+        pool = getWeakWords(pool);
+      } else if (String(scope).startsWith("topic:")) {
+        const topicTitle = scope.slice("topic:".length);
+        const topic = topicData.find((item) => item.title === topicTitle);
+        if (topic) {
+          const wanted = new Set((topic.vocabulary || []).map((word) => word.toLowerCase()));
+          const wordItems = vocabularyData.filter((item) =>
+            wanted.has(item.word.toLowerCase()),
+          );
+          const idiomItems = resolveTopicIdioms(topic, idiomData).map(idiomToQuizItem);
+          pool = [...wordItems, ...idiomItems];
+        } else {
+          pool = [];
+        }
       }
-    }
 
-    const idiomScoped =
-      quizScope === "idioms" || String(quizScope).startsWith("idiom:");
-    if (!idiomScoped && quizCategoryFilter && quizCategoryFilter !== "All") {
-      pool = pool.filter((item) => item.category === quizCategoryFilter);
-    }
+      const idiomScoped = scope === "idioms" || String(scope).startsWith("idiom:");
+      if (!idiomScoped && quizCategoryFilter && quizCategoryFilter !== "All") {
+        pool = pool.filter((item) => item.category === quizCategoryFilter);
+      }
 
-    return pool;
-  }, [
-    favoriteWords,
-    idiomData,
-    quizCategoryFilter,
-    quizScope,
-    topicData,
-    vocabularyData,
-  ]);
+      return pool;
+    },
+    [favoriteWords, idiomData, quizCategoryFilter, quizScope, topicData, vocabularyData],
+  );
 
   const describeQuizScope = useCallback(() => {
     if (quizScope === "all") return "All vocabulary";
@@ -259,48 +260,67 @@ export function QuizProvider({
       (item) => item.word.toLowerCase() !== correct.word.toLowerCase(),
     );
     const distractorPool = sameCategory.length >= 3 ? sameCategory : fallback;
-    const distractors = shuffle(distractorPool).slice(0, 3);
+    const distractors = shuffleStable(distractorPool).slice(0, 3);
     while (distractors.length < 3 && fallback.length) {
       const next = fallback.find(
         (item) =>
-          !distractors.some((d) => d.word === item.word) &&
-          item.word !== correct.word,
+          !distractors.some((d) => d.word === item.word) && item.word !== correct.word,
       );
       if (!next) break;
       distractors.push(next);
     }
-    return shuffle([correct, ...distractors.slice(0, 3)]);
+    return shuffleStable([correct, ...distractors.slice(0, 3)]);
   }, []);
 
   const hideSummary = useCallback(() => setShowSummary(false), []);
 
+  const logSessionEnd = useCallback(
+    (stats: QuizSessionStats) => {
+      appendStudyEvent({
+        type: "quiz_session",
+        meta: {
+          known: stats.known,
+          again: stats.again,
+          total: stats.total,
+          answered: stats.answered,
+          accuracy: sessionAccuracy(stats),
+          mode: modeRef.current,
+          minutes: Math.max(2, Math.round(stats.answered * 0.35)),
+        },
+      });
+      onProgressRefresh?.();
+    },
+    [onProgressRefresh],
+  );
+
   const finishSessionSummary = useCallback(() => {
     clearCardTimer();
+    clearAdvanceTimer();
     setShowSummary(true);
-    const { known, again, total } = quizSessionStats;
-    appendStudyEvent({
-      type: "quiz_session",
-      meta: {
-        known,
-        again,
-        total,
-        mode: quizMode,
-        minutes: Math.max(3, Math.round(total * 0.4)),
-      },
-    });
-    onProgressRefresh?.();
-  }, [clearCardTimer, onProgressRefresh, quizMode, quizSessionStats]);
+    logSessionEnd(statsRef.current);
+  }, [clearAdvanceTimer, clearCardTimer, logSessionEnd]);
 
   const prepareQuiz = useCallback(
     ({
       forceAll = false,
       preserveForce = false,
       limit = null,
+      restart = true,
+      scopeOverride,
     }: {
       forceAll?: boolean;
       preserveForce?: boolean;
       limit?: number | null;
+      restart?: boolean;
+      scopeOverride?: string;
     } = {}) => {
+      const midSession =
+        queueRef.current.length > 0 && indexRef.current < queueRef.current.length;
+
+      // Keep an in-progress or just-finished session when quietly syncing (page revisit).
+      if (!restart && (midSession || showSummary)) return;
+
+      const scope = scopeOverride ?? quizScope;
       const effectiveForceAll = !preserveForce ? forceAll : forceAll || quizForceAll;
       if (!preserveForce) setQuizForceAll(forceAll);
       else if (forceAll) setQuizForceAll(true);
@@ -310,52 +330,40 @@ export function QuizProvider({
 
       setShowSummary(false);
       clearCardTimer();
-      if (advanceTimerRef.current) {
-        clearTimeout(advanceTimerRef.current);
-        advanceTimerRef.current = null;
-      }
+      clearAdvanceTimer();
+      advancingRef.current = false;
 
-      const pool = getQuizWordPool();
-      const useAllInScope =
-        effectiveForceAll ||
-        quizScope === "all" ||
-        quizScope === "idioms" ||
-        quizScope === "favorites" ||
-        quizScope === "weak" ||
-        String(quizScope).startsWith("topic:") ||
-        String(quizScope).startsWith("idiom:");
-
-      const due = useAllInScope
-        ? pool.map((item) => ({ item }))
-        : getDueWords(pool);
-
-      let queue = shuffle(due.map(({ item }) => item));
-      const sessionCap = (limit ?? quizSessionLimit) || QUIZ_SESSION_SIZE;
-
-      if (!useAllInScope) {
-        queue = queue.slice(0, sessionCap);
-      } else if (
-        useAllInScope &&
-        !String(quizScope).startsWith("topic:") &&
-        !String(quizScope).startsWith("idiom:")
-      ) {
-        queue = queue.slice(0, sessionCap);
-      } else if (limit != null || quizSessionLimit) {
-        queue = queue.slice(0, sessionCap);
-      }
+      const pool = getQuizWordPool(scope);
+      const queue = buildQuizQueue({
+        pool,
+        scope,
+        forceAll: effectiveForceAll,
+        limit: limit ?? (preserveForce ? quizSessionLimit : null),
+      });
 
       setQuizQueue(queue);
-      setQuizSessionStats({ known: 0, again: 0, missed: [], total: queue.length });
+      queueRef.current = queue;
+      setQuizSessionStats(emptySessionStats(queue.length));
+      statsRef.current = emptySessionStats(queue.length);
+      setRequeueCounts({});
+      requeueCountsRef.current = {};
       setQuizIndex(0);
+      indexRef.current = 0;
       setQuizRevealed(false);
       setQuizListeningHeard(false);
       setQuizTypeChecked(false);
-      setShowSummary(false);
     },
-    [clearCardTimer, getQuizWordPool, quizForceAll, quizScope, quizSessionLimit],
+    [
+      clearAdvanceTimer,
+      clearCardTimer,
+      getQuizWordPool,
+      quizForceAll,
+      quizScope,
+      quizSessionLimit,
+      showSummary,
+    ],
   );
 
-  // Refresh MCQ when card changes
   useEffect(() => {
     const current = quizQueue[quizIndex];
     if (quizMode === "mcq" && current) {
@@ -365,96 +373,102 @@ export function QuizProvider({
 
   const advanceQuiz = useCallback(
     (knewIt: boolean) => {
-      const current = quizQueue[quizIndex];
+      if (advancingRef.current) return;
+      const current = queueRef.current[indexRef.current];
       if (!current) return;
 
-      if (advanceTimerRef.current) {
-        clearTimeout(advanceTimerRef.current);
-        advanceTimerRef.current = null;
-      }
+      advancingRef.current = true;
+      clearAdvanceTimer();
       clearCardTimer();
       recordStudyActivity();
-
-      setQuizSessionStats((prev) => {
-        const missed = [...prev.missed];
-        if (!knewIt && !missed.includes(current.word)) missed.push(current.word);
-        return {
-          known: prev.known + (knewIt ? 1 : 0),
-          again: prev.again + (knewIt ? 0 : 1),
-          missed,
-          total: prev.total,
-        };
-      });
 
       gradeWord(current.word, knewIt);
       appendStudyEvent({
         type: "quiz_grade",
-        meta: { word: current.word, knewIt: Boolean(knewIt), mode: quizMode },
+        meta: { word: current.word, knewIt: Boolean(knewIt), mode: modeRef.current },
       });
 
-      let nextQueue = quizQueue;
-      if (!knewIt && quizRequeueMissed) {
-        nextQueue = [...quizQueue, current];
+      const prevStats = statsRef.current;
+      const missed = [...prevStats.missed];
+      if (!knewIt && !missed.includes(current.word)) missed.push(current.word);
+
+      const nextStats: QuizSessionStats = {
+        known: prevStats.known + (knewIt ? 1 : 0),
+        again: prevStats.again + (knewIt ? 0 : 1),
+        missed,
+        total: prevStats.total,
+        answered: prevStats.answered + 1,
+      };
+      setQuizSessionStats(nextStats);
+      statsRef.current = nextStats;
+
+      let nextQueue = queueRef.current;
+      if (
+        !knewIt &&
+        canRequeueWord(
+          current.word,
+          requeueCountsRef.current,
+          nextQueue.length,
+          nextStats.total,
+          requeueEnabledRef.current,
+        )
+      ) {
+        nextQueue = [...nextQueue, current];
+        const nextCounts = bumpRequeueCount(current.word, requeueCountsRef.current);
+        setRequeueCounts(nextCounts);
+        requeueCountsRef.current = nextCounts;
         setQuizQueue(nextQueue);
+        queueRef.current = nextQueue;
       }
 
-      const nextIndex = quizIndex + 1;
+      const nextIndex = indexRef.current + 1;
       setQuizIndex(nextIndex);
+      indexRef.current = nextIndex;
       setQuizRevealed(false);
       setQuizListeningHeard(false);
       setQuizTypeChecked(false);
 
       if (nextIndex >= nextQueue.length) {
         setShowSummary(true);
-        appendStudyEvent({
-          type: "quiz_session",
-          meta: {
-            known: quizSessionStats.known + (knewIt ? 1 : 0),
-            again: quizSessionStats.again + (knewIt ? 0 : 1),
-            total: quizSessionStats.total,
-            mode: quizMode,
-            minutes: Math.max(3, Math.round(quizSessionStats.total * 0.4)),
-          },
-        });
+        logSessionEnd(nextStats);
+      } else {
         onProgressRefresh?.();
-        return;
       }
-      onProgressRefresh?.();
+
+      // Unlock after React flushes the card change.
+      requestAnimationFrame(() => {
+        advancingRef.current = false;
+      });
     },
-    [
-      clearCardTimer,
-      onProgressRefresh,
-      quizIndex,
-      quizMode,
-      quizQueue,
-      quizRequeueMissed,
-    ],
+    [clearAdvanceTimer, clearCardTimer, logSessionEnd, onProgressRefresh],
   );
 
   const checkTypedQuizAnswer = useCallback(
     (typed: string) => {
-      const current = quizQueue[quizIndex];
-      const typingMode = quizMode === "type" || quizMode === "cloze";
+      const current = queueRef.current[indexRef.current];
+      const typingMode = modeRef.current === "type" || modeRef.current === "cloze";
       if (!current || !typingMode || quizTypeChecked) return false;
 
       const correct = wordsMatchTyped(typed, current.word);
       setQuizTypeChecked(true);
       setQuizRevealed(true);
 
-      if (correct) {
-        if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
-        advanceTimerRef.current = setTimeout(() => {
+      clearAdvanceTimer();
+      // Auto-advance: correct → known, wrong → again (no more stuck cards).
+      advanceTimerRef.current = setTimeout(
+        () => {
           advanceTimerRef.current = null;
-          advanceQuiz(true);
-        }, 650);
-      }
+          advanceQuiz(correct);
+        },
+        correct ? 550 : 1100,
+      );
       return correct;
     },
-    [advanceQuiz, quizIndex, quizMode, quizQueue, quizTypeChecked],
+    [advanceQuiz, clearAdvanceTimer, quizTypeChecked],
   );
 
   const reviewMissedQuiz = useCallback(() => {
-    const missedWords = quizSessionStats.missed;
+    const missedWords = statsRef.current.missed;
     if (!missedWords.length) return;
     const lookup = new Map<string, Word>([
       ...vocabularyData.map((item): [string, Word] => [item.word.toLowerCase(), item]),
@@ -466,19 +480,34 @@ export function QuizProvider({
     const queue = missedWords
       .map((word) => lookup.get(word.toLowerCase()))
       .filter(Boolean) as Word[];
+    clearAdvanceTimer();
+    advancingRef.current = false;
     setQuizQueue(queue);
-    setQuizSessionStats({ known: 0, again: 0, missed: [], total: queue.length });
+    queueRef.current = queue;
+    setQuizSessionStats(emptySessionStats(queue.length));
+    setRequeueCounts({});
     setQuizIndex(0);
+    indexRef.current = 0;
     setQuizRevealed(false);
     setQuizForceAll(true);
     setShowSummary(false);
-  }, [idiomData, quizSessionStats.missed, vocabularyData]);
+    setQuizTypeChecked(false);
+    setQuizListeningHeard(false);
+  }, [clearAdvanceTimer, idiomData, vocabularyData]);
 
   const onMcqPick = useCallback(
     (_pickedWord: string, correct: boolean) => {
-      setTimeout(() => advanceQuiz(correct), correct ? 420 : 900);
+      if (advancingRef.current) return;
+      clearAdvanceTimer();
+      advanceTimerRef.current = setTimeout(
+        () => {
+          advanceTimerRef.current = null;
+          advanceQuiz(correct);
+        },
+        correct ? 420 : 900,
+      );
     },
-    [advanceQuiz],
+    [advanceQuiz, clearAdvanceTimer],
   );
 
   const setQuizScope = useCallback(
@@ -499,6 +528,8 @@ export function QuizProvider({
     (mode: QuizMode) => {
       setQuizModeState(mode);
       setQuizRevealed(false);
+      setQuizTypeChecked(false);
+      clearAdvanceTimer();
       saveQuizSettings({
         scope: quizScope,
         mode,
@@ -507,7 +538,7 @@ export function QuizProvider({
         requeue: quizRequeueMissed,
       });
     },
-    [quizCategoryFilter, quizRequeueMissed, quizScope, quizTimerEnabled],
+    [clearAdvanceTimer, quizCategoryFilter, quizRequeueMissed, quizScope, quizTimerEnabled],
   );
 
   const setQuizCategoryFilter = useCallback(
@@ -555,7 +586,7 @@ export function QuizProvider({
   const startCardTimer = useCallback(
     (onTimeout: () => void) => {
       clearCardTimer();
-      if (!quizTimerEnabled || !quizQueue[quizIndex]) return;
+      if (!quizTimerEnabled || !queueRef.current[indexRef.current]) return;
 
       setQuizCardTimerRemaining(QUIZ_CARD_TIMER_SEC);
       cardTimerRef.current = setInterval(() => {
@@ -570,39 +601,42 @@ export function QuizProvider({
         });
       }, 1000);
     },
-    [clearCardTimer, quizIndex, quizQueue, quizTimerEnabled],
+    [clearCardTimer, quizTimerEnabled],
   );
 
   const startTopicQuiz = useCallback(
     (title: string, navigate: (page: string) => void) => {
-      setQuizScope(`topic:${title}`);
+      const scope = `topic:${title}`;
+      setQuizScope(scope);
       setQuizSessionLimit(null);
       persistQuizSettings();
       navigate("quiz");
-      prepareQuiz({ forceAll: true });
+      prepareQuiz({ forceAll: true, restart: true, scopeOverride: scope });
     },
     [persistQuizSettings, prepareQuiz, setQuizScope],
   );
 
   const startTopicExam = useCallback(
     (title: string, navigate: (page: string) => void) => {
-      setQuizScope(`topic:${title}`);
+      const scope = `topic:${title}`;
+      setQuizScope(scope);
       setQuizModeState("flashcard");
       setQuizSessionLimit(10);
       persistQuizSettings();
       navigate("quiz");
-      prepareQuiz({ forceAll: true, limit: 10 });
+      prepareQuiz({ forceAll: true, limit: 10, restart: true, scopeOverride: scope });
     },
     [persistQuizSettings, prepareQuiz, setQuizScope],
   );
 
   const startIdiomQuiz = useCallback(
     (phrase: string, navigate: (page: string) => void) => {
-      setQuizScope(`idiom:${phrase}`);
+      const scope = `idiom:${phrase}`;
+      setQuizScope(scope);
       setQuizSessionLimit(null);
       persistQuizSettings();
       navigate("quiz");
-      prepareQuiz({ forceAll: true });
+      prepareQuiz({ forceAll: true, restart: true, scopeOverride: scope });
     },
     [persistQuizSettings, prepareQuiz, setQuizScope],
   );
@@ -616,6 +650,8 @@ export function QuizProvider({
       prepareQuiz({
         forceAll: true,
         limit: Math.min(10, Math.max(1, idiomData.length)),
+        restart: true,
+        scopeOverride: "idioms",
       });
     },
     [idiomData.length, persistQuizSettings, prepareQuiz, setQuizScope],
@@ -627,7 +663,7 @@ export function QuizProvider({
       setQuizSessionLimit(null);
       persistQuizSettings();
       navigate("quiz");
-      prepareQuiz({ forceAll: true });
+      prepareQuiz({ forceAll: true, restart: true, scopeOverride: "weak" });
     },
     [persistQuizSettings, prepareQuiz, setQuizScope],
   );
@@ -650,6 +686,7 @@ export function QuizProvider({
       quizSessionStats,
       quizMcqChoices,
       showSummary,
+      isSessionActive,
       setQuizScope,
       setQuizMode,
       setQuizCategoryFilter,
@@ -676,7 +713,7 @@ export function QuizProvider({
       onMcqPick,
       clearCardTimer,
       startCardTimer,
-      shuffle,
+      shuffle: shuffleStable,
       wordsMatchTyped,
       buildClozeFor: buildClozePrompt,
       finishSessionSummary,
@@ -699,6 +736,7 @@ export function QuizProvider({
       quizSessionStats,
       quizMcqChoices,
       showSummary,
+      isSessionActive,
       setQuizScope,
       setQuizMode,
       setQuizCategoryFilter,
