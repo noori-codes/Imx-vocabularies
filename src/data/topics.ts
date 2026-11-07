@@ -43,6 +43,46 @@ export const createTopic = ({
 
 export const topicData: Topic[] = [
   createTopic({
+    title: "Is It Better to Plan Every Detail — or Leave Room for Surprise?",
+    date: "2026-11-08",
+    completed: false,
+    vocabulary: [
+      "Spontaneity",
+      "Serendipity",
+      "Ambiguity",
+      "Certainty",
+      "Rigidity",
+      "Improvisation",
+      "Contingency",
+      "Forecast",
+      "Unpredictability",
+      "Flexibility",
+    ],
+    idioms: [
+      "Go with the flow",
+      "Leave it to chance",
+      "Expect the unexpected",
+      "Plan ahead",
+      "Take it as it comes",
+    ],
+    summary:
+      "Some people feel safer when every hour is scheduled. Others believe the best moments arrive when plans are loose enough for surprise. This topic explores how much structure we need — and how much uncertainty we can enjoy — in work, travel, friendship, and daily life.",
+    notes:
+      "Compare the comfort of certainty with the energy of spontaneity. Discuss when planning protects us and when it becomes rigid. Explore serendipity, improvisation, and whether leaving room for surprise makes life richer or more stressful.",
+    questions: [
+      "Do you feel calmer with a detailed plan, or freer without one?",
+      "When has a surprise turned out better than something you carefully planned?",
+      "Can too much planning kill creativity?",
+      "Is leaving things to chance brave, lazy, or both?",
+      "How do you react when plans suddenly change?",
+      "Should important decisions ever be spontaneous?",
+      "What is one area of your life that needs more structure?",
+      "What is one area that needs more flexibility?",
+      "Do you trust serendipity, or do you think luck mostly favors people who prepare?",
+    ],
+  }),
+
+  createTopic({
     title: "Are We Becoming Less Patient in a World That Gives Us Everything Instantly?",
     date: "2026-11-05",
     completed: false,

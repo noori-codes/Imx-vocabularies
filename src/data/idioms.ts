@@ -53,6 +53,68 @@ export const createIdiom = ({
 const q = (...items: string[]) => items;
 
 export const idiomData: Idiom[] = [
+  // Planning vs surprise — 2026-11-08
+  createIdiom({
+    idiom: "Go with the flow",
+    date: "2026-11-08",
+    pronunciation: "ɡəʊ wɪð ðə fləʊ",
+    meaning: "To accept what happens and adapt instead of forcing a fixed plan.",
+    example: "The train was delayed, so we decided to go with the flow and explore the station café.",
+    usage: "Use when someone chooses flexibility over control.",
+    questions: q(
+      "When is it wise to go with the flow?",
+      "Can going with the flow become a way to avoid responsibility?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Leave it to chance",
+    date: "2026-11-08",
+    pronunciation: "liːv ɪt tə tʃɑːns",
+    meaning: "To allow something to happen randomly rather than controlling the outcome.",
+    example: "She refused to leave her career to chance and prepared carefully for the interview.",
+    usage: "Use when discussing risk, luck, or whether preparation is needed.",
+    questions: q(
+      "What decisions would you never leave to chance?",
+      "Is leaving something to chance sometimes healthier than overthinking?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Expect the unexpected",
+    date: "2026-11-08",
+    pronunciation: "ɪkˈspekt ði ˌʌnɪkˈspektɪd",
+    meaning: "To stay ready for surprising events because plans can change.",
+    example: "Good travelers expect the unexpected and pack a little flexibility into every itinerary.",
+    usage: "Use as advice when situations are uncertain or likely to change.",
+    questions: q(
+      "How do you personally prepare when you expect the unexpected?",
+      "Does expecting the unexpected make people more anxious or more calm?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Plan ahead",
+    date: "2026-11-08",
+    pronunciation: "plæn əˈhed",
+    meaning: "To think about and prepare for the future before something happens.",
+    example: "If you plan ahead for the presentation, you will feel less nervous on stage.",
+    usage: "Use when encouraging preparation and foresight.",
+    questions: q(
+      "What is one thing you wish you had planned ahead for?",
+      "Can planning ahead ever make people less open to opportunity?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Take it as it comes",
+    date: "2026-11-08",
+    pronunciation: "teɪk ɪt əz ɪt kʌmz",
+    meaning: "To deal with situations calmly as they happen, without worrying too far ahead.",
+    example: "He prefers to take life as it comes rather than fill every week with strict goals.",
+    usage: "Use when someone chooses a calm, day-by-day attitude.",
+    questions: q(
+      "Do you usually take things as they come, or do you prefer firm schedules?",
+      "When does taking it as it comes become avoidance?",
+    ),
+  }),
+
   // Patience and instant gratification — 2026-11-05
   createIdiom({
     idiom: "Good things take time",
