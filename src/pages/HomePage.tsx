@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
-import { idiomToQuizItem, getDueWords, getStudyStreakInfo, getWeakWords, getProgressStats, getStudyGoals } from "../lib/storage";
+import { ArrowRight, Flame, RefreshCw, Zap } from "lucide-react";
+import {
+  idiomToQuizItem,
+  getDueWords,
+  getStudyStreakInfo,
+  getWeakWords,
+  getProgressStats,
+  getStudyGoals,
+} from "../lib/storage";
 import { MOTIVATION_QUOTES } from "../state/templates";
 import { useLibrary } from "../state/libraryStore";
 import { useAppShell } from "../state/appShell";
@@ -26,7 +34,7 @@ export function HomePage() {
     };
   }, [vocabularyData, idiomData, progressTick]);
 
-  const weak = getWeakWords(vocabularyData, { limit: 6 });
+  const weak = getWeakWords(vocabularyData, { limit: 8 });
 
   const newQuote = () => {
     setQuote(MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)]);
@@ -34,87 +42,129 @@ export function HomePage() {
 
   const streakLine = stats.streak.studiedToday
     ? stats.streak.streak > 1
-      ? `You studied today — ${stats.streak.streak}-day streak. Keep it going.`
-      : "You studied today. Nice work — come back tomorrow for a streak."
+      ? `Studied today — keep the ${stats.streak.streak}-day run alive.`
+      : "Studied today. Come back tomorrow to start a streak."
     : stats.streak.streak > 0
-      ? `${stats.streak.streak}-day streak waiting — review a few due words today.`
-      : "Review a few due words, then add one new idea from your latest presentation.";
+      ? `${stats.streak.streak}-day streak waiting — review a few due items.`
+      : "Review a few due items to start your streak.";
 
   const dailyPct = Math.min(
     100,
     Math.round((stats.progress.reviewsToday / stats.goals.dailyReviews) * 100),
   );
 
+  const stageTitle = stats.due > 0 ? "Items due now" : "You're caught up";
+  const stageSub =
+    stats.due > 0
+      ? "Open Exam Studio and clear what's waiting — then keep building the library."
+      : "Browse words, open a topic, or run a fresh practice session.";
+
   return (
     <section id="home" className="page page--active">
-      <div className="hero-card">
-        <div className="hero-copy">
-          <p className="eyebrow animate-fade-up">Personal study journal</p>
-          <h2 className="brand-hero animate-fade-up animate-delay-1">IMX</h2>
-          <p className="hero-subtitle animate-fade-up animate-delay-2">
-            Daily lessons with vocabulary, idioms, and discussion — kept in one quiet place to
-            review and grow.
-          </p>
-          <div className="hero-actions animate-fade-up animate-delay-3">
-            <button type="button" className="primary-btn" onClick={() => navigate("quiz", { replace: false })}>
-              Start exam
+      <div className="home-bento">
+        <article className="bento-stage animate-fade-up">
+          <div className="bento-stage__due">
+            <p className="bento-label">Today</p>
+            <div className="bento-stage__number" id="homeDueWords">
+              {stats.due}
+            </div>
+            <h2 className="bento-stage__title">{stageTitle}</h2>
+            <p className="bento-stage__sub">{stageSub}</p>
+          </div>
+          <div className="bento-stage__actions">
+            <button
+              type="button"
+              className="primary-btn"
+              onClick={() => navigate("quiz", { replace: false })}
+            >
+              {stats.due > 0 ? "Review due" : "Start exam"}
+              <ArrowRight size={16} aria-hidden="true" />
             </button>
-            <button type="button" className="ghost-btn" onClick={() => navigate("progress", { replace: false })}>
-              View progress
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={() => navigate("vocabulary", { replace: false })}
+            >
+              Browse words
             </button>
           </div>
-        </div>
-        <aside className="hero-aside animate-fade-up animate-delay-2" aria-label="Study note">
-          <p className="hero-aside__label">Today</p>
-          <p className="hero-aside__text" id="homeStudyStreak">
+        </article>
+
+        <aside className="bento-streak animate-fade-up animate-delay-1" aria-label="Study streak">
+          <div>
+            <p className="bento-label">
+              <Flame
+                size={11}
+                style={{ display: "inline", verticalAlign: "-1px", marginRight: 5 }}
+              />
+              Streak
+            </p>
+            <div className="bento-streak__value" id="homeStudyStreakValue">
+              {stats.streak.streak}
+            </div>
+          </div>
+          <p className="bento-streak__text" id="homeStudyStreak">
             {streakLine}
           </p>
         </aside>
-      </div>
 
-      <section className="motivation-card" aria-label="Daily motivation">
-        <div className="motivation-card__header">
-          <p className="motivation-eyebrow">Daily line</p>
-          <button id="newQuoteBtn" className="quote-btn" type="button" onClick={newQuote}>
-            New line
+        <div className="bento-metrics animate-fade-up animate-delay-2" aria-label="Library snapshot">
+          <button
+            type="button"
+            className="bento-metric"
+            onClick={() => navigate("vocabulary", { replace: false })}
+          >
+            <span className="bento-metric__label">Words</span>
+            <strong className="bento-metric__value" id="homeTotalWords">
+              {vocabularyData.length}
+            </strong>
+          </button>
+          <button
+            type="button"
+            className="bento-metric"
+            onClick={() => navigate("topics", { replace: false })}
+          >
+            <span className="bento-metric__label">Topics</span>
+            <strong className="bento-metric__value" id="homeTotalTopics">
+              {topicData.length}
+            </strong>
+          </button>
+          <button
+            type="button"
+            className="bento-metric"
+            onClick={() => navigate("idioms", { replace: false })}
+          >
+            <span className="bento-metric__label">Idioms</span>
+            <strong className="bento-metric__value" id="homeTotalIdioms">
+              {idiomData.length}
+            </strong>
+          </button>
+          <button
+            type="button"
+            className="bento-metric"
+            onClick={() => navigate("favorites", { replace: false })}
+          >
+            <span className="bento-metric__label">Saved</span>
+            <strong className="bento-metric__value" id="homeFavoriteWords">
+              {favoriteWords.size}
+            </strong>
           </button>
         </div>
-        <p id="motivationQuote" className="motivation-quote">
-          {quote}
-        </p>
-      </section>
 
-      <div className="home-study-strip" aria-label="Library snapshot">
-        <button type="button" className="study-stat" onClick={() => navigate("vocabulary", { replace: false })}>
-          <span className="progress-label">Vocabulary</span>
-          <strong id="homeTotalWords">{vocabularyData.length}</strong>
-        </button>
-        <button type="button" className="study-stat" onClick={() => navigate("topics", { replace: false })}>
-          <span className="progress-label">Topics</span>
-          <strong id="homeTotalTopics">{topicData.length}</strong>
-        </button>
-        <button type="button" className="study-stat" onClick={() => navigate("idioms", { replace: false })}>
-          <span className="progress-label">Idioms</span>
-          <strong id="homeTotalIdioms">{idiomData.length}</strong>
-        </button>
-        <button type="button" className="study-stat" onClick={() => navigate("favorites", { replace: false })}>
-          <span className="progress-label">Favorites</span>
-          <strong id="homeFavoriteWords">{favoriteWords.size}</strong>
-        </button>
-        <button type="button" className="study-stat" onClick={() => navigate("quiz", { replace: false })}>
-          <span className="progress-label">Due</span>
-          <strong id="homeDueWords">{stats.due}</strong>
-        </button>
-      </div>
-
-      <section id="homeWeekStrip" className="week-strip home-panel" aria-label="This week’s progress">
-        <div className="week-strip__copy">
-          <p className="eyebrow">This week</p>
-          <p className="week-strip__line">
-            {stats.progress.reviewsWeek} reviews · {stats.progress.sessionsWeek} sessions · streak{" "}
-            {stats.streak.streak}
-            {stats.progress.accuracyWeek != null ? ` · ${stats.progress.accuracyWeek}% accuracy` : ""}
-          </p>
+        <section
+          id="homeWeekStrip"
+          className="bento-week animate-fade-up animate-delay-2"
+          aria-label="This week’s progress"
+        >
+          <div>
+            <p className="bento-label">This week</p>
+            <p className="bento-week__line">
+              {stats.progress.reviewsWeek} reviews · {stats.progress.sessionsWeek} sessions
+              {stats.progress.accuracyWeek != null
+                ? ` · ${stats.progress.accuracyWeek}% accuracy`
+                : ""}
+            </p>
+          </div>
           <div className="goal-bar goal-bar--compact">
             <div className="goal-bar__meta">
               <span>Today’s goal</span>
@@ -126,47 +176,64 @@ export function HomePage() {
               <div className="goal-bar__fill" style={{ width: `${dailyPct}%` }} />
             </div>
           </div>
-        </div>
-        <button type="button" className="ghost-btn" onClick={() => navigate("progress", { replace: false })}>
-          View progress
-        </button>
-      </section>
-
-      <section
-        id="homeWeakWords"
-        className="home-panel"
-        aria-label="Weak words"
-        hidden={!weak.length}
-      >
-        <div className="home-panel__header">
-          <div>
-            <p className="eyebrow">Needs review</p>
-            <h3>Weak words</h3>
+          <div className="bento-week__footer">
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={() => navigate("progress", { replace: false })}
+            >
+              View progress
+            </button>
           </div>
-          <button
-            id="homeReviewWeakBtn"
-            className="primary-btn"
-            type="button"
-            onClick={() => quiz.startWeakWordsQuiz((p) => navigate(p as "quiz", { replace: false }))}
-          >
-            Review weak words
-          </button>
-        </div>
-        <ul id="homeWeakWordsList" className="home-weak-list">
-          {weak.map((item) => (
-            <li key={item.word}>
+        </section>
+
+        <section
+          id="homeWeakWords"
+          className="bento-focus animate-fade-up animate-delay-3"
+          aria-label="Weak words"
+          hidden={!weak.length}
+        >
+          <div className="bento-focus__head">
+            <div>
+              <p className="bento-label">Needs review</p>
+              <h3>Weak words</h3>
+            </div>
+            <button
+              id="homeReviewWeakBtn"
+              className="primary-btn"
+              type="button"
+              onClick={() => quiz.startWeakWordsQuiz((p) => navigate(p as "quiz", { replace: false }))}
+            >
+              <Zap size={15} aria-hidden="true" />
+              Review
+            </button>
+          </div>
+          <div id="homeWeakWordsList" className="bento-chips">
+            {weak.map((item) => (
               <button
+                key={item.word}
                 type="button"
-                className="link-btn"
+                className="bento-chip"
                 onClick={() => openModal(item.word, <WordDetailModal item={item} />)}
               >
-                {item.word}
+                <span className="bento-chip__word">{item.word}</span>
+                <span className="bento-chip__meaning">{item.meaning}</span>
               </button>
-              <span>{item.meaning}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+            ))}
+          </div>
+        </section>
+
+        <section className="bento-line animate-fade-up animate-delay-3" aria-label="Daily line">
+          <p className="bento-label">Daily line</p>
+          <p id="motivationQuote" className="bento-line__quote">
+            {quote}
+          </p>
+          <button id="newQuoteBtn" className="quote-btn" type="button" onClick={newQuote}>
+            <RefreshCw size={14} aria-hidden="true" />
+            New
+          </button>
+        </section>
+      </div>
     </section>
   );
 }
