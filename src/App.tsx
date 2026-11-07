@@ -6,7 +6,7 @@ import { QuizProvider } from "./state/quizStore";
 import { markBackupExported, shouldRemindBackup } from "./lib/storage";
 import { AppBanner, OfflineBanner } from "./components/layout/Banners";
 import { Topbar } from "./components/layout/Topbar";
-import { Nav } from "./components/layout/Nav";
+import { Nav, NavRail } from "./components/layout/Nav";
 import { ModalHost } from "./components/layout/Modal";
 import { Toast } from "./components/layout/Toast";
 import { HomePage } from "./pages/HomePage";
@@ -273,18 +273,17 @@ function AppInner() {
       <BootstrapEffects />
       <PageVisibilityFix />
       <SearchJump />
-      <AppBanner />
-      <OfflineBanner />
       <div className="page-shell">
-        <div className="site-chrome" id="siteChrome">
-          <Topbar />
-          <Nav />
+        <NavRail />
+        <div className="page-main">
+          <AppBanner />
+          <OfflineBanner />
+          <div className="site-chrome" id="siteChrome">
+            <Topbar />
+          </div>
+          <AppRoutes />
         </div>
-        <AppRoutes />
-        <footer className="footer">
-          <p>Keep learning. Keep growing.</p>
-          <span>One word at a time.</span>
-        </footer>
+        <Nav />
       </div>
       <ModalHost />
       <Toast />

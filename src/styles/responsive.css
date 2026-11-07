@@ -1,9 +1,13 @@
-/* Breakpoints */
+/* Breakpoints — full-screen shell adaptations */
+
 @media (max-width: 960px) {
   .home-grid,
-  .home-study-strip,
   .card-grid,
   .mini-vocab-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-study-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -16,56 +20,44 @@
     padding-left: 12px;
   }
 
-  .hero-card {
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
-
   .hero-aside {
-    padding: var(--space-2) 0 0;
+    padding: 0.85rem 0 0;
     border-left: 0;
-    border-top: 1px solid var(--rule);
+    border-top: 2px solid var(--rule);
   }
 
-  .study-stat {
-    border-right: 1px solid var(--border-subtle);
-    border-bottom: 1px solid var(--border-subtle);
+  .progress-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 900px) {
+  .speak-toast {
+    bottom: 1.25rem;
+    left: calc(var(--rail-w) + 1.25rem);
   }
 
-  .home-study-strip .study-stat:nth-child(2n) {
-    border-right: 0;
-  }
-
-  .home-study-strip .study-stat:nth-last-child(-n + 2) {
-    border-bottom: 0;
+  .offline-banner {
+    bottom: 1.25rem;
+    left: calc(var(--rail-w) + 1.25rem);
   }
 }
 
 @media (max-width: 820px) {
-  .topbar {
-    grid-template-columns: 1fr;
+  .site-chrome {
+    padding-inline: 1rem;
   }
 
-  .nav-link--aside {
+  .brand-sub {
     display: none;
-  }
-
-  .nav-more {
-    display: block;
   }
 
   .topbar-actions {
     max-width: none;
-    justify-self: stretch;
   }
 
-  body.is-scrolled .topbar-actions,
   body.is-scrolled .search-box {
     display: none;
-  }
-
-  body.is-scrolled .page-nav {
-    margin-bottom: 0;
   }
 
   .page-header {
@@ -73,7 +65,11 @@
   }
 
   .speak-toast {
-    bottom: max(72px, env(safe-area-inset-bottom, 0px) + 56px);
+    bottom: calc(var(--dock-h) + 1rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .offline-banner {
+    bottom: calc(var(--dock-h) + 4rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -89,8 +85,9 @@
 }
 
 @media (max-width: 720px) {
-  .page-shell {
-    padding: var(--space-2) var(--space-2) var(--space-4);
+  .page--active {
+    padding-inline: 1rem;
+    padding-bottom: calc(var(--dock-h) + 2rem);
   }
 
   .quiz-meta {
@@ -171,17 +168,8 @@
     width: auto;
   }
 
-  .home-study-strip .study-stat {
-    border-right: 0;
-    border-bottom: 1px solid var(--border-subtle);
-  }
-
-  .home-study-strip .study-stat:last-child {
-    border-bottom: 0;
-  }
-
   .brand-hero {
-    font-size: clamp(3.2rem, 18vw, 4.5rem);
+    font-size: clamp(3.6rem, 20vw, 5.5rem);
   }
 
   .primary-btn,
@@ -193,6 +181,17 @@
   .filter-btn {
     width: auto;
     flex: 0 0 auto;
+  }
+
+  .page-nav {
+    bottom: max(0.65rem, env(safe-area-inset-bottom, 0px));
+    max-width: calc(100vw - 0.75rem);
+  }
+
+  .dock-item,
+  .nav-link {
+    min-width: 44px;
+    min-height: 48px;
   }
 }
 
@@ -207,8 +206,9 @@
   .modal__panel,
   .favorite-btn.is-favorite,
   .topic-favorite-btn.is-favorite,
-  .vocab-card {
-    animation: none;
+  .vocab-card,
+  .animate-fade-up {
+    animation: none !important;
   }
 
   *,

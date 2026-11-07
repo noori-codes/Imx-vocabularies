@@ -1,114 +1,162 @@
-/* IMX — Dark Editorial Cinema + Parchment Light
-   Inspired by premium editorial systems: warm charcoal canvas, cream ink,
-   single amber accent for high-signal moments only. */
+/* IMX — Midnight Studio (refined)
+   Quiet ink canvas. Electric mint as a precise signal — never decoration. */
 
 :root {
   color-scheme: dark;
 
-  /* Canvas & surfaces */
-  --bg: #12100e;
-  --surface: #1a1816;
-  --surface-muted: #161412;
-  --surface-raised: #201d1a;
-  --surface-strong: rgba(18, 16, 14, 0.94);
+  /* Canvas */
+  --bg: #06090e;
+  --bg-elevated: #0a0f16;
+  --surface: #101722;
+  --surface-muted: #0c121a;
+  --surface-raised: #161e2b;
+  --surface-hover: #1a2332;
+  --surface-strong: rgba(10, 15, 22, 0.92);
+  --surface-glass: rgba(16, 23, 34, 0.78);
 
   /* Ink */
-  --text: #f4efe6;
-  --text-secondary: #c8c2b8;
-  --muted: #8f8880;
+  --text: #f0f3f8;
+  --text-secondary: #a9b4c6;
+  --muted: #7a879c;
 
-  /* Single accent — CTAs, eyebrows, progress only */
-  --accent: #d4a574;
-  --accent-soft: rgba(212, 165, 116, 0.14);
-  --accent-strong: #e0b888;
-  --accent-ink: #12100e;
+  /* Accent — mint signal */
+  --accent: #2ee6a8;
+  --accent-soft: rgba(46, 230, 168, 0.1);
+  --accent-strong: #55efb8;
+  --accent-dim: #19b87f;
+  --accent-ink: #03140c;
+  --accent-glow: rgba(46, 230, 168, 0.22);
 
-  /* Borders — hairline hierarchy, no shadow chrome */
-  --border-subtle: rgba(244, 239, 230, 0.06);
-  --border: rgba(244, 239, 230, 0.1);
-  --border-strong: rgba(244, 239, 230, 0.16);
-  --rule: rgba(212, 165, 116, 0.35);
+  --signal: #5bb8ff;
+  --signal-soft: rgba(91, 184, 255, 0.1);
+
+  /* Borders */
+  --border-subtle: rgba(240, 243, 248, 0.055);
+  --border: rgba(240, 243, 248, 0.1);
+  --border-strong: rgba(240, 243, 248, 0.16);
+  --rule: rgba(46, 230, 168, 0.32);
 
   /* Semantic */
-  --danger: #d49090;
-  --success: #7fb89a;
+  --danger: #ff7b8a;
+  --danger-soft: rgba(255, 123, 138, 0.12);
+  --success: #2ee6a8;
+  --success-soft: rgba(46, 230, 168, 0.12);
+  --warn: #f0b84a;
+  --warn-soft: rgba(240, 184, 74, 0.12);
 
-  /* Layout */
-  --radius: 12px;
-  --radius-lg: 16px;
-  --radius-pill: 999px;
+  /* Spacing — keep legacy names used across stylesheets */
   --space-1: 8px;
   --space-2: 16px;
-  --space-3: 32px;
-  --space-4: 48px;
-  --content-max: 1080px;
-  --control-h: 42px;
-  --touch: 44px;
-  --action-col: 148px;
+  --space-3: 24px;
+  --space-4: 40px;
+  --space-5: 56px;
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
 
-  /* Typography scale */
-  --font-sans: "DM Sans", "Outfit", system-ui, sans-serif;
-  --font-serif: "Fraunces", "Literata", "Times New Roman", serif;
-  --fs-xs: 0.7rem;
+  /* Shape */
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+  --radius-pill: 999px;
+
+  /* Layout */
+  --content-max: 1200px;
+  --rail-w: 220px;
+  --page-pad-x: clamp(1rem, 3.2vw, 2rem);
+  --page-pad-y: clamp(0.85rem, 2vw, 1.5rem);
+  --dock-h: 68px;
+  --topbar-h: 56px;
+  --control-h: 40px;
+  --touch: 40px;
+  --action-col: 132px;
+
+  /* Type */
+  --font-sans: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Outfit", "Figtree", system-ui, sans-serif;
+  --font-serif: var(--font-display);
+  --fs-xs: 0.6875rem;
   --fs-sm: 0.875rem;
-  --fs-body: 1rem;
-  --fs-lg: 1.125rem;
-  --fs-h3: 1.25rem;
-  --fs-h2: clamp(1.65rem, 3vw, 2.1rem);
-  --fs-hero: clamp(3.8rem, 10vw, 6rem);
-  --lh-tight: 1.12;
-  --lh-body: 1.65;
+  --fs-body: 0.9375rem;
+  --fs-lg: 1.0625rem;
+  --fs-h3: 1.2rem;
+  --fs-h2: clamp(1.45rem, 2.4vw, 1.85rem);
+  --fs-hero: clamp(3rem, 7vw, 4.75rem);
+  --lh-tight: 1.08;
+  --lh-body: 1.55;
   --tracking-eyebrow: 0.14em;
-  --tracking-tight: -0.025em;
+  --tracking-tight: -0.035em;
 
-  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px color-mix(in srgb, var(--accent) 55%, transparent);
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px color-mix(in srgb, var(--accent) 45%, transparent);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --shadow: none;
-  --shadow-soft: none;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.38);
+  --shadow-soft: 0 8px 28px rgba(0, 0, 0, 0.22);
+  --shadow-glow: 0 0 40px var(--accent-glow);
 
-  /* Category accents — muted, never compete with primary amber */
-  --cat-emotions: #b87a8a;
-  --cat-mindset: #7a9ab8;
-  --cat-character: #b89868;
-  --cat-learning: #6a9a82;
-  --cat-speaking: #a088b0;
-  --cat-lifestyle: #b89868;
-  --cat-society: #8494a8;
-  --cat-growth: #94a868;
+  /* Categories — muted, readable */
+  --cat-emotions: #e8879e;
+  --cat-mindset: #6bb4ef;
+  --cat-character: #e0a86a;
+  --cat-learning: #2ee6a8;
+  --cat-speaking: #b49ae8;
+  --cat-lifestyle: #d9b06a;
+  --cat-society: #7aa0e0;
+  --cat-growth: #9bc46a;
 }
 
 body.light {
   color-scheme: light;
 
-  --bg: #f6f3f1;
-  --surface: #faf8f5;
-  --surface-muted: #efecea;
-  --surface-raised: #fffcfa;
-  --surface-strong: rgba(250, 248, 245, 0.95);
+  --bg: #f4f6f9;
+  --bg-elevated: #eef1f6;
+  --surface: #ffffff;
+  --surface-muted: #f0f3f7;
+  --surface-raised: #ffffff;
+  --surface-hover: #f7f9fc;
+  --surface-strong: rgba(255, 255, 255, 0.92);
+  --surface-glass: rgba(255, 255, 255, 0.82);
 
-  --text: #1c1916;
-  --text-secondary: #4a4540;
-  --muted: #6e6860;
+  --text: #0d1219;
+  --text-secondary: #3d4a5c;
+  --muted: #66758a;
 
-  --accent: #8a6530;
-  --accent-soft: rgba(138, 101, 48, 0.1);
-  --accent-strong: #6e5024;
-  --accent-ink: #fffcfa;
+  --accent: #0c9a6e;
+  --accent-soft: rgba(12, 154, 110, 0.1);
+  --accent-strong: #0a8560;
+  --accent-dim: #087a57;
+  --accent-ink: #f2fffa;
+  --accent-glow: rgba(12, 154, 110, 0.18);
 
-  --border-subtle: rgba(28, 25, 22, 0.06);
-  --border: rgba(28, 25, 22, 0.1);
-  --border-strong: rgba(28, 25, 22, 0.15);
-  --rule: rgba(138, 101, 48, 0.35);
+  --signal: #1a7fd4;
+  --signal-soft: rgba(26, 127, 212, 0.1);
 
-  --danger: #9b4040;
-  --success: #2d6648;
+  --border-subtle: rgba(13, 18, 25, 0.05);
+  --border: rgba(13, 18, 25, 0.09);
+  --border-strong: rgba(13, 18, 25, 0.14);
+  --rule: rgba(12, 154, 110, 0.3);
 
-  --cat-emotions: #a06878;
-  --cat-mindset: #5a7a98;
-  --cat-character: #987848;
-  --cat-learning: #4a8268;
-  --cat-speaking: #886898;
-  --cat-lifestyle: #987848;
-  --cat-society: #687888;
-  --cat-growth: #788858;
+  --danger: #d6455a;
+  --danger-soft: rgba(214, 69, 90, 0.1);
+  --success: #0c9a6e;
+  --success-soft: rgba(12, 154, 110, 0.1);
+  --warn: #b8860b;
+  --warn-soft: rgba(184, 134, 11, 0.1);
+
+  --cat-emotions: #c45a72;
+  --cat-mindset: #2a7fc4;
+  --cat-character: #b87a2e;
+  --cat-learning: #0c9a6e;
+  --cat-speaking: #7a5cbf;
+  --cat-lifestyle: #a87a1a;
+  --cat-society: #3d6fd4;
+  --cat-growth: #5a8f2e;
+
+  --shadow: 0 18px 48px rgba(13, 18, 25, 0.08);
+  --shadow-soft: 0 8px 24px rgba(13, 18, 25, 0.06);
 }

@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-const APP_VERSION = "1.1.4";
+const APP_VERSION = "1.2.0";
 
 export default defineConfig({
   base: "./",
@@ -29,8 +29,8 @@ export default defineConfig({
         start_url: "./",
         scope: "./",
         display: "standalone",
-        background_color: "#12100e",
-        theme_color: "#12100e",
+        background_color: "#05070a",
+        theme_color: "#05070a",
         orientation: "any",
         icons: [
           {

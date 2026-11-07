@@ -14,7 +14,7 @@ export function AppBanner() {
         role="status"
         data-variant={banner.variant}
       >
-        {banner.message}
+        <div className="app-banner__inner">{banner.message}</div>
       </div>
     );
   }
@@ -25,7 +25,7 @@ export function AppBanner() {
       role="status"
       data-variant={banner.variant}
     >
-      {banner.node}
+      <div className="app-banner__inner">{banner.node}</div>
     </div>
   );
 }

@@ -104,7 +104,7 @@ export function AppShellProvider({ children }: { children: ReactNode }) {
     document.body.classList.toggle("light", next === "light");
     const themeMeta = document.querySelector('meta[name="theme-color"]');
     if (themeMeta) {
-      themeMeta.setAttribute("content", next === "light" ? "#f6f3f1" : "#12100e");
+      themeMeta.setAttribute("content", next === "light" ? "#f3f6fa" : "#05070a");
     }
     setTheme(next);
   }, []);

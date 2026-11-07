@@ -1,6 +1,6 @@
 # IMX English Hub
 
-Personal English study journal for vocabulary, presentation topics, quizzes, favorites, progress tracking, and daily motivation quotes.
+Full-screen English study lab for vocabulary, presentation topics, quizzes, favorites, progress tracking, and daily motivation — Midnight Studio UI with a floating dock and immersive exam mode.
 
 ## Run locally
 
