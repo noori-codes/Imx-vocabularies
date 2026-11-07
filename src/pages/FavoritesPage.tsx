@@ -19,7 +19,7 @@ export function FavoritesPage() {
       <div className="page-header">
         <div>
           <p className="eyebrow">Saved</p>
-          <h2>Study highlights</h2>
+          <h2>Your highlights</h2>
         </div>
       </div>
 

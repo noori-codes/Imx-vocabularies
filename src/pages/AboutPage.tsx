@@ -1,14 +1,16 @@
 export function AboutPage() {
   return (
     <section id="about" className="page page--active">
-      <div className="about-card">
+      <div className="about-hero">
         <p className="eyebrow">About</p>
-        <h2>A quiet place for English practice</h2>
-        <p>
-          IMX English Hub keeps daily lessons together: one discussion topic, vocabulary, idioms,
-          quizzes, favorites, and backups. Add or edit content in the browser — custom work stays on
-          this device until you export it.
+        <h2 className="about-hero__title">A quiet place for English practice</h2>
+        <p className="about-hero__lead">
+          IMX keeps vocabulary, idioms, discussion topics, quizzes, favorites, and backups in one
+          focused workspace — so daily practice stays simple.
         </p>
+      </div>
+
+      <div className="about-card about-card--wide">
         <ul className="about-list">
           <li>Eight focused vocabulary categories</li>
           <li>Daily topic packs with ~10 words and ~5 idioms</li>

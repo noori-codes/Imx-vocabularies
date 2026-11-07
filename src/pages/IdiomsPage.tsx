@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Plus } from "lucide-react";
 import { useLibrary } from "../state/libraryStore";
 import { useAppShell } from "../state/appShell";
 import { IdiomCard } from "../components/idioms/IdiomCard";
@@ -54,6 +55,7 @@ export function IdiomsPage() {
             type="button"
             onClick={() => openModal("Add idiom", <IdiomFormModal />)}
           >
+            <Plus size={16} aria-hidden="true" />
             Add idiom
           </button>
           <button

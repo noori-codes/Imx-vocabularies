@@ -1,4 +1,5 @@
 import { FormEvent, useMemo } from "react";
+import { ArrowRight } from "lucide-react";
 import {
   getActivityByDate,
   getProgressStats,
@@ -16,8 +17,10 @@ const heatClass = (count: number) => {
   return "heat-4";
 };
 
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
 export function ProgressPage() {
-  const { progressTick } = useAppShell();
+  const { progressTick, navigate } = useAppShell();
   const streak = useMemo(() => getStudyStreakInfo(), [progressTick]);
   const stats = useMemo(() => getProgressStats(), [progressTick]);
   const goals = useMemo(() => getStudyGoals(), [progressTick]);
@@ -25,6 +28,32 @@ export function ProgressPage() {
 
   const dailyPct = Math.min(100, Math.round((stats.reviewsToday / goals.dailyReviews) * 100));
   const weeklyPct = Math.min(100, Math.round((stats.minutesWeek / goals.weeklyMinutes) * 100));
+
+  /** Align 84 days into Mon-first weeks for a structured heatmap */
+  const heatWeeks = useMemo(() => {
+    if (!activity.length) return [] as { date: string; count: number }[][];
+    const first = new Date(`${activity[0].date}T12:00:00`);
+    const jsDay = first.getDay(); // 0 Sun
+    const mondayOffset = (jsDay + 6) % 7;
+    const padded: ({ date: string; count: number } | null)[] = [
+      ...Array.from({ length: mondayOffset }, () => null),
+      ...activity,
+    ];
+    while (padded.length % 7 !== 0) padded.push(null);
+    const weeks: ({ date: string; count: number } | null)[][] = [];
+    for (let i = 0; i < padded.length; i += 7) {
+      weeks.push(padded.slice(i, i + 7));
+    }
+    return weeks;
+  }, [activity]);
+
+  const mixTotal = Math.max(1, stats.speakingWeek + stats.writingWeek + stats.knownWeek + stats.againWeek);
+  const mixParts = [
+    { key: "speaking", label: "Speaking", value: stats.speakingWeek, color: "var(--signal)" },
+    { key: "writing", label: "Writing", value: stats.writingWeek, color: "var(--cat-speaking)" },
+    { key: "known", label: "Known", value: stats.knownWeek, color: "var(--accent)" },
+    { key: "again", label: "Again", value: stats.againWeek, color: "var(--warn)" },
+  ];
 
   const onGoals = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -44,15 +73,16 @@ export function ProgressPage() {
         </div>
       </div>
 
-      <div className="progress-hero">
-        <div className="progress-streak">
+      <div className="progress-bento">
+        <article className="progress-bento__streak">
           <p className="progress-label">Streak</p>
           <p className="progress-streak__value">{streak.streak}</p>
           <p className="progress-muted">
-            {streak.studiedToday ? "Studied today" : "Study today to keep it"}
+            {streak.studiedToday ? "Studied today — keep the chain." : "Study today to keep it."}
           </p>
-        </div>
-        <div className="progress-stat-grid">
+        </article>
+
+        <div className="progress-bento__stats">
           <div className="progress-stat">
             <span className="progress-label">Reviews today</span>
             <strong>{stats.reviewsToday}</strong>
@@ -70,120 +100,156 @@ export function ProgressPage() {
             <strong>{stats.sessionsWeek}</strong>
           </div>
         </div>
-      </div>
 
-      <section className="progress-panel">
-        <div className="home-panel__header">
-          <div>
-            <p className="eyebrow">Activity</p>
-            <h3>Last 12 weeks</h3>
+        <section className="progress-bento__activity">
+          <div className="progress-panel__head">
+            <div>
+              <p className="eyebrow">Activity</p>
+              <h3>Last 12 weeks</h3>
+            </div>
           </div>
-        </div>
-        <div className="heat-calendar" role="img" aria-label="Study activity calendar">
-          {activity.map(({ date, count }) => (
-            <span
-              key={date}
-              className={`heat-cell ${heatClass(count)}`}
-              title={`${date}: ${count} activity`}
-              data-count={count}
-            />
-          ))}
-        </div>
-        <div className="heat-legend">
-          <span>Less</span>
-          <span className="heat-cell heat-0" />
-          <span className="heat-cell heat-1" />
-          <span className="heat-cell heat-2" />
-          <span className="heat-cell heat-3" />
-          <span className="heat-cell heat-4" />
-          <span>More</span>
-        </div>
-      </section>
+          <div className="heat-wrap">
+            <div className="heat-weekdays" aria-hidden="true">
+              {WEEKDAYS.map((d) => (
+                <span key={d}>{d[0]}</span>
+              ))}
+            </div>
+            <div className="heat-calendar heat-calendar--weeks" role="img" aria-label="Study activity calendar">
+              {heatWeeks.map((week, wi) => (
+                <div key={wi} className="heat-week">
+                  {week.map((cell, di) =>
+                    cell ? (
+                      <span
+                        key={cell.date}
+                        className={`heat-cell ${heatClass(cell.count)}`}
+                        title={`${cell.date}: ${cell.count} activity`}
+                        data-count={cell.count}
+                      />
+                    ) : (
+                      <span key={`pad-${wi}-${di}`} className="heat-cell heat-pad" />
+                    ),
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="heat-legend">
+            <span>Less</span>
+            <span className="heat-cell heat-0" />
+            <span className="heat-cell heat-1" />
+            <span className="heat-cell heat-2" />
+            <span className="heat-cell heat-3" />
+            <span className="heat-cell heat-4" />
+            <span>More</span>
+          </div>
+        </section>
 
-      <section className="progress-panel">
-        <div className="home-panel__header">
-          <div>
-            <p className="eyebrow">Goals</p>
-            <h3>Daily &amp; weekly targets</h3>
-          </div>
-        </div>
-        <div className="goal-bars">
-          <div className="goal-bar">
-            <div className="goal-bar__meta">
-              <span>Daily reviews</span>
-              <span>
-                {stats.reviewsToday} / {goals.dailyReviews}
-              </span>
-            </div>
-            <div className="goal-bar__track">
-              <div className="goal-bar__fill" style={{ width: `${dailyPct}%` }} />
+        <section className="progress-bento__goals">
+          <div className="progress-panel__head">
+            <div>
+              <p className="eyebrow">Goals</p>
+              <h3>Daily &amp; weekly</h3>
             </div>
           </div>
-          <div className="goal-bar">
-            <div className="goal-bar__meta">
-              <span>Weekly minutes (est.)</span>
-              <span>
-                {stats.minutesWeek} / {goals.weeklyMinutes}
-              </span>
+          <div className="goal-bars">
+            <div className="goal-bar">
+              <div className="goal-bar__meta">
+                <span>Daily reviews</span>
+                <span>
+                  {stats.reviewsToday} / {goals.dailyReviews}
+                </span>
+              </div>
+              <div className="goal-bar__track">
+                <div className="goal-bar__fill" style={{ width: `${dailyPct}%` }} />
+              </div>
             </div>
-            <div className="goal-bar__track">
-              <div className="goal-bar__fill" style={{ width: `${weeklyPct}%` }} />
+            <div className="goal-bar">
+              <div className="goal-bar__meta">
+                <span>Weekly minutes</span>
+                <span>
+                  {stats.minutesWeek} / {goals.weeklyMinutes}
+                </span>
+              </div>
+              <div className="goal-bar__track">
+                <div className="goal-bar__fill" style={{ width: `${weeklyPct}%` }} />
+              </div>
             </div>
           </div>
-        </div>
-        <form id="goalsForm" className="form-grid goals-form" onSubmit={onGoals}>
-          <label>
-            Daily review goal
-            <input
-              name="dailyReviews"
-              type="number"
-              min={1}
-              max={200}
-              defaultValue={goals.dailyReviews}
-            />
-          </label>
-          <label>
-            Weekly minutes goal
-            <input
-              name="weeklyMinutes"
-              type="number"
-              min={5}
-              max={1000}
-              defaultValue={goals.weeklyMinutes}
-            />
-          </label>
-          <div className="form-actions full">
+          <form id="goalsForm" className="goals-inline" onSubmit={onGoals}>
+            <label>
+              Daily
+              <input
+                name="dailyReviews"
+                type="number"
+                min={1}
+                max={200}
+                defaultValue={goals.dailyReviews}
+              />
+            </label>
+            <label>
+              Weekly min
+              <input
+                name="weeklyMinutes"
+                type="number"
+                min={5}
+                max={1000}
+                defaultValue={goals.weeklyMinutes}
+              />
+            </label>
             <button type="submit" className="primary-btn">
-              Save goals
+              Save
+            </button>
+          </form>
+        </section>
+
+        <section className="progress-bento__mix">
+          <div className="progress-panel__head">
+            <div>
+              <p className="eyebrow">This week</p>
+              <h3>Practice mix</h3>
+            </div>
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={() => navigate("quiz", { replace: false })}
+            >
+              Open exam
+              <ArrowRight size={14} aria-hidden="true" />
             </button>
           </div>
-        </form>
-      </section>
-
-      <section className="progress-panel">
-        <div className="home-panel__header">
-          <div>
-            <p className="eyebrow">This week</p>
-            <h3>Practice mix</h3>
+          <div
+            className={`mix-bar${mixParts.every((p) => p.value === 0) ? " mix-bar--empty" : ""}`}
+            aria-hidden="true"
+          >
+            {mixParts.every((p) => p.value === 0) ? (
+              <span className="mix-bar__seg" style={{ width: "100%", background: "transparent" }} />
+            ) : (
+              mixParts.map((part) =>
+                part.value > 0 ? (
+                  <span
+                    key={part.key}
+                    className="mix-bar__seg"
+                    style={{
+                      width: `${(part.value / mixTotal) * 100}%`,
+                      background: part.color,
+                    }}
+                    title={`${part.label}: ${part.value}`}
+                  />
+                ) : null,
+              )
+            )}
           </div>
-        </div>
-        <ul className="progress-mix">
-          <li>
-            <span>Speaking drills</span>
-            <strong>{stats.speakingWeek}</strong>
-          </li>
-          <li>
-            <span>Writing prompts</span>
-            <strong>{stats.writingWeek}</strong>
-          </li>
-          <li>
-            <span>Known / again</span>
-            <strong>
-              {stats.knownWeek} / {stats.againWeek}
-            </strong>
-          </li>
-        </ul>
-      </section>
+          <ul className="progress-mix progress-mix--legend">
+            {mixParts.map((part) => (
+              <li key={part.key}>
+                <span className="mix-dot" style={{ background: part.color }} />
+                <span>{part.label}</span>
+                <strong>{part.value}</strong>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
     </section>
   );
 }

@@ -1,11 +1,3 @@
-export const EMPTY_FLOURISH = (
-  <div className="empty-flourish" aria-hidden="true">
-    <span />
-    <span />
-    <span />
-  </div>
-);
-
 export function EmptyState({
   title,
   detail,
@@ -21,7 +13,7 @@ export function EmptyState({
 }) {
   return (
     <div className="empty-state">
-      {EMPTY_FLOURISH}
+      <div className="empty-flourish" aria-hidden="true" />
       <h3>{title}</h3>
       <p>{detail}</p>
       {hasLibrary && showClear ? (

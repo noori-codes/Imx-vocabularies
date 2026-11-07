@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Plus } from "lucide-react";
 import { useLibrary } from "../state/libraryStore";
 import { useAppShell } from "../state/appShell";
 import { TopicCard } from "../components/topic/TopicCard";
@@ -55,6 +56,7 @@ export function TopicsPage() {
             type="button"
             onClick={() => openModal("Add topic", <TopicFormModal />)}
           >
+            <Plus size={16} aria-hidden="true" />
             Add topic
           </button>
           <button
