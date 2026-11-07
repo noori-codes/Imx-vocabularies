@@ -102,6 +102,30 @@ button {
   cursor: pointer;
 }
 
+/* Inline SVG icons (HTML helpers + Lucide className="ui-icon") */
+.ui-icon {
+  display: inline-grid;
+  place-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  line-height: 0;
+  color: inherit;
+}
+
+.ui-icon svg,
+.icon-btn svg,
+.favorite-btn svg,
+.topic-favorite-btn svg,
+.topic-toggle-icon svg,
+.theme-toggle svg,
+.rail-item__icon svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 h1,
 h2,
 h3,

@@ -40,7 +40,7 @@ export function ModalHost() {
             onClick={closeModal}
           >
             <span className="ui-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
                 <path
                   d="M7 7l10 10M17 7 7 17"
                   stroke="currentColor"

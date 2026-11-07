@@ -118,7 +118,7 @@
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  color: var(--muted);
+  color: var(--text-secondary);
   background: transparent;
   transition: background 0.18s var(--ease), color 0.18s var(--ease);
 }
@@ -296,10 +296,10 @@ body.is-scrolled .site-chrome {
 }
 
 .search-box .ui-icon {
-  color: var(--muted);
+  color: var(--text-secondary);
   flex-shrink: 0;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 .search-box input {
@@ -323,16 +323,16 @@ body.is-scrolled .site-chrome {
   display: inline-grid;
   place-content: center;
   border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--muted);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text);
   transition: color 0.2s var(--ease), border-color 0.2s var(--ease), background 0.2s var(--ease);
 }
 
 .theme-toggle:hover {
-  color: var(--text);
-  border-color: var(--border-strong);
-  background: var(--surface-raised);
+  color: var(--accent-strong);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: var(--accent-soft);
 }
 
 /* ——— Floating dock (mobile / tablet) ——— */
@@ -378,7 +378,7 @@ body.is-scrolled .site-chrome {
   min-width: 54px;
   padding: 6px 8px;
   border-radius: 16px;
-  color: var(--muted);
+  color: var(--text-secondary);
   background: transparent;
   border: 0;
   font-size: 0.6rem;

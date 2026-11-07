@@ -304,9 +304,9 @@
   width: 44px;
   height: 44px;
   min-width: 44px;
-  border-color: var(--border);
-  background: var(--surface);
-  color: var(--text-secondary);
+  border-color: var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text);
 }
 
 .quiz-word-row .icon-btn:hover {
