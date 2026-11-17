@@ -53,6 +53,68 @@ export const createIdiom = ({
 const q = (...items: string[]) => items;
 
 export const idiomData: Idiom[] = [
+  // Understood vs admired — 2026-11-18
+  createIdiom({
+    idiom: "An open book",
+    date: "2026-11-18",
+    pronunciation: "ən ˈəʊpən bʊk",
+    meaning: "A person whose thoughts, feelings, and life are easy for others to understand.",
+    example: "She is an open book with close friends, but much quieter around strangers.",
+    usage: "Use to describe someone transparent, honest, or easy to read.",
+    questions: q(
+      "Are you an open book, or do people have to earn access to you?",
+      "Can being an open book make someone more trustworthy — or more vulnerable?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Keep your cards close to your chest",
+    date: "2026-11-18",
+    pronunciation: "kiːp jɔː kɑːdz kləʊs tə jɔː tʃest",
+    meaning: "To hide your true thoughts, feelings, or plans from other people.",
+    example: "He kept his cards close to his chest during the negotiation and revealed very little.",
+    usage: "Use when someone is deliberately private or strategic about what they share.",
+    questions: q(
+      "When is it smart to keep your cards close to your chest?",
+      "Can hiding too much make relationships feel cold?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Let your guard down",
+    date: "2026-11-18",
+    pronunciation: "let jɔː ɡɑːd daʊn",
+    meaning: "To stop protecting yourself emotionally and allow yourself to be more open or vulnerable.",
+    example: "It took months before she finally let her guard down and talked about her past.",
+    usage: "Use when someone becomes more trusting, relaxed, or emotionally open.",
+    questions: q(
+      "What helps you let your guard down with someone?",
+      "Is letting your guard down always a sign of strength?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Keep someone at arm's length",
+    date: "2026-11-18",
+    pronunciation: "kiːp ˈsʌmwʌn ət ɑːmz leŋθ",
+    meaning: "To avoid becoming too close or emotionally involved with someone.",
+    example: "He is friendly at work, but he keeps most colleagues at arm's length.",
+    usage: "Use when discussing emotional distance, caution, or protective boundaries.",
+    questions: q(
+      "Who do you keep at arm's length, and what are you protecting?",
+      "Can keeping people at arm's length become a habit that blocks intimacy?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Beneath the surface",
+    date: "2026-11-18",
+    pronunciation: "bɪˈniːθ ðə ˈsɜːfɪs",
+    meaning: "Hidden under what is visible; referring to deeper feelings, motives, or truths.",
+    example: "Beneath the surface of his confidence was a quiet fear of failing.",
+    usage: "Use when pointing to deeper emotions or realities that are not immediately obvious.",
+    questions: q(
+      "What do people usually miss beneath the surface of your personality?",
+      "Is what lies beneath the surface more important than first impressions?",
+    ),
+  }),
+
   // Planning vs surprise — 2026-11-08
   createIdiom({
     idiom: "Go with the flow",

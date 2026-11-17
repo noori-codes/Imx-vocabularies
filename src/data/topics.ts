@@ -43,6 +43,47 @@ export const createTopic = ({
 
 export const topicData: Topic[] = [
   createTopic({
+    title: "Would You Rather Be Understood Completely — or Admired From a Distance?",
+    date: "2026-11-18",
+    completed: false,
+    vocabulary: [
+      "Intimacy",
+      "Admiration",
+      "Vulnerability",
+      "Authenticity",
+      "Opacity",
+      "Revelation",
+      "Exposure",
+      "Reserve",
+      "Persona",
+      "Presence",
+    ],
+    idioms: [
+      "An open book",
+      "Keep your cards close to your chest",
+      "Let your guard down",
+      "Keep someone at arm's length",
+      "Beneath the surface",
+    ],
+    summary:
+      "Some people want to be known in full — their fears, contradictions, and quiet truths. Others prefer a carefully held image that earns admiration without inviting too much closeness. This topic explores the tension between being understood and being admired, and what we risk when we choose one over the other.",
+    notes:
+      "Discuss friendships, relationships, leadership, and social media. Consider whether mystery creates power, whether full openness creates intimacy or exhaustion, and how authenticity fits between the two. Explore vulnerability, personal boundaries, and whether admiration without understanding is hollow.",
+    questions: [
+      "Would you rather be completely understood by a few people, or admired by many who barely know you?",
+      "Is being mysterious attractive, or does it just keep people away?",
+      "Can someone admire you without truly understanding you?",
+      "What parts of yourself do you keep private — and why?",
+      "Does full openness create intimacy, or can it overwhelm a relationship?",
+      "Is admiration valuable if it is based on an incomplete version of you?",
+      "Have you ever felt lonely while being admired?",
+      "When is keeping people at arm's length wise, and when is it fear?",
+      "Does authenticity require total honesty, or careful selection?",
+      "Who in your life understands you best — and how does that feel different from being admired?",
+    ],
+  }),
+
+  createTopic({
     title: "Is It Better to Plan Every Detail — or Leave Room for Surprise?",
     date: "2026-11-08",
     completed: false,
