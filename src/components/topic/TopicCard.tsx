@@ -1,9 +1,11 @@
 import { useEffect, useId, useState } from "react";
 import { categoryClass, iconChevron, iconShare, iconSpeak, iconStar } from "../../lib/dom";
 import {
+  appendStudyEvent,
   getMissingTopicIdioms,
   getMissingTopicWords,
   getSpeakingPracticeFor,
+  recordStudyActivity,
 } from "../../lib/storage";
 import { formatDate } from "../../lib/helpers";
 import { formatTopicShare, shareContent } from "../../lib/share";
@@ -34,7 +36,7 @@ export function TopicCard({
     isTopicCompleted,
     deleteTopic,
   } = useLibrary();
-  const { openModal, navigate } = useAppShell();
+  const { openModal, navigate, bumpProgress, showToast } = useAppShell();
   const quiz = useQuiz();
   const detailsId = useId();
   const [open, setOpen] = useState(false);
@@ -319,7 +321,19 @@ export function TopicCard({
           <button
             type="button"
             className="ghost-btn complete-topic-btn"
-            onClick={() => toggleTopicCompleted(topic.title)}
+            onClick={() => {
+              const completing = !isCompleted;
+              toggleTopicCompleted(topic.title);
+              if (completing) {
+                recordStudyActivity();
+                appendStudyEvent({
+                  type: "topic_complete",
+                  meta: { title: topic.title, minutes: 5 },
+                });
+                bumpProgress();
+                showToast("Topic marked complete · saved to progress");
+              }
+            }}
           >
             {isCompleted ? "Mark incomplete" : "Mark completed"}
           </button>

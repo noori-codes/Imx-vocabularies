@@ -20,7 +20,7 @@ const heatClass = (count: number) => {
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export function ProgressPage() {
-  const { progressTick, navigate } = useAppShell();
+  const { progressTick, navigate, bumpProgress, showToast } = useAppShell();
   const streak = useMemo(() => getStudyStreakInfo(), [progressTick]);
   const stats = useMemo(() => getProgressStats(), [progressTick]);
   const goals = useMemo(() => getStudyGoals(), [progressTick]);
@@ -62,6 +62,8 @@ export function ProgressPage() {
       dailyReviews: Number(form.get("dailyReviews")),
       weeklyMinutes: Number(form.get("weeklyMinutes")),
     });
+    bumpProgress();
+    showToast("Goals saved");
   };
 
   return (
@@ -175,7 +177,12 @@ export function ProgressPage() {
               </div>
             </div>
           </div>
-          <form id="goalsForm" className="goals-inline" onSubmit={onGoals}>
+          <form
+            id="goalsForm"
+            className="goals-inline"
+            key={`goals-${progressTick}-${goals.dailyReviews}-${goals.weeklyMinutes}`}
+            onSubmit={onGoals}
+          >
             <label>
               Daily
               <input

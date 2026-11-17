@@ -33,6 +33,14 @@ const STORAGE = {
 
 const HISTORY_MAX = 2000;
 
+/** Local calendar YYYY-MM-DD (avoids UTC day drift from toISOString). */
+export const localDateKey = (date = new Date()) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
 export { STORAGE, CATEGORIES, normalizeCategory };
 
 export const readJson = (key, fallback) => {
@@ -516,7 +524,7 @@ export const getSpeakingPracticeFor = (topicTitle) => {
 
 export const getStudyStreakInfo = () => {
   const data = readJson(STORAGE.studyStreak, { lastDate: "", streak: 0 });
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateKey();
   const studiedToday = data.lastDate === today;
   return {
     streak: Number(data.streak) || 0,
@@ -526,13 +534,13 @@ export const getStudyStreakInfo = () => {
 };
 
 export const recordStudyActivity = () => {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateKey();
   const data = readJson(STORAGE.studyStreak, { lastDate: "", streak: 0 });
   if (data.lastDate === today) return getStudyStreakInfo();
 
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayKey = yesterday.toISOString().slice(0, 10);
+  const yesterdayKey = localDateKey(yesterday);
 
   let streak = 1;
   if (data.lastDate === yesterdayKey) streak = (Number(data.streak) || 0) + 1;
@@ -623,11 +631,12 @@ export const getStudyHistory = () => {
 
 export const appendStudyEvent = (event = {}) => {
   const type = String(event.type || "activity").trim() || "activity";
+  const at = event.at || new Date().toISOString();
   const entry = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     type,
-    at: event.at || new Date().toISOString(),
-    date: (event.at || new Date().toISOString()).slice(0, 10),
+    at,
+    date: event.date || (event.at ? String(event.at).slice(0, 10) : localDateKey()),
     meta: event.meta && typeof event.meta === "object" ? event.meta : {},
   };
   const history = getStudyHistory();
@@ -815,7 +824,7 @@ export const getActivityByDate = (days = 84) => {
   for (let i = 0; i < days; i += 1) {
     const d = new Date(today);
     d.setDate(today.getDate() - (days - 1 - i));
-    map.set(d.toISOString().slice(0, 10), 0);
+    map.set(localDateKey(d), 0);
   }
   history.forEach((event) => {
     const key = event.date || String(event.at || "").slice(0, 10);
@@ -829,7 +838,9 @@ export const getActivityByDate = (days = 84) => {
             ? 2
             : event.type === "writing"
               ? 2
-              : 1;
+              : event.type === "topic_complete"
+                ? 3
+                : 1;
     map.set(key, (map.get(key) || 0) + weight);
   });
   return [...map.entries()].map(([date, count]) => ({ date, count }));
@@ -837,10 +848,10 @@ export const getActivityByDate = (days = 84) => {
 
 export const getProgressStats = () => {
   const history = getStudyHistory();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateKey();
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 6);
-  const weekStart = weekAgo.toISOString().slice(0, 10);
+  const weekStart = localDateKey(weekAgo);
 
   let reviewsToday = 0;
   let reviewsWeek = 0;
@@ -872,6 +883,9 @@ export const getProgressStats = () => {
     if (event.type === "writing" && date >= weekStart) {
       writingWeek += 1;
       minutesWeek += Number(event.meta?.minutes) || 4;
+    }
+    if (event.type === "topic_complete" && date >= weekStart) {
+      minutesWeek += Number(event.meta?.minutes) || 5;
     }
   });
 
