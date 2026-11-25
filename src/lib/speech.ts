@@ -180,7 +180,7 @@ const pickEnglishVoice = () => {
   );
 };
 
-const speakWithSpeechSynthesis = (phrase, token) =>
+const speakWithSpeechSynthesis = (phrase, token, rate = 0.92) =>
   new Promise((resolve) => {
     if (
       token !== speakToken ||
@@ -195,7 +195,7 @@ const speakWithSpeechSynthesis = (phrase, token) =>
 
     const utterance = new SpeechSynthesisUtterance(phrase);
     utterance.lang = "en-US";
-    utterance.rate = 0.92;
+    utterance.rate = Math.min(1.2, Math.max(0.55, rate));
     utterance.pitch = 1;
     utterance.volume = 1;
 
@@ -369,9 +369,18 @@ export const unlockAudio = () => {
   }
 };
 
-export const speakWord = async (text) => {
+/**
+ * @param {string} text
+ * @param {{ rate?: number, preferSynth?: boolean }=} options
+ *   rate — speech rate for synth playback (default 0.92; use ~0.75 for slow)
+ *   preferSynth — skip remote MP3 and use speechSynthesis (needed for slow rate)
+ */
+export const speakWord = async (text, options = {}) => {
   const phrase = normalizePhrase(text);
   if (!phrase) return;
+
+  const rate = typeof options.rate === "number" ? options.rate : 0.92;
+  const preferSynth = Boolean(options.preferSynth) || rate < 0.88;
 
   unlockAudio();
 
@@ -385,15 +394,17 @@ export const speakWord = async (text) => {
     }
   }
 
-  try {
-    if (await tryRemoteSources(phrase, token)) return;
-  } catch (error) {
-    console.warn("Remote pronunciation failed", error);
+  if (!preferSynth) {
+    try {
+      if (await tryRemoteSources(phrase, token)) return;
+    } catch (error) {
+      console.warn("Remote pronunciation failed", error);
+    }
   }
 
   if (token !== speakToken) return;
 
-  const spoke = await speakWithSpeechSynthesis(phrase, token);
+  const spoke = await speakWithSpeechSynthesis(phrase, token, rate);
   if (spoke || token !== speakToken) return;
 
   // Quiet, non-technical fallback — never mention speech-dispatcher / Linux.

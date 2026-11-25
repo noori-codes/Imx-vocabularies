@@ -87,6 +87,13 @@ export function HomePage() {
             >
               Browse words
             </button>
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={() => navigate("speak", { replace: false })}
+            >
+              Speak with partner
+            </button>
           </div>
         </article>
 

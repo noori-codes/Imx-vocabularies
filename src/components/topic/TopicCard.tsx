@@ -36,7 +36,7 @@ export function TopicCard({
     isTopicCompleted,
     deleteTopic,
   } = useLibrary();
-  const { openModal, navigate, bumpProgress, showToast } = useAppShell();
+  const { openModal, navigate, bumpProgress, showToast, setFocusTopicTitle } = useAppShell();
   const quiz = useQuiz();
   const detailsId = useId();
   const [open, setOpen] = useState(false);
@@ -335,6 +335,16 @@ export function TopicCard({
             onClick={() => openModal("Speaking practice", <SpeakingPracticeModal entry={topic} />)}
           >
             Speaking practice
+          </button>
+          <button
+            type="button"
+            className="ghost-btn shadow-topic-btn"
+            onClick={() => {
+              setFocusTopicTitle(topic.title);
+              navigate("speak", { replace: false });
+            }}
+          >
+            Listen &amp; shadow
           </button>
           <button
             type="button"

@@ -16,6 +16,7 @@ export type AppPage =
   | "idioms"
   | "topics"
   | "quiz"
+  | "speak"
   | "progress"
   | "favorites"
   | "data"
@@ -67,6 +68,7 @@ const VALID_PAGES: AppPage[] = [
   "idioms",
   "topics",
   "quiz",
+  "speak",
   "progress",
   "favorites",
   "data",

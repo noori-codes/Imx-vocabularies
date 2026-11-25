@@ -98,6 +98,7 @@ export type PageId =
   | "idioms"
   | "topics"
   | "quiz"
+  | "speak"
   | "progress"
   | "favorites"
   | "data"

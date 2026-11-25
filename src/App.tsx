@@ -14,6 +14,7 @@ import { WordsPage } from "./pages/WordsPage";
 import { IdiomsPage } from "./pages/IdiomsPage";
 import { TopicsPage } from "./pages/TopicsPage";
 import { ExamPage } from "./pages/ExamPage";
+import { SpeakPage } from "./pages/SpeakPage";
 import { ProgressPage } from "./pages/ProgressPage";
 import { FavoritesPage } from "./pages/FavoritesPage";
 import { DataPage } from "./pages/DataPage";
@@ -27,6 +28,7 @@ function AppRoutes() {
     idioms: <IdiomsPage />,
     topics: <TopicsPage />,
     quiz: <ExamPage />,
+    speak: <SpeakPage />,
     progress: <ProgressPage />,
     favorites: <FavoritesPage />,
     data: <DataPage />,
