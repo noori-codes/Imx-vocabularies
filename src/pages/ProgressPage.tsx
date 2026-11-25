@@ -9,15 +9,21 @@ import {
 } from "../lib/storage";
 import { useAppShell } from "../state/appShell";
 
-const heatClass = (count: number) => {
-  if (count <= 0) return "heat-0";
-  if (count <= 2) return "heat-1";
-  if (count <= 5) return "heat-2";
-  if (count <= 10) return "heat-3";
-  return "heat-4";
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+const dayTone = (count: number) => {
+  if (count <= 0) return "day-0";
+  if (count <= 2) return "day-1";
+  if (count <= 5) return "day-2";
+  if (count <= 10) return "day-3";
+  return "day-4";
 };
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const shortMonth = (iso: string) => {
+  const date = new Date(`${iso.slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString(undefined, { month: "short" });
+};
 
 export function ProgressPage() {
   const { progressTick, navigate, bumpProgress, showToast } = useAppShell();
@@ -29,29 +35,46 @@ export function ProgressPage() {
   const dailyPct = Math.min(100, Math.round((stats.reviewsToday / goals.dailyReviews) * 100));
   const weeklyPct = Math.min(100, Math.round((stats.minutesWeek / goals.weeklyMinutes) * 100));
 
-  /** Align 84 days into Mon-first weeks for a structured heatmap */
-  const heatWeeks = useMemo(() => {
-    if (!activity.length) return [] as { date: string; count: number }[][];
+  const recentDays = useMemo(() => activity.slice(-7), [activity]);
+
+  const weekBars = useMemo(() => {
+    if (!activity.length) return [] as { key: string; label: string; total: number }[];
     const first = new Date(`${activity[0].date}T12:00:00`);
-    const jsDay = first.getDay(); // 0 Sun
+    const jsDay = first.getDay();
     const mondayOffset = (jsDay + 6) % 7;
     const padded: ({ date: string; count: number } | null)[] = [
       ...Array.from({ length: mondayOffset }, () => null),
       ...activity,
     ];
     while (padded.length % 7 !== 0) padded.push(null);
-    const weeks: ({ date: string; count: number } | null)[][] = [];
+
+    const bars: { key: string; label: string; total: number }[] = [];
     for (let i = 0; i < padded.length; i += 7) {
-      weeks.push(padded.slice(i, i + 7));
+      const week = padded.slice(i, i + 7);
+      const days = week.filter(Boolean) as { date: string; count: number }[];
+      if (!days.length) continue;
+      const total = days.reduce((sum, day) => sum + day.count, 0);
+      const mid = days[Math.floor(days.length / 2)] || days[0];
+      bars.push({
+        key: days[0].date,
+        label: shortMonth(mid.date),
+        total,
+      });
     }
-    return weeks;
+    return bars.slice(-12);
   }, [activity]);
 
-  const mixTotal = Math.max(1, stats.speakingWeek + stats.writingWeek + stats.knownWeek + stats.againWeek);
+  const maxWeekTotal = Math.max(1, ...weekBars.map((bar) => bar.total));
+
+  const mixTotal = Math.max(
+    1,
+    stats.speakingWeek + stats.writingWeek + stats.topicsWeek + stats.knownWeek + stats.againWeek,
+  );
   const mixParts = [
+    { key: "topics", label: "Topics", value: stats.topicsWeek, color: "var(--accent)" },
     { key: "speaking", label: "Speaking", value: stats.speakingWeek, color: "var(--signal)" },
     { key: "writing", label: "Writing", value: stats.writingWeek, color: "var(--cat-speaking)" },
-    { key: "known", label: "Known", value: stats.knownWeek, color: "var(--accent)" },
+    { key: "known", label: "Known", value: stats.knownWeek, color: "var(--cat-learning)" },
     { key: "again", label: "Again", value: stats.againWeek, color: "var(--warn)" },
   ];
 
@@ -107,42 +130,47 @@ export function ProgressPage() {
           <div className="progress-panel__head">
             <div>
               <p className="eyebrow">Activity</p>
-              <h3>Last 12 weeks</h3>
+              <h3>Study rhythm</h3>
             </div>
           </div>
-          <div className="heat-wrap">
-            <div className="heat-weekdays" aria-hidden="true">
-              {WEEKDAYS.map((d) => (
-                <span key={d}>{d[0]}</span>
-              ))}
+
+          <div className="activity-days" role="list" aria-label="Last 7 days">
+            {recentDays.map((day, index) => {
+              const date = new Date(`${day.date}T12:00:00`);
+              const weekday = WEEKDAYS[(date.getDay() + 6) % 7];
+              const isToday = index === recentDays.length - 1;
+              return (
+                <div
+                  key={day.date}
+                  className={`activity-day ${dayTone(day.count)}${isToday ? " is-today" : ""}`}
+                  role="listitem"
+                  title={`${day.date}: ${day.count} activity`}
+                >
+                  <span className="activity-day__label">{weekday}</span>
+                  <span className="activity-day__value">{day.count}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="activity-weeks">
+            <div className="activity-weeks__head">
+              <span>Last 12 weeks</span>
+              <span>{weekBars.reduce((sum, bar) => sum + bar.total, 0)} total</span>
             </div>
-            <div className="heat-calendar heat-calendar--weeks" role="img" aria-label="Study activity calendar">
-              {heatWeeks.map((week, wi) => (
-                <div key={wi} className="heat-week">
-                  {week.map((cell, di) =>
-                    cell ? (
-                      <span
-                        key={cell.date}
-                        className={`heat-cell ${heatClass(cell.count)}`}
-                        title={`${cell.date}: ${cell.count} activity`}
-                        data-count={cell.count}
-                      />
-                    ) : (
-                      <span key={`pad-${wi}-${di}`} className="heat-cell heat-pad" />
-                    ),
-                  )}
+            <div className="activity-bars" role="img" aria-label="Weekly study activity">
+              {weekBars.map((bar) => (
+                <div key={bar.key} className="activity-bar" title={`${bar.key}: ${bar.total}`}>
+                  <div className="activity-bar__track">
+                    <div
+                      className={`activity-bar__fill${bar.total > 0 ? "" : " is-empty"}`}
+                      style={{ height: `${Math.max(bar.total > 0 ? 12 : 0, (bar.total / maxWeekTotal) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="activity-bar__label">{bar.label}</span>
                 </div>
               ))}
             </div>
-          </div>
-          <div className="heat-legend">
-            <span>Less</span>
-            <span className="heat-cell heat-0" />
-            <span className="heat-cell heat-1" />
-            <span className="heat-cell heat-2" />
-            <span className="heat-cell heat-3" />
-            <span className="heat-cell heat-4" />
-            <span>More</span>
           </div>
         </section>
 

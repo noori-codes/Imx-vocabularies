@@ -350,10 +350,15 @@ export function TopicCard({
               const completing = !isCompleted;
               toggleTopicCompleted(topic.title);
               if (completing) {
+                const reviewWeight = Math.max(1, topic.vocabulary.length);
                 recordStudyActivity();
                 appendStudyEvent({
                   type: "topic_complete",
-                  meta: { title: topic.title, minutes: 5 },
+                  meta: {
+                    title: topic.title,
+                    reviews: reviewWeight,
+                    minutes: Math.max(5, Math.round(reviewWeight * 0.5)),
+                  },
                 });
                 bumpProgress();
                 showToast("Topic marked complete · saved to progress");

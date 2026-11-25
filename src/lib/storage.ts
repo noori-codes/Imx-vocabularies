@@ -636,7 +636,7 @@ export const appendStudyEvent = (event = {}) => {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     type,
     at,
-    date: event.date || (event.at ? String(event.at).slice(0, 10) : localDateKey()),
+    date: event.date || localDateKey(event.at ? new Date(event.at) : new Date()),
     meta: event.meta && typeof event.meta === "object" ? event.meta : {},
   };
   const history = getStudyHistory();
@@ -860,6 +860,7 @@ export const getProgressStats = () => {
   let sessionsWeek = 0;
   let speakingWeek = 0;
   let writingWeek = 0;
+  let topicsWeek = 0;
   let minutesWeek = 0;
 
   history.forEach((event) => {
@@ -884,8 +885,14 @@ export const getProgressStats = () => {
       writingWeek += 1;
       minutesWeek += Number(event.meta?.minutes) || 4;
     }
-    if (event.type === "topic_complete" && date >= weekStart) {
-      minutesWeek += Number(event.meta?.minutes) || 5;
+    if (event.type === "topic_complete") {
+      const reviewWeight = Math.max(1, Number(event.meta?.reviews) || 5);
+      if (date === today) reviewsToday += reviewWeight;
+      if (date >= weekStart) {
+        reviewsWeek += reviewWeight;
+        topicsWeek += 1;
+        minutesWeek += Number(event.meta?.minutes) || 5;
+      }
     }
   });
 
@@ -896,6 +903,7 @@ export const getProgressStats = () => {
     sessionsWeek,
     speakingWeek,
     writingWeek,
+    topicsWeek,
     minutesWeek,
     accuracyWeek: graded ? Math.round((knownWeek / graded) * 100) : null,
     knownWeek,
