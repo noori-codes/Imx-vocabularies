@@ -327,7 +327,7 @@ export function TopicCard({
             className="ghost-btn exam-topic-btn"
             onClick={() => quiz.startTopicExam(topic.title, (p) => navigate(p as "quiz", { replace: false }))}
           >
-            Exam session (10)
+            Take exam (10 · MCQ)
           </button>
           <button
             type="button"

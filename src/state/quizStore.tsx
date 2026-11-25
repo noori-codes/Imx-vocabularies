@@ -10,15 +10,20 @@ import {
 } from "react";
 import { buildClozePrompt } from "../lib/cloze";
 import {
+  buildMcqChoices,
   buildQuizQueue,
   bumpRequeueCount,
   canRequeueWord,
   emptySessionStats,
+  EXAM_PASS_THRESHOLD,
+  EXAM_SESSION_SIZE,
   QUIZ_CARD_TIMER_SEC,
   QUIZ_SESSION_SIZE,
   sessionAccuracy,
+  sessionPassed,
   shuffleStable,
   wordsMatchTyped,
+  type QuizSessionKind,
   type QuizSessionStats,
 } from "../lib/quizLogic";
 import {
@@ -34,8 +39,15 @@ import {
 import type { QuizMode, QuizScope, Word } from "../types/models";
 import { useLibrary } from "./libraryStore";
 
-export { QUIZ_SESSION_SIZE, QUIZ_CARD_TIMER_SEC, sessionAccuracy };
-export type { QuizSessionStats };
+export {
+  QUIZ_SESSION_SIZE,
+  EXAM_SESSION_SIZE,
+  EXAM_PASS_THRESHOLD,
+  QUIZ_CARD_TIMER_SEC,
+  sessionAccuracy,
+  sessionPassed,
+};
+export type { QuizSessionStats, QuizSessionKind };
 
 type QuizContextValue = {
   quizScope: QuizScope | string;
@@ -48,6 +60,7 @@ type QuizContextValue = {
   quizRevealed: boolean;
   quizForceAll: boolean;
   quizSessionLimit: number | null;
+  quizSessionKind: QuizSessionKind;
   quizTypeChecked: boolean;
   quizListeningHeard: boolean;
   quizCardTimerRemaining: number;
@@ -55,13 +68,14 @@ type QuizContextValue = {
   quizMcqChoices: Word[];
   showSummary: boolean;
   isSessionActive: boolean;
+  examLocked: boolean;
   setQuizScope: (scope: string) => void;
   setQuizMode: (mode: QuizMode) => void;
   setQuizCategoryFilter: (cat: string) => void;
   setQuizTimerEnabled: (v: boolean) => void;
   setQuizRequeueMissed: (v: boolean) => void;
   persistQuizSettings: () => void;
-  getQuizWordPool: () => Word[];
+  getQuizWordPool: (scopeOverride?: string) => Word[];
   describeQuizScope: () => string;
   describeQuizMode: () => string;
   currentQuizItem: () => Word | null;
@@ -73,6 +87,7 @@ type QuizContextValue = {
     restart?: boolean;
     /** Build against this scope immediately (avoids stale-state races). */
     scopeOverride?: string;
+    kind?: QuizSessionKind;
   }) => void;
   setQuizRevealed: (v: boolean) => void;
   setQuizListeningHeard: (v: boolean) => void;
@@ -133,6 +148,7 @@ export function QuizProvider({
   const [quizRevealed, setQuizRevealed] = useState(false);
   const [quizForceAll, setQuizForceAll] = useState(false);
   const [quizSessionLimit, setQuizSessionLimit] = useState<number | null>(null);
+  const [quizSessionKind, setQuizSessionKind] = useState<QuizSessionKind>("practice");
   const [quizTypeChecked, setQuizTypeChecked] = useState(false);
   const [quizListeningHeard, setQuizListeningHeard] = useState(false);
   const [quizMcqChoices, setQuizMcqChoices] = useState<Word[]>([]);
@@ -236,46 +252,30 @@ export function QuizProvider({
     if (quizScope === "weak") return "Weak words";
     if (String(quizScope).startsWith("topic:")) {
       const title = quizScope.slice("topic:".length);
-      return quizSessionLimit === 10 ? `Topic exam: ${title}` : `Topic: ${title}`;
+      return quizSessionKind === "exam" ? `Topic exam · ${title}` : `Practice · ${title}`;
     }
     if (String(quizScope).startsWith("idiom:")) {
       const phrase = quizScope.slice("idiom:".length);
-      return quizSessionLimit ? `Idiom exam: ${phrase}` : `Idiom: ${phrase}`;
+      return quizSessionKind === "exam" ? `Idiom exam · ${phrase}` : `Practice · ${phrase}`;
     }
-    return "Exam practice";
-  }, [quizScope, quizSessionLimit]);
+    return quizSessionKind === "exam" ? "Exam session" : "Practice session";
+  }, [quizScope, quizSessionKind]);
 
   const currentQuizItem = useCallback(
     () => quizQueue[quizIndex] || null,
     [quizIndex, quizQueue],
   );
 
-  const pickMcqChoices = useCallback((correct: Word, pool: Word[]) => {
-    const sameCategory = pool.filter(
-      (item) =>
-        item.word.toLowerCase() !== correct.word.toLowerCase() &&
-        item.category === correct.category,
-    );
-    const fallback = pool.filter(
-      (item) => item.word.toLowerCase() !== correct.word.toLowerCase(),
-    );
-    const distractorPool = sameCategory.length >= 3 ? sameCategory : fallback;
-    const distractors = shuffleStable(distractorPool).slice(0, 3);
-    while (distractors.length < 3 && fallback.length) {
-      const next = fallback.find(
-        (item) =>
-          !distractors.some((d) => d.word === item.word) && item.word !== correct.word,
-      );
-      if (!next) break;
-      distractors.push(next);
-    }
-    return shuffleStable([correct, ...distractors.slice(0, 3)]);
-  }, []);
+  const pickMcqChoices = useCallback(
+    (correct: Word, pool: Word[]) => buildMcqChoices(correct, pool, vocabularyData),
+    [vocabularyData],
+  );
 
   const hideSummary = useCallback(() => setShowSummary(false), []);
 
   const logSessionEnd = useCallback(
     (stats: QuizSessionStats) => {
+      const accuracy = sessionAccuracy(stats);
       appendStudyEvent({
         type: "quiz_session",
         meta: {
@@ -283,14 +283,16 @@ export function QuizProvider({
           again: stats.again,
           total: stats.total,
           answered: stats.answered,
-          accuracy: sessionAccuracy(stats),
+          accuracy,
           mode: modeRef.current,
+          kind: quizSessionKind,
+          passed: quizSessionKind === "exam" ? sessionPassed(stats) : null,
           minutes: Math.max(2, Math.round(stats.answered * 0.35)),
         },
       });
       onProgressRefresh?.();
     },
-    [onProgressRefresh],
+    [onProgressRefresh, quizSessionKind],
   );
 
   const finishSessionSummary = useCallback(() => {
@@ -307,12 +309,14 @@ export function QuizProvider({
       limit = null,
       restart = true,
       scopeOverride,
+      kind,
     }: {
       forceAll?: boolean;
       preserveForce?: boolean;
       limit?: number | null;
       restart?: boolean;
       scopeOverride?: string;
+      kind?: QuizSessionKind;
     } = {}) => {
       const midSession =
         queueRef.current.length > 0 && indexRef.current < queueRef.current.length;
@@ -321,6 +325,9 @@ export function QuizProvider({
       if (!restart && (midSession || showSummary)) return;
 
       const scope = scopeOverride ?? quizScope;
+      const nextKind = kind ?? (preserveForce ? quizSessionKind : "practice");
+      setQuizSessionKind(nextKind);
+
       const effectiveForceAll = !preserveForce ? forceAll : forceAll || quizForceAll;
       if (!preserveForce) setQuizForceAll(forceAll);
       else if (forceAll) setQuizForceAll(true);
@@ -339,6 +346,7 @@ export function QuizProvider({
         scope,
         forceAll: effectiveForceAll,
         limit: limit ?? (preserveForce ? quizSessionLimit : null),
+        kind: nextKind,
       });
 
       setQuizQueue(queue);
@@ -359,6 +367,7 @@ export function QuizProvider({
       getQuizWordPool,
       quizForceAll,
       quizScope,
+      quizSessionKind,
       quizSessionLimit,
       showSummary,
     ],
@@ -403,7 +412,9 @@ export function QuizProvider({
       statsRef.current = nextStats;
 
       let nextQueue = queueRef.current;
+      // Exams never re-queue — one pass, scored as-is.
       if (
+        quizSessionKind !== "exam" &&
         !knewIt &&
         canRequeueWord(
           current.word,
@@ -440,7 +451,7 @@ export function QuizProvider({
         advancingRef.current = false;
       });
     },
-    [clearAdvanceTimer, clearCardTimer, logSessionEnd, onProgressRefresh],
+    [clearAdvanceTimer, clearCardTimer, logSessionEnd, onProgressRefresh, quizSessionKind],
   );
 
   const checkTypedQuizAnswer = useCallback(
@@ -482,10 +493,14 @@ export function QuizProvider({
       .filter(Boolean) as Word[];
     clearAdvanceTimer();
     advancingRef.current = false;
+    setQuizSessionKind("practice");
+    setQuizRequeueMissedState(true);
     setQuizQueue(queue);
     queueRef.current = queue;
     setQuizSessionStats(emptySessionStats(queue.length));
+    statsRef.current = emptySessionStats(queue.length);
     setRequeueCounts({});
+    requeueCountsRef.current = {};
     setQuizIndex(0);
     indexRef.current = 0;
     setQuizRevealed(false);
@@ -609,9 +624,15 @@ export function QuizProvider({
       const scope = `topic:${title}`;
       setQuizScope(scope);
       setQuizSessionLimit(null);
+      setQuizRequeueMissedState(true);
       persistQuizSettings();
       navigate("quiz");
-      prepareQuiz({ forceAll: true, restart: true, scopeOverride: scope });
+      prepareQuiz({
+        forceAll: true,
+        restart: true,
+        scopeOverride: scope,
+        kind: "practice",
+      });
     },
     [persistQuizSettings, prepareQuiz, setQuizScope],
   );
@@ -620,11 +641,19 @@ export function QuizProvider({
     (title: string, navigate: (page: string) => void) => {
       const scope = `topic:${title}`;
       setQuizScope(scope);
-      setQuizModeState("flashcard");
-      setQuizSessionLimit(10);
+      setQuizModeState("mcq");
+      setQuizTimerEnabledState(true);
+      setQuizRequeueMissedState(false);
+      setQuizSessionLimit(EXAM_SESSION_SIZE);
       persistQuizSettings();
       navigate("quiz");
-      prepareQuiz({ forceAll: true, limit: 10, restart: true, scopeOverride: scope });
+      prepareQuiz({
+        forceAll: true,
+        limit: EXAM_SESSION_SIZE,
+        restart: true,
+        scopeOverride: scope,
+        kind: "exam",
+      });
     },
     [persistQuizSettings, prepareQuiz, setQuizScope],
   );
@@ -634,9 +663,15 @@ export function QuizProvider({
       const scope = `idiom:${phrase}`;
       setQuizScope(scope);
       setQuizSessionLimit(null);
+      setQuizRequeueMissedState(true);
       persistQuizSettings();
       navigate("quiz");
-      prepareQuiz({ forceAll: true, restart: true, scopeOverride: scope });
+      prepareQuiz({
+        forceAll: true,
+        restart: true,
+        scopeOverride: scope,
+        kind: "practice",
+      });
     },
     [persistQuizSettings, prepareQuiz, setQuizScope],
   );
@@ -644,14 +679,17 @@ export function QuizProvider({
   const startIdiomExam = useCallback(
     (navigate: (page: string) => void) => {
       setQuizScope("idioms");
-      setQuizModeState("flashcard");
+      setQuizModeState("mcq");
+      setQuizTimerEnabledState(true);
+      setQuizRequeueMissedState(false);
       persistQuizSettings();
       navigate("quiz");
       prepareQuiz({
         forceAll: true,
-        limit: Math.min(10, Math.max(1, idiomData.length)),
+        limit: Math.min(EXAM_SESSION_SIZE, Math.max(1, idiomData.length)),
         restart: true,
         scopeOverride: "idioms",
+        kind: "exam",
       });
     },
     [idiomData.length, persistQuizSettings, prepareQuiz, setQuizScope],
@@ -661,12 +699,24 @@ export function QuizProvider({
     (navigate: (page: string) => void) => {
       setQuizScope("weak");
       setQuizSessionLimit(null);
+      setQuizRequeueMissedState(true);
       persistQuizSettings();
       navigate("quiz");
-      prepareQuiz({ forceAll: true, restart: true, scopeOverride: "weak" });
+      prepareQuiz({
+        forceAll: true,
+        restart: true,
+        scopeOverride: "weak",
+        kind: "practice",
+      });
     },
     [persistQuizSettings, prepareQuiz, setQuizScope],
   );
+
+  const examLocked =
+    quizSessionKind === "exam" &&
+    !showSummary &&
+    quizQueue.length > 0 &&
+    quizIndex < quizQueue.length;
 
   const value = useMemo(
     (): QuizContextValue => ({
@@ -680,6 +730,7 @@ export function QuizProvider({
       quizRevealed,
       quizForceAll,
       quizSessionLimit,
+      quizSessionKind,
       quizTypeChecked,
       quizListeningHeard,
       quizCardTimerRemaining,
@@ -687,6 +738,7 @@ export function QuizProvider({
       quizMcqChoices,
       showSummary,
       isSessionActive,
+      examLocked,
       setQuizScope,
       setQuizMode,
       setQuizCategoryFilter,
@@ -730,6 +782,7 @@ export function QuizProvider({
       quizRevealed,
       quizForceAll,
       quizSessionLimit,
+      quizSessionKind,
       quizTypeChecked,
       quizListeningHeard,
       quizCardTimerRemaining,
@@ -737,6 +790,7 @@ export function QuizProvider({
       quizMcqChoices,
       showSummary,
       isSessionActive,
+      examLocked,
       setQuizScope,
       setQuizMode,
       setQuizCategoryFilter,

@@ -2,11 +2,15 @@ import type { Word } from "../types/models";
 import { getDueWords, getQuizProgress } from "./storage";
 
 export const QUIZ_SESSION_SIZE = 15;
+export const EXAM_SESSION_SIZE = 10;
+export const EXAM_PASS_THRESHOLD = 70;
 export const QUIZ_CARD_TIMER_SEC = 20;
 /** Cap how many times a missed card can be re-queued in one session. */
 export const QUIZ_MAX_REQUEUES_PER_WORD = 1;
 /** Hard cap so requeues can't explode a session. */
 export const QUIZ_MAX_QUEUE_GROWTH = 1.6;
+
+export type QuizSessionKind = "practice" | "exam";
 
 export type QuizSessionStats = {
   known: number;
@@ -29,6 +33,12 @@ export const emptySessionStats = (total = 0): QuizSessionStats => ({
 export const sessionAccuracy = (stats: QuizSessionStats): number | null => {
   if (!stats.answered) return null;
   return Math.round((stats.known / stats.answered) * 100);
+};
+
+export const sessionPassed = (stats: QuizSessionStats, threshold = EXAM_PASS_THRESHOLD) => {
+  const accuracy = sessionAccuracy(stats);
+  if (accuracy == null) return null;
+  return accuracy >= threshold;
 };
 
 const normalizeTypedWord = (value: string) =>
@@ -85,6 +95,8 @@ type BuildQueueOpts = {
   forceAll: boolean;
   limit: number | null;
   sessionDefault?: number;
+  /** Exam queues prefer core vocabulary before idioms. */
+  kind?: QuizSessionKind;
 };
 
 /**
@@ -92,6 +104,7 @@ type BuildQueueOpts = {
  * - Due scope: only SRS-due items, overdue first, then never-seen
  * - Force/all scopes: shuffle with a soft session cap
  * - Topic/idiom scoped exams keep their explicit limit
+ * - Exam sessions prefer vocabulary words, then idioms to fill
  */
 export const buildQuizQueue = ({
   pool,
@@ -99,6 +112,7 @@ export const buildQuizQueue = ({
   forceAll,
   limit,
   sessionDefault = QUIZ_SESSION_SIZE,
+  kind = "practice",
 }: BuildQueueOpts): Word[] => {
   const useAllInScope =
     forceAll ||
@@ -112,14 +126,18 @@ export const buildQuizQueue = ({
   let items: Word[];
 
   if (useAllInScope) {
-    items = shuffleStable(prioritizePool(pool));
+    items =
+      kind === "exam" && String(scope).startsWith("topic:")
+        ? buildTopicExamPool(pool)
+        : shuffleStable(prioritizePool(pool));
   } else {
     const due = getDueWords(pool);
     items = due.map(({ item }) => item);
   }
 
-  const sessionCap = limit ?? sessionDefault;
+  const sessionCap = limit ?? (kind === "exam" ? EXAM_SESSION_SIZE : sessionDefault);
   const shouldCap =
+    kind === "exam" ||
     !useAllInScope ||
     (!String(scope).startsWith("topic:") && !String(scope).startsWith("idiom:")) ||
     limit != null;
@@ -129,6 +147,47 @@ export const buildQuizQueue = ({
   }
 
   return items;
+};
+
+/** Vocab first (shuffled by priority), then idioms if the exam still needs cards. */
+export const buildTopicExamPool = (pool: Word[]): Word[] => {
+  const words = prioritizePool(pool.filter((item) => !item.isIdiom));
+  const idioms = prioritizePool(pool.filter((item) => item.isIdiom));
+  return [...shuffleStable(words), ...shuffleStable(idioms)];
+};
+
+/** Build MCQ options; use distractorPool when the scoped pool is too small. */
+export const buildMcqChoices = (
+  correct: Word,
+  pool: Word[],
+  distractorPool: Word[] = pool,
+): Word[] => {
+  const notCorrect = (item: Word) => item.word.toLowerCase() !== correct.word.toLowerCase();
+  const sameCategory = pool.filter(
+    (item) => notCorrect(item) && item.category === correct.category,
+  );
+  const scopedFallback = pool.filter(notCorrect);
+  const globalSame = distractorPool.filter(
+    (item) => notCorrect(item) && item.category === correct.category,
+  );
+  const globalFallback = distractorPool.filter(notCorrect);
+
+  const pickUnique = (source: Word[], needed: number, taken: Word[]) => {
+    const next = shuffleStable(
+      source.filter(
+        (item) => !taken.some((t) => t.word.toLowerCase() === item.word.toLowerCase()),
+      ),
+    );
+    return next.slice(0, needed);
+  };
+
+  const distractors: Word[] = [];
+  for (const source of [sameCategory, scopedFallback, globalSame, globalFallback]) {
+    if (distractors.length >= 3) break;
+    distractors.push(...pickUnique(source, 3 - distractors.length, distractors));
+  }
+
+  return shuffleStable([correct, ...distractors.slice(0, 3)]);
 };
 
 /** Prefer never-reviewed and recently-missed words when forcing a full pool. */

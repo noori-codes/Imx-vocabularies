@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { categoryClass } from "../lib/dom";
-import { sessionAccuracy } from "../lib/quizLogic";
+import { EXAM_PASS_THRESHOLD, sessionAccuracy, sessionPassed } from "../lib/quizLogic";
 import { speakWord, unlockAudio } from "../lib/speech";
 import { CATEGORIES, useLibrary } from "../state/libraryStore";
 import { useQuiz } from "../state/quizStore";
@@ -65,11 +65,20 @@ export function ExamPage() {
 
   useEffect(() => {
     if (!current || quiz.showSummary) return;
-    if (mode === "mcq" || mode === "type" || mode === "cloze") {
+    // Practice typing modes stay untimed; exams (and flash/listen modes) use the timer.
+    if ((mode === "type" || mode === "cloze") && quiz.quizSessionKind !== "exam") {
+      quiz.clearCardTimer();
+      return;
+    }
+    if ((mode === "type" || mode === "cloze") && quiz.quizTypeChecked) {
       quiz.clearCardTimer();
       return;
     }
     quiz.startCardTimer(() => {
+      if (mode === "mcq" || mode === "type" || mode === "cloze") {
+        quiz.advanceQuiz(false);
+        return;
+      }
       if (!quiz.quizRevealed) {
         quiz.setQuizRevealed(true);
         return;
@@ -77,7 +86,14 @@ export function ExamPage() {
       quiz.advanceQuiz(false);
     });
     return () => quiz.clearCardTimer();
-  }, [current?.word, mode, quiz.quizRevealed, quiz.showSummary]);
+  }, [
+    current?.word,
+    mode,
+    quiz.quizRevealed,
+    quiz.quizTypeChecked,
+    quiz.quizSessionKind,
+    quiz.showSummary,
+  ]);
 
   useEffect(() => {
     const quizPage = document.getElementById("quiz");
@@ -164,6 +180,8 @@ export function ExamPage() {
     : 0;
 
   const accuracy = sessionAccuracy(quiz.quizSessionStats);
+  const passed = sessionPassed(quiz.quizSessionStats);
+  const isExam = quiz.quizSessionKind === "exam";
 
   const checkType = () => {
     if (!current || quiz.quizTypeChecked) return;
@@ -212,16 +230,23 @@ export function ExamPage() {
     <section id="quiz" className="page page--active">
       <div className="page-header">
         <div>
-          <p className="eyebrow">Practice</p>
+          <p className="eyebrow">{isExam ? "Exam" : "Practice"}</p>
           <h2>Exam studio</h2>
+          {isExam ? (
+            <p className="quiz-exam-note">
+              Timed MCQ · no re-queue · pass at {EXAM_PASS_THRESHOLD}%
+            </p>
+          ) : null}
         </div>
         <div className="quiz-focus-bar">
+          {isExam ? <span className="quiz-exam-pill">Exam mode</span> : null}
           <button
             id="quizSettingsToggle"
             className="ghost-btn quiz-settings-toggle"
             type="button"
             aria-expanded={settingsOpen}
             aria-controls="quizToolbarPanel"
+            disabled={quiz.examLocked}
             onClick={() => setSettingsOpen((o) => !o)}
           >
             <Settings2 size={15} aria-hidden="true" />
@@ -231,7 +256,14 @@ export function ExamPage() {
             id="quizRestartBtn"
             className="ghost-btn"
             type="button"
-            onClick={() => quiz.prepareQuiz({ forceAll: true, restart: true })}
+            onClick={() =>
+              quiz.prepareQuiz({
+                forceAll: true,
+                restart: true,
+                kind: quiz.quizSessionKind,
+                limit: quiz.quizSessionLimit,
+              })
+            }
           >
             <RotateCcw size={15} aria-hidden="true" />
             Restart
@@ -239,7 +271,11 @@ export function ExamPage() {
         </div>
       </div>
 
-      <div className="quiz-mode-strip" role="tablist" aria-label="Exam mode">
+      <div
+        className={`quiz-mode-strip${quiz.examLocked ? " is-locked" : ""}`}
+        role="tablist"
+        aria-label="Exam mode"
+      >
         {MODE_OPTIONS.map((option) => {
           const Icon = option.icon;
           return (
@@ -249,7 +285,11 @@ export function ExamPage() {
               role="tab"
               aria-selected={mode === option.id}
               className={`quiz-mode-chip${mode === option.id ? " is-active" : ""}`}
-              onClick={() => quiz.setQuizMode(option.id)}
+              disabled={quiz.examLocked && option.id !== mode}
+              onClick={() => {
+                if (quiz.examLocked) return;
+                quiz.setQuizMode(option.id);
+              }}
             >
               <Icon aria-hidden="true" />
               {option.label}
@@ -275,7 +315,12 @@ export function ExamPage() {
                   scope === "weak" ||
                   scope.startsWith("topic:") ||
                   scope.startsWith("idiom:");
-                quiz.prepareQuiz({ forceAll: force, restart: true, scopeOverride: scope });
+                quiz.prepareQuiz({
+                  forceAll: force,
+                  restart: true,
+                  scopeOverride: scope,
+                  kind: "practice",
+                });
               }}
             >
               {scopeOptions.map(([value, label]) => (
@@ -363,10 +408,29 @@ export function ExamPage() {
           ) : null}
         </div>
 
-        <div id="quizSummary" className="quiz-summary" hidden={!quiz.showSummary}>
+        <div
+          id="quizSummary"
+          className={`quiz-summary${isExam ? (passed ? " is-pass" : " is-fail") : ""}`}
+          hidden={!quiz.showSummary}
+        >
           <div className="quiz-summary__hero">
-            <p className="eyebrow">Session complete</p>
-            <h3>{accuracy != null && accuracy >= 80 ? "Strong session" : "Session wrapped"}</h3>
+            <p className="eyebrow">{isExam ? "Exam complete" : "Session complete"}</p>
+            <h3>
+              {isExam
+                ? passed
+                  ? "Passed"
+                  : "Keep studying"
+                : accuracy != null && accuracy >= 80
+                  ? "Strong session"
+                  : "Session wrapped"}
+            </h3>
+            {isExam ? (
+              <p className="quiz-summary__result">
+                {passed
+                  ? `You cleared the ${EXAM_PASS_THRESHOLD}% pass mark.`
+                  : `Need ${EXAM_PASS_THRESHOLD}% to pass · you scored ${accuracy ?? 0}%.`}
+              </p>
+            ) : null}
           </div>
           <div className="quiz-summary__stats-grid">
             <div className="quiz-summary__stat">
@@ -374,11 +438,11 @@ export function ExamPage() {
               <strong>{quiz.quizSessionStats.known}</strong>
             </div>
             <div className="quiz-summary__stat">
-              <span>Again</span>
+              <span>Missed</span>
               <strong>{quiz.quizSessionStats.again}</strong>
             </div>
             <div className="quiz-summary__stat">
-              <span>Reviews</span>
+              <span>Questions</span>
               <strong>{quiz.quizSessionStats.answered}</strong>
             </div>
             <div className="quiz-summary__stat">
@@ -413,9 +477,16 @@ export function ExamPage() {
               id="quizNewSessionBtn"
               className="ghost-btn"
               type="button"
-              onClick={() => quiz.prepareQuiz({ forceAll: quiz.quizForceAll, restart: true })}
+              onClick={() =>
+                quiz.prepareQuiz({
+                  forceAll: quiz.quizForceAll,
+                  restart: true,
+                  kind: quiz.quizSessionKind,
+                  limit: quiz.quizSessionLimit,
+                })
+              }
             >
-              New session
+              {isExam ? "Retake exam" : "New session"}
             </button>
           </div>
         </div>
@@ -433,7 +504,9 @@ export function ExamPage() {
               id="quizEmptyRestartBtn"
               className="primary-btn"
               type="button"
-              onClick={() => quiz.prepareQuiz({ forceAll: true, restart: true })}
+              onClick={() =>
+                quiz.prepareQuiz({ forceAll: true, restart: true, kind: "practice" })
+              }
             >
               Practice all words
             </button>
@@ -474,7 +547,9 @@ function QuizStatus({
       <div className="quiz-session-bar__meta">
         <p id="quizStatusText">
           {showSummary
-            ? "Session complete"
+            ? quiz.quizSessionKind === "exam"
+              ? "Exam complete"
+              : "Session complete"
             : current
               ? `${quiz.describeQuizScope()} · ${quiz.describeQuizMode()}`
               : "Loading exam…"}
