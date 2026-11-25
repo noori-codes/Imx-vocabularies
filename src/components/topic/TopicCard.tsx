@@ -15,7 +15,7 @@ import { useAppShell } from "../../state/appShell";
 import { useQuiz } from "../../state/quizStore";
 import { TopicFormModal } from "../modals/TopicIdiomModals";
 import { SpeakingPracticeModal, WritingPracticeModal } from "../modals/PracticeModals";
-import { WordDetailModal, WordFormModal } from "../modals/WordModals";
+import { WordFormModal } from "../modals/WordModals";
 import type { Topic } from "../../types/models";
 
 export function TopicCard({
@@ -175,32 +175,57 @@ export function TopicCard({
               return (
                 <div key={word} className="mini-vocab-card">
                   <div className="mini-vocab-head">
-                    <h5>
+                    <h5>{wordData.word}</h5>
+                    <div className="mini-vocab-head__actions">
                       <button
                         type="button"
-                        className="word-title-btn open-word-btn"
+                        className="icon-btn mini-speak"
+                        aria-label={`Pronounce ${wordData.word}`}
+                        onClick={() => speakWord(wordData.word)}
+                        dangerouslySetInnerHTML={{ __html: iconSpeak }}
+                      />
+                      <button
+                        type="button"
+                        className="ghost-btn mini-edit-btn"
                         onClick={() =>
-                          openModal(wordData.word, <WordDetailModal item={wordData} />)
+                          openModal("Edit word", <WordFormModal item={wordData} />)
                         }
                       >
-                        {wordData.word}
+                        Edit
                       </button>
-                    </h5>
-                    <button
-                      type="button"
-                      className="icon-btn mini-speak"
-                      aria-label={`Pronounce ${wordData.word}`}
-                      onClick={() => speakWord(wordData.word)}
-                      dangerouslySetInnerHTML={{ __html: iconSpeak }}
-                    />
+                    </div>
                   </div>
-                  <p className="mini-vocab-pron">/{wordData.pronunciation || "ˈwɜːrd"}/</p>
+                  {wordData.pronunciation ? (
+                    <p className="mini-vocab-pron">/{wordData.pronunciation}/</p>
+                  ) : null}
                   <p className="mini-vocab-meta">
                     <strong>Meaning:</strong> {wordData.meaning}
                   </p>
-                  <p className="mini-vocab-meta">
-                    <strong>Example:</strong> {wordData.sentence}
-                  </p>
+                  {wordData.synonym ? (
+                    <p className="mini-vocab-meta">
+                      <strong>Synonym:</strong> {wordData.synonym}
+                    </p>
+                  ) : null}
+                  {wordData.antonym ? (
+                    <p className="mini-vocab-meta">
+                      <strong>Antonym:</strong> {wordData.antonym}
+                    </p>
+                  ) : null}
+                  {wordData.wordFamily ? (
+                    <p className="mini-vocab-meta">
+                      <strong>Word family:</strong> {wordData.wordFamily}
+                    </p>
+                  ) : null}
+                  {wordData.sentence ? (
+                    <p className="mini-vocab-meta">
+                      <strong>Example:</strong> {wordData.sentence}
+                    </p>
+                  ) : null}
+                  {wordData.notes ? (
+                    <p className="mini-vocab-meta">
+                      <strong>Notes:</strong> {wordData.notes}
+                    </p>
+                  ) : null}
                 </div>
               );
             })}
