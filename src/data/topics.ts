@@ -43,6 +43,47 @@ export const createTopic = ({
 
 export const topicData: Topic[] = [
   createTopic({
+    title: "Should You Choose the Path That Excites You — or the One That Keeps You Safe?",
+    date: "2026-11-26",
+    completed: false,
+    vocabulary: [
+      "Security",
+      "Courage",
+      "Hesitation",
+      "Ambition",
+      "Risk-Taking",
+      "Complacency",
+      "Prudence",
+      "Boldness",
+      "Stability",
+      "Thrill",
+    ],
+    idioms: [
+      "Play it safe",
+      "Take the plunge",
+      "Leap of faith",
+      "Better safe than sorry",
+      "Throw caution to the wind",
+    ],
+    summary:
+      "One path feels alive — a new city, a harder goal, a conversation that could change everything. The other path feels steady — familiar work, careful choices, fewer surprises. This topic asks whether a good life is built by chasing excitement or protecting safety, and how we decide when the risk is worth it.",
+    notes:
+      "Talk about careers, relationships, travel, money, and personal growth. Compare short-term thrill with long-term stability. Consider whether caution is wisdom or fear, and whether boldness is courage or recklessness. Explore regret: people often regret the chances they never took, but safety also protects what they already love.",
+    questions: [
+      "Would you rather feel excited most days, or safe most days?",
+      "When has playing it safe protected you — and when has it held you back?",
+      "Is caution usually wisdom, or disguised fear?",
+      "What is one leap of faith you still think about?",
+      "Can a stable life still feel thrilling?",
+      "Do people regret missed chances more than failed risks?",
+      "Should young people take more risks than older people?",
+      "How do money and family responsibilities change what “safe” means?",
+      "Is ambition healthy if it constantly unsettles your peace?",
+      "What decision in your life needs more boldness right now — and what needs more prudence?",
+    ],
+  }),
+
+  createTopic({
     title: "Would You Rather Be Understood Completely — or Admired From a Distance?",
     date: "2026-11-18",
     completed: false,

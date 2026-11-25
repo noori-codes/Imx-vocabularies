@@ -53,6 +53,68 @@ export const createIdiom = ({
 const q = (...items: string[]) => items;
 
 export const idiomData: Idiom[] = [
+  // Excitement vs safety — 2026-11-26
+  createIdiom({
+    idiom: "Play it safe",
+    date: "2026-11-26",
+    pronunciation: "pleɪ ɪt seɪf",
+    meaning: "To avoid risk and choose the careful or secure option.",
+    example: "She wanted to start her own business, but she played it safe and kept her office job.",
+    usage: "Use when someone chooses caution over adventure or uncertainty.",
+    questions: q(
+      "When is it smart to play it safe?",
+      "Have you ever played it safe and later wished you had taken a chance?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Take the plunge",
+    date: "2026-11-26",
+    pronunciation: "teɪk ðə plʌndʒ",
+    meaning: "To finally do something risky or important after hesitation.",
+    example: "After months of doubt, he took the plunge and moved abroad to study.",
+    usage: "Use for big decisions that require courage after delay.",
+    questions: q(
+      "What plunge are you waiting to take?",
+      "What usually stops people from taking the plunge?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Leap of faith",
+    date: "2026-11-26",
+    pronunciation: "liːp əv feɪθ",
+    meaning: "A decision to trust something uncertain without full proof it will work.",
+    example: "Starting the relationship felt like a leap of faith, but they both wanted to try.",
+    usage: "Use when belief or trust must come before certainty.",
+    questions: q(
+      "When was the last leap of faith you took?",
+      "Is a leap of faith brave, naive, or both?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Better safe than sorry",
+    date: "2026-11-26",
+    pronunciation: "ˈbetə seɪf ðæn ˈsɒri",
+    meaning: "It is wiser to be careful than to take a risk and regret it later.",
+    example: "She packed extra clothes for the trip — better safe than sorry.",
+    usage: "Use to justify caution, preparation, or avoiding unnecessary risk.",
+    questions: q(
+      "When do you agree that it is better safe than sorry?",
+      "Can this phrase make people too afraid of risk?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Throw caution to the wind",
+    date: "2026-11-26",
+    pronunciation: "θrəʊ ˈkɔːʃən tə ðə wɪnd",
+    meaning: "To stop being careful and take a bold risk.",
+    example: "They threw caution to the wind and booked one-way tickets with almost no plan.",
+    usage: "Use when someone acts boldly and ignores usual worries.",
+    questions: q(
+      "When have you thrown caution to the wind?",
+      "Is throwing caution to the wind exciting — or irresponsible?",
+    ),
+  }),
+
   // Understood vs admired — 2026-11-18
   createIdiom({
     idiom: "An open book",

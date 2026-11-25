@@ -26,7 +26,7 @@ type Line = {
   id: string;
   text: string;
   meaning: string;
-  kind: "word" | "idiom" | "example";
+  kind: "example" | "question";
 };
 
 const PARTNERS = ["You", "Partner"] as const;
@@ -67,45 +67,47 @@ export function SpeakPage() {
       const words = vocabularyData.filter((item) => wanted.has(item.word.toLowerCase()));
       const idioms = resolveTopicIdioms(topic, idiomData);
       const out: Line[] = [];
+
       words.forEach((item) => {
+        if (!item.sentence?.trim()) return;
         out.push({
-          id: `w:${item.word}`,
-          text: item.word,
-          meaning: item.meaning,
-          kind: "word",
+          id: `e:${item.word}`,
+          text: item.sentence.trim(),
+          meaning: `${item.word} — ${item.meaning}`,
+          kind: "example",
         });
-        if (item.sentence) {
-          out.push({
-            id: `e:${item.word}`,
-            text: item.sentence,
-            meaning: item.meaning,
-            kind: "example",
-          });
-        }
       });
+
       idioms.forEach((item) => {
+        if (!item.example?.trim()) return;
         out.push({
-          id: `i:${item.idiom}`,
-          text: item.idiom,
-          meaning: item.meaning,
-          kind: "idiom",
+          id: `ie:${item.idiom}`,
+          text: item.example.trim(),
+          meaning: `${item.idiom} — ${item.meaning}`,
+          kind: "example",
         });
-        if (item.example) {
-          out.push({
-            id: `ie:${item.idiom}`,
-            text: item.example,
-            meaning: item.meaning,
-            kind: "example",
-          });
-        }
       });
-      return out;
+
+      (topic.questions || []).forEach((question, qi) => {
+        const text = String(question || "").trim();
+        if (!text) return;
+        out.push({
+          id: `q:${title}:${qi}`,
+          text,
+          meaning: "Discussion question — answer in your own words after repeating.",
+          kind: "question",
+        });
+      });
+
+      return dedupeLines(out);
     };
 
     if (source === "favorites") {
-      return vocabularyData
-        .filter((item) => favoriteWords.has(item.word))
-        .flatMap((item) => wordToLines(item));
+      return dedupeLines(
+        vocabularyData
+          .filter((item) => favoriteWords.has(item.word))
+          .flatMap((item) => sentenceLinesFromWord(item)),
+      );
     }
     if (source === "latest") {
       return latestTopic ? buildFromTopic(latestTopic.title) : [];
@@ -113,7 +115,12 @@ export function SpeakPage() {
     if (source.startsWith("topic:")) {
       return buildFromTopic(source.slice("topic:".length));
     }
-    return vocabularyData.slice(0, 24).flatMap((item) => wordToLines(item));
+    return dedupeLines(
+      vocabularyData
+        .filter((item) => item.sentence?.trim())
+        .slice(0, 30)
+        .flatMap((item) => sentenceLinesFromWord(item)),
+    );
   }, [source, topicData, vocabularyData, idiomData, favoriteWords, latestTopic]);
 
   const current = lines[index] || null;
@@ -196,7 +203,7 @@ export function SpeakPage() {
           <p className="eyebrow">Together</p>
           <h2>Speak lab</h2>
           <p className="speak-lede">
-            Listen &amp; repeat with a partner, or shadow the audio out loud.
+            Practice full sentences together — listen &amp; repeat, or shadow the audio.
           </p>
         </div>
       </div>
@@ -243,8 +250,8 @@ export function SpeakPage() {
       {!current ? (
         <div className="speak-empty">
           <p className="eyebrow">Nothing to practice</p>
-          <h3>Pick a topic with vocabulary</h3>
-          <p>Open Topics, add words, then come back for listen &amp; repeat.</p>
+          <h3>No sentences in this source</h3>
+          <p>Pick a topic with example sentences or discussion questions.</p>
         </div>
       ) : (
         <div className="speak-stage">
@@ -351,28 +358,28 @@ export function SpeakPage() {
   );
 }
 
-function wordToLines(item: Word): Line[] {
-  const lines: Line[] = [
+function sentenceLinesFromWord(item: Word): Line[] {
+  if (!item.sentence?.trim()) return [];
+  return [
     {
-      id: `w:${item.word}`,
-      text: item.word,
-      meaning: item.meaning,
-      kind: "word",
+      id: `e:${item.word}`,
+      text: item.sentence.trim(),
+      meaning: `${item.word} — ${item.meaning}`,
+      kind: "example",
     },
   ];
-  if (item.sentence) {
-    lines.push({
-      id: `e:${item.word}`,
-      text: item.sentence,
-      meaning: item.meaning,
-      kind: "example",
-    });
-  }
-  return lines;
+}
+
+function dedupeLines(lines: Line[]): Line[] {
+  const seen = new Set<string>();
+  return lines.filter((line) => {
+    const key = line.text.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function labelForKind(kind: Line["kind"]) {
-  if (kind === "idiom") return "Idiom";
-  if (kind === "example") return "Example";
-  return "Word";
+  return kind === "question" ? "Question" : "Sentence";
 }
