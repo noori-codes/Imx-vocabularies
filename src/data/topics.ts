@@ -43,6 +43,42 @@ export const createTopic = ({
 
 export const topicData: Topic[] = [
   createTopic({
+    title: "Can You Truly Know Someone Without Seeing How They Behave Under Pressure?",
+    date: "2026-11-27",
+    completed: false,
+    vocabulary: [
+      "Integrity",
+      "Composure",
+      "Adversity",
+      "Temperament",
+      "Resentment",
+      "Provocation",
+      "Reliability",
+      "Hypocrisy",
+      "Empathy",
+      "Consistency",
+    ],
+    idioms: [
+      "Under pressure",
+      "Show one's true colors",
+      "Rise to the occasion",
+      "Keep one's cool",
+      "When the chips are down",
+    ],
+    summary:
+      "Some people seem kind, confident, and trustworthy when life is easy. But rejection, jealousy, failure, and pressure can change how they react. Do difficult situations reveal someone's true character, or do they bring out temporary reactions?",
+    notes:
+      "Discuss how people respond to stress, conflict, and disappointment. Consider whether one difficult moment should define a person, how apology and repair matter, and why repeated behavior may reveal more than a single reaction.",
+    questions: [
+      "Do difficult situations reveal someone's real personality?",
+      "Can a good person behave badly under extreme pressure?",
+      "Is someone's reaction to failure more revealing than their reaction to success?",
+      "Should we judge people by their worst moments or their overall behavior?",
+      "Can someone completely change their character over time?",
+    ],
+  }),
+
+  createTopic({
     title: "Should You Choose the Path That Excites You — or the One That Keeps You Safe?",
     date: "2026-11-26",
     completed: false,

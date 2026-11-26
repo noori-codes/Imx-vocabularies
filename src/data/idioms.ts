@@ -53,6 +53,68 @@ export const createIdiom = ({
 const q = (...items: string[]) => items;
 
 export const idiomData: Idiom[] = [
+  // Character under pressure — 2026-11-27
+  createIdiom({
+    idiom: "Under pressure",
+    date: "2026-11-27",
+    pronunciation: "ˈʌndə ˈpreʃə",
+    meaning: "In a stressful or demanding situation.",
+    example: "People often reveal their habits under pressure.",
+    usage: "Use when someone is dealing with stress, urgency, or high expectations.",
+    questions: q(
+      "What helps you think clearly under pressure?",
+      "Do people become more honest or more guarded under pressure?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Show one's true colors",
+    date: "2026-11-27",
+    pronunciation: "ʃəʊ wʌnz truː ˈkʌləz",
+    meaning: "To reveal one's real character, especially through behavior.",
+    example: "Difficult situations can make people show their true colors.",
+    usage: "Use when someone's actions reveal what they are really like.",
+    questions: q(
+      "Can one mistake make someone show their true colors?",
+      "What kinds of situations reveal character most clearly?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Rise to the occasion",
+    date: "2026-11-27",
+    pronunciation: "raɪz tə ði əˈkeɪʒən",
+    meaning: "To respond successfully to a difficult situation or challenge.",
+    example: "She rose to the occasion when everyone needed her.",
+    usage: "Use when someone performs well or acts helpfully in a demanding moment.",
+    questions: q(
+      "When have you seen someone rise to the occasion?",
+      "What qualities help a person rise to the occasion?",
+    ),
+  }),
+  createIdiom({
+    idiom: "Keep one's cool",
+    date: "2026-11-27",
+    pronunciation: "kiːp wʌnz kuːl",
+    meaning: "To remain calm and in control of one's emotions.",
+    example: "It's difficult to keep your cool during an argument.",
+    usage: "Use when someone stays calm instead of becoming angry or upset.",
+    questions: q(
+      "What helps you keep your cool in an argument?",
+      "Is staying calm always better than showing anger?",
+    ),
+  }),
+  createIdiom({
+    idiom: "When the chips are down",
+    date: "2026-11-27",
+    pronunciation: "wen ðə tʃɪps ə daʊn",
+    meaning: "When a situation becomes difficult or serious.",
+    example: "You discover who your real friends are when the chips are down.",
+    usage: "Use when talking about how people behave during hard times.",
+    questions: q(
+      "Who can you count on when the chips are down?",
+      "Can difficult times strengthen a relationship?",
+    ),
+  }),
+
   // Excitement vs safety — 2026-11-26
   createIdiom({
     idiom: "Play it safe",
